@@ -53,6 +53,7 @@ const LANGS = {
         // Theme
         "settings-appearance": "Appearance",
         "label-colorscheme": "Color Scheme",
+        "label-hover-highlight": "Highlight on hover",
         "theme-group-dark": "Dark",
         "theme-group-light": "Light",
         "label-bgimg": "Background Image",
@@ -266,6 +267,7 @@ const LANGS = {
         "desc-hidemissing": "选中的显示器断开时自动隐藏窗口",
         "settings-appearance": "外观",
         "label-colorscheme": "配色方案",
+        "label-hover-highlight": "悬停高亮监控项",
         "theme-group-dark": "暗色",
         "theme-group-light": "亮色",
         "label-bgimg": "背景图片",

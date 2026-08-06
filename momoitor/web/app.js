@@ -97,13 +97,15 @@ function hideChartCursor(section) {
 }
 
 /* Focus dim — hovering a monitor box dims all the other boxes to 50% */
+let _hoverHighlightEnabled = true; // settings-driven: dim other boxes when hovering one
+
 function initTermBoxFocusDim() {
     const grid = document.querySelector('.term-grid');
     if (!grid) return;
     const boxes = grid.querySelectorAll('.term-box');
     if (boxes.length < 2) return;
     const setDim = (focused) => {
-        boxes.forEach(b => b.classList.toggle('dimmed', !!focused && b !== focused));
+        boxes.forEach(b => b.classList.toggle('dimmed', _hoverHighlightEnabled && !!focused && b !== focused));
     };
     // mouseover/mouseout instead of enter/leave so crossing a grid gap keeps the dim state
     grid.addEventListener('mouseover', (e) => {
@@ -114,6 +116,14 @@ function initTermBoxFocusDim() {
     });
 }
 initTermBoxFocusDim();
+
+/* Enable/disable hover highlight on the monitoring boxes */
+function applyHoverHighlight(enabled) {
+    _hoverHighlightEnabled = !!enabled;
+    if (!_hoverHighlightEnabled) {
+        document.querySelectorAll('.term-box.dimmed').forEach(b => b.classList.remove('dimmed'));
+    }
+}
 
 function updateChart(key, dynamicMax) {
     const svg = document.querySelector('.sparkline-bg[data-spark="' + key + '"]');
@@ -2133,6 +2143,7 @@ function initSettings() {
     const fontsizeVal = document.getElementById('fontsize-val');
     const fullscreenChk = document.getElementById('opt-fullscreen');
     const autostartChk = document.getElementById('opt-autostart');
+    const hoverHighlightChk = document.getElementById('opt-hover-highlight');
     const updateNotifyChk = document.getElementById('opt-update-notify');
 
     // Server mode
@@ -2320,6 +2331,8 @@ function initSettings() {
         fontsizeRange.value = s.font_size || 100;
         fontsizeVal.textContent = (s.font_size || 100) + '%';
         fullscreenChk.checked = s.fullscreen !== false;
+        hoverHighlightChk.checked = s.hover_highlight !== false;
+        applyHoverHighlight(s.hover_highlight !== false);
         autostartChk.checked = await pywebview.api.get_autostart();
         updateNotifyChk.checked = s.update_check_enabled !== false;
 
@@ -2468,6 +2481,7 @@ function initSettings() {
             language: languageSel.value,
             font_size: parseInt(fontsizeRange.value),
             fullscreen: fullscreenChk.checked,
+            hover_highlight: hoverHighlightChk.checked,
             update_check_enabled: updateNotifyChk.checked,
             refresh_interval: parseInt(intervalSel.value),
             data_source: datasourceSel.value,
@@ -2528,6 +2542,7 @@ function initSettings() {
         applyLang(s.language || 'en');
         applyFontSize(s.font_size);
         applyColorscheme(s.colorscheme || 'gruvbox');
+        applyHoverHighlight(s.hover_highlight !== false);
         applyFonts(s.font_ui, s.font_data, s.font_clock);
         await applyClockBackgroundSetting(s.clock_bg_image, s.clock_bg_opacity, s.clock_bg_blur, s.clock_bg_gradient !== false, s.clock_bg_fit || 'fit', s.clock_bg_offset_x ?? 50, s.clock_bg_offset_y ?? 50);
         applyHwNames(true);
