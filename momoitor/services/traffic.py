@@ -255,7 +255,12 @@ class TrafficService:
                 self._sample_processes()
                 sample_counter = 0
 
-            time.sleep(POLL_INTERVAL)
+            # 分片 sleep：stop() 置 _running=False 后能在此快速退出，
+            # 避免整个 POLL_INTERVAL 都在睡导致 join 等到超时。
+            slept = 0.0
+            while self._running and slept < POLL_INTERVAL:
+                time.sleep(0.5)
+                slept += 0.5
 
     def start(self):
         """启动后台记录线程。"""
@@ -267,10 +272,11 @@ class TrafficService:
         logger.info("Traffic service started")
 
     def stop(self):
-        """停止后台记录线程并保存数据。"""
+        """停止后台记录线程并保存数据（幂等，可安全多次调用）。"""
         self._running = False
         if self._thread:
-            self._thread.join(timeout=5)
+            self._thread.join(timeout=2)
+            self._thread = None
         self._save_daily()
         logger.info("Traffic service stopped")
 
