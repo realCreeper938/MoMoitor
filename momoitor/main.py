@@ -23,8 +23,20 @@ from momoitor.config import load_settings, DATA_DIR
 from momoitor.api import create_monitor, create_window, create_api
 
 logger.remove()
-logger.add(sys.stderr, level="DEBUG", format="<green>{time:HH:mm:ss.SSS}</green> | <level>{level:<7}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - {message}")
-logger.add(os.path.join(DATA_DIR, "momonitor.log"), rotation="1 MB", retention="7 days", level="DEBUG")
+
+# debug 日志级别：默认关闭（INFO），可在「设置 → 高级 → Debug Logs」开启。
+# 需在 main() 之前读取设置以决定日志级别，因此这里加载一次。
+def _logging_level() -> str:
+    try:
+        s = load_settings()
+        return "DEBUG" if s.get("debug_logs") else "INFO"
+    except Exception:
+        return "INFO"
+
+
+_log_level = _logging_level()
+logger.add(sys.stderr, level=_log_level, format="<green>{time:HH:mm:ss.SSS}</green> | <level>{level:<7}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - {message}")
+logger.add(os.path.join(DATA_DIR, "momonitor.log"), rotation="1 MB", retention="7 days", level=_log_level)
 
 
 def _cleanup_webview2_data():

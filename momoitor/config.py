@@ -122,6 +122,9 @@ DEFAULT_SETTINGS = {
     "server_auth_pass": "",
     "hint_dismissed": False,   # 首次启动提示是否已忽略
     "update_check_enabled": True,  # 是否检查 GitHub 新版本并弹窗提示
+    "meting_api_base": "",  # 音乐歌词 Meting API 地址，留空关闭歌词
+    "lyrics_process_whitelist": "cloudmusic,foobar2000,potplayer,QQMusic",  # 仅这些进程播放媒体时获取歌词，逗号分隔，留空则不限
+    "debug_logs": False,  # 是否输出 debug 级别日志（设置 → 高级 可开启），默认关闭
 }
 
 
