@@ -45,7 +45,7 @@ LIB_DIR = os.path.join(BASE_DIR, "libs")
 WALLPAPERS_DIR = os.path.join(DATA_DIR, "wallpapers")
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 
-APP_VERSION = "0.4.0"
+APP_VERSION = "0.4.1"
 
 APP_AUTHOR = "realCreeper938"
 APP_HOMEPAGE = "https://github.com/realCreeper938/MoMoitor"
