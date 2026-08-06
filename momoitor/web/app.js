@@ -648,6 +648,30 @@ function hideAppConfirm() {
     if (overlay) overlay.style.display = 'none';
 }
 
+/* ── 服务端模式提示框 ── */
+function showServerInfoModal(info) {
+    const overlay = document.getElementById('server-info-overlay');
+    if (!overlay) return;
+    const urlsEl = document.getElementById('server-info-urls');
+    if (urlsEl) {
+        urlsEl.innerHTML = '';
+        const urls = (info && Array.isArray(info.urls)) ? info.urls : [];
+        for (const u of urls) {
+            const div = document.createElement('div');
+            div.textContent = u;
+            urlsEl.appendChild(div);
+        }
+    }
+    const pathEl = document.getElementById('server-info-path');
+    if (pathEl) pathEl.textContent = (info && info.settings_file) || '--';
+    overlay.style.display = 'flex';
+}
+
+function hideServerInfoModal() {
+    const overlay = document.getElementById('server-info-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
 /* ── 版本更新检测 ── */
 function showUpdateModal(info) {
     const overlay = document.getElementById('update-overlay');
@@ -2508,6 +2532,14 @@ function initSettings() {
             refreshWeatherDetail();
         }
 
+        // If server mode is on, tell the user it runs headless and how to disable it
+        if (s.server_mode) {
+            try {
+                const info = await pywebview.api.get_server_info();
+                showServerInfoModal(info);
+            } catch (e) { console.warn('get_server_info:', e); }
+        }
+
         closeSettings();
     }
 
@@ -2880,6 +2912,12 @@ window.addEventListener('pywebviewready', async () => {
     const updateOverlay = document.getElementById('update-overlay');
     if (updateOverlay) updateOverlay.addEventListener('click', (e) => {
         if (e.target === updateOverlay) hideUpdateModal();
+    });
+    const serverInfoOkBtn = document.getElementById('server-info-ok');
+    if (serverInfoOkBtn) serverInfoOkBtn.addEventListener('click', hideServerInfoModal);
+    const serverInfoOverlay = document.getElementById('server-info-overlay');
+    if (serverInfoOverlay) serverInfoOverlay.addEventListener('click', (e) => {
+        if (e.target === serverInfoOverlay) hideServerInfoModal();
     });
     const updateGotoEl = document.getElementById('update-goto');
     if (updateGotoEl) updateGotoEl.addEventListener('click', (e) => {

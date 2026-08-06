@@ -23,7 +23,7 @@ import os
 import webview
 from loguru import logger
 
-from momoitor.config import (load_settings, save_settings, APP_VERSION, WEB_DIR,
+from momoitor.config import (load_settings, save_settings, SETTINGS_FILE, APP_VERSION, WEB_DIR,
                              APP_AUTHOR, APP_HOMEPAGE, APP_GITHUB_REPO)
 from momoitor.services import autostart, background as bg_svc, window as win_svc
 from momoitor.services.window import adjust_brightness, adjust_volume
@@ -351,6 +351,27 @@ class Api:
             return None
         return check_latest_release()
 
+    def get_server_info(self):
+        """服务端模式信息：配置文件路径 + 浏览器可访问地址（用于保存时的提示框）。"""
+        host = self._settings.get("server_host", "0.0.0.0") or "0.0.0.0"
+        port = int(self._settings.get("server_port", 20622))
+        loopback = host in ("0.0.0.0", "::", "")
+        urls = []
+        if loopback or host in ("127.0.0.1", "localhost"):
+            urls.append("http://127.0.0.1:%d" % port)
+        else:
+            urls.append("http://%s:%d" % (host, port))
+        if loopback:
+            lan = _detect_lan_ip()
+            if lan:
+                urls.append("http://%s:%d" % (lan, port))
+        return {
+            "settings_file": SETTINGS_FILE,
+            "host": host,
+            "port": port,
+            "urls": urls,
+        }
+
     def save_settings(self, settings):
         old_monitor = self._settings.get("monitor", 0)
         old_fullscreen = self._settings.get("fullscreen", True)
@@ -479,6 +500,27 @@ def create_window(monitor):
     _fps.start()
     _music.start()
     return window, api
+
+
+def _detect_lan_ip():
+    """探测本机局域网 IP（用于服务端模式提示框展示可访问地址）。
+
+    用 UDP socket 连一个公网地址来让系统选出默认路由接口，
+    不真正发送数据包，失败时返回 None。
+    """
+    try:
+        import socket
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+        finally:
+            s.close()
+        if ip and ip != "0.0.0.0":
+            return ip
+    except Exception:
+        pass
+    return None
 
 
 def create_api(monitor):
