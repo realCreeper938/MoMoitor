@@ -1692,7 +1692,7 @@ html, body {
 .disk-part-bar {
     width: 100%;
     height: 6px;
-    background: var(--bg);
+    background: transparent;
     border: 1px solid var(--border);
     border-radius: 6px;
     overflow: hidden;
