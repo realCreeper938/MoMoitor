@@ -47,7 +47,7 @@ SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 
 APP_VERSION = "0.3.21"
 
-APP_AUTHOR = "MoMoitor"
+APP_AUTHOR = "realCreeper938"
 APP_HOMEPAGE = "https://github.com/realCreeper938/MoMoitor"
 APP_GITHUB_REPO = "realCreeper938/MoMoitor"
 
