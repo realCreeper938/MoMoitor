@@ -48,3 +48,4 @@ jobs:
         with:
           files: dist/MoMoitor-v*-win64.zip
           prerelease: ${{ inputs.prerelease || false }}
+          generate_release_notes: true
