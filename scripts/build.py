@@ -5,7 +5,6 @@
     check      编译检查（Python compileall + 前端 JS 语法检查）
     build      打包 exe（PyInstaller onedir）→ zip + SHA-256
     run        开发模式启动 (python -m momoitor.main)
-    icon       生成 assets/app.ico（Pillow 绘制，提交入库）
     release    提升版本号 + 提交 + 打 tag（--dry-run 预览）
 
 示例:
@@ -159,37 +158,6 @@ def cmd_run() -> int:
     return subprocess.run([sys.executable, "-m", "momoitor.main"], cwd=ROOT).returncode
 
 
-def cmd_icon() -> int:
-    """用 Pillow 生成 assets/app.ico（16-256 多尺寸）。"""
-    try:
-        from PIL import Image, ImageDraw
-    except ImportError:
-        print("ERROR: Pillow not installed")
-        return 1
-
-    size = 256
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-
-    # 圆角深色面板
-    draw.rounded_rectangle([8, 8, size - 8, size - 8], radius=48, fill=(22, 25, 33, 255))
-    # 显示器边框
-    draw.rounded_rectangle([52, 60, 204, 156], radius=10, outline=(118, 200, 255, 255), width=7)
-    # 屏幕内容：三条脉冲线
-    draw.line([(66, 132), (94, 132), (108, 108), (122, 148), (136, 100), (152, 140), (164, 118), (190, 118)],
-              fill=(118, 200, 255, 255), width=6, joint="curve")
-    # 底座
-    draw.rounded_rectangle([104, 164, 152, 182], radius=4, fill=(118, 200, 255, 255))
-    draw.rounded_rectangle([84, 182, 172, 190], radius=4, fill=(118, 200, 255, 255))
-
-    assets_dir = os.path.join(ROOT, "assets")
-    os.makedirs(assets_dir, exist_ok=True)
-    path = os.path.join(assets_dir, "app.ico")
-    img.save(path, format="ICO", sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
-    print(f"icon: {os.path.relpath(path, ROOT)}")
-    return 0
-
-
 def cmd_release(version: str, dry_run: bool) -> int:
     """提升版本号 → 提交 → 注解 tag vX.Y.Z。"""
     if not VERSION_PATTERN.match(version):
@@ -241,7 +209,6 @@ def main() -> int:
     p_build = sub.add_parser("build", help="PyInstaller onedir + zip + sha256")
     p_build.add_argument("--clean", action="store_true", help="wipe dist/ and build/ first")
     sub.add_parser("run", help="python -m momoitor.main")
-    sub.add_parser("icon", help="generate assets/app.ico with Pillow")
     p_release = sub.add_parser("release", help="bump version, commit, tag")
     p_release.add_argument("--version", required=True, help="new version X.Y.Z")
     p_release.add_argument("--dry-run", action="store_true", help="print steps without executing")
@@ -253,8 +220,6 @@ def main() -> int:
         return cmd_build(args.clean)
     if args.command == "run":
         return cmd_run()
-    if args.command == "icon":
-        return cmd_icon()
     if args.command == "release":
         return cmd_release(args.version, args.dry_run)
     return 1
