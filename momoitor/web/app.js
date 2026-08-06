@@ -783,6 +783,90 @@ function _startInterval(enabled, fn, ms) {
 
 /* Music */
 let _lastCover = '';
+/* Lyrics */
+let _lyricLines = [];      // 当前曲目的歌词行 [{time, text}, ...]
+let _lyricKey = '';        // 当前已加载歌词的曲目标识 "title|artist"
+let _lyricBase = { pos: 0, t: 0 };  // 轮询间隙内插值估算当前时间的基准
+let _lyricTimer = null;    // 歌词平滑推进定时器
+let _lyricActive = false;  // 是否处于歌词显示模式
+let _lyricHover = false;   // 鼠标是否悬停在歌词上（悬停时显示播放控件）
+let _lyricCurIdx = -1;     // 当前渲染句子的下标，用于切换句子时重置水平滚动
+
+/* Render the current + next lyric lines based on interpolated position. */
+function renderLyrics() {
+    if (!_lyricActive) return;
+    const curEl = document.getElementById('h-lyric-current');
+    const nextEl = document.getElementById('h-lyric-next');
+    if (!curEl || !nextEl) return;
+    const pos = _lyricBase.pos + (Date.now() - _lyricBase.t) / 1000;
+    let cur = null, next = null, curIdx = -1;
+    for (let i = 0; i < _lyricLines.length; i++) {
+        if (_lyricLines[i].time <= pos) { cur = _lyricLines[i]; curIdx = i; }
+        else { next = _lyricLines[i]; break; }
+    }
+    if (curIdx !== _lyricCurIdx) {
+        _lyricCurIdx = curIdx;
+        curEl.scrollLeft = 0;   // 句子切换时水平滚动归零
+    }
+    curEl.textContent = (cur && cur.text) ? cur.text : '♪';
+    nextEl.textContent = (next && next.text) ? next.text : '';
+    _scrollCurrentLine(curEl, cur, next, pos);
+}
+
+/* 单行长歌词水平滚动：超出容器的部分按「当前句时长」（到下一句的时间）均匀
+   滚完整行，由播放进度驱动 scrollLeft，不用 CSS 动画，滚动速度随句长自适应。 */
+function _scrollCurrentLine(curEl, cur, next, pos) {
+    if (!cur || !cur.text) { curEl.scrollLeft = 0; return; }
+    const over = curEl.scrollWidth - curEl.clientWidth;
+    if (over <= 0) { curEl.scrollLeft = 0; return; }
+    const dur = (next ? next.time : pos + 4) - cur.time;  // 本句时长（秒）
+    const span = Math.max(dur, 2.5);                       // 至少 2.5s 滚完
+    const p = Math.min(Math.max((pos - cur.time) / span, 0), 1);
+    curEl.scrollLeft = p * over;
+}
+
+/* Apply current view: controls shown either when not in lyric mode, or when
+   the mouse is hovering over the lyrics (so users can control playback). */
+function applyLyricView() {
+    const controls = document.getElementById('h-music-controls');
+    const lyrics = document.getElementById('h-music-lyrics');
+    if (!controls || !lyrics) return;
+    if (_lyricActive && !_lyricHover) {
+        controls.style.display = 'none';
+        lyrics.style.display = 'flex';
+    } else {
+        controls.style.display = '';
+        lyrics.style.display = 'none';
+    }
+}
+
+/* Enter lyrics mode: show lyric lines, start the lyric timer. Controls are
+   hidden until the mouse hovers over the lyrics. */
+function showLyrics(m) {
+    _lyricActive = true;
+    _lyricBase = { pos: m.position || 0, t: Date.now() };
+    _lyricCurIdx = -1;   // 强制重置，保证重新进入时水平滚动从 0 开始
+    applyLyricView();
+    if (!_lyricTimer) {
+        _lyricTimer = setInterval(renderLyrics, 500);
+    }
+    renderLyrics();
+}
+
+/* Exit lyrics mode: restore controls, stop the lyric timer. */
+function hideLyrics() {
+    _lyricActive = false;
+    _lyricHover = false;
+    _lyricCurIdx = -1;
+    applyLyricView();
+    if (_lyricTimer) { clearInterval(_lyricTimer); _lyricTimer = null; }
+}
+
+/* Toggle whether the mouse is over the lyrics — revealing/hiding controls. */
+function setLyricHover(on) {
+    _lyricHover = on;
+    applyLyricView();
+}
 
 /** Batch-update all cover images with the same source. */
 function _updateCovers(cover) {
@@ -833,7 +917,65 @@ async function refreshMusic() {
             // Pause (⏸) while playing, Play (⏵) while paused
             toggleBtn.textContent = m.playing ? '⏸' : '⏵';
         }
+        handleLyrics(m);
     } catch (e) { console.warn('refreshMusic:', e && e.message ? e.message : String(e), e); }
+}
+
+/* Decide whether to show lyrics (playing + position available + configured
+   + process in whitelist). Fetches lyrics once per track, then shows
+   current/next lines over the controls. */
+function handleLyrics(m) {
+    const s = window._appSettings || {};
+    const metingBase = s.meting_api_base || '';
+    const inWhitelist = processInLyricsWhitelist(s.lyrics_process_whitelist, m && m.process_name);
+    const lyricMode = !!(m && m.playing && m.position >= 0 && m.duration > 0 && metingBase && inWhitelist);
+    if (!lyricMode) {
+        if (_lyricActive) hideLyrics();
+        return;
+    }
+    const key = (m.title || '') + '|' + (m.artist || '');
+    if (_lyricKey === key) {
+        // Same track already loaded — keep advancing
+        if (_lyricActive) {
+            _lyricBase = { pos: m.position || 0, t: Date.now() };
+            renderLyrics();
+        } else {
+            showLyrics(m);
+        }
+        return;
+    }
+    // New track — show placeholder immediately, then fetch once
+    _lyricKey = key;
+    _lyricLines = [];
+    showLyrics(m);
+    pywebview.api.get_lyrics(m.title, m.artist).then((res) => {
+        _lyricLines = (res && res.lines) || [];
+        if (_lyricActive) renderLyrics();
+    }).catch(() => {
+        _lyricLines = [];
+        if (_lyricActive) renderLyrics();
+    });
+}
+
+/* 判断进程名是否在歌词白名单内。白名单逗号分隔，大小写不敏感、支持子串匹配
+   （如 "potplayer" 能匹配 "potplayer64"）。留空表示不限制任何进程。 */
+function processInLyricsWhitelist(whitelist, processName) {
+    const pn = (processName || '').toLowerCase();
+    const list = String(whitelist || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+    if (!list.length) return true;       // 未配置白名单 → 不限制
+    if (!pn) return false;
+    return list.some(w => pn.includes(w) || w.includes(pn));
+}
+
+/* Wire hover on the whole music area: hovering anywhere over it reveals
+   playback controls (when in lyric mode). Binding on the persistent container
+   avoids a flicker loop that would occur if the hidden lyrics element
+   disappeared from under the cursor. */
+function bindLyricHover() {
+    const section = document.getElementById('music-section');
+    if (!section) return;
+    section.addEventListener('mouseenter', () => setLyricHover(true));
+    section.addEventListener('mouseleave', () => setLyricHover(false));
 }
 
 /* Spawn a ripple from the pointer position on a music control button */
@@ -2169,11 +2311,14 @@ function initSettings() {
     const serverAuthChk = document.getElementById('opt-server-auth');
     const serverUserInput = document.getElementById('opt-server-user');
     const serverPassInput = document.getElementById('opt-server-pass');
+    const debugLogsChk = document.getElementById('opt-debug-logs');
 
     // Data
     const intervalSel = document.getElementById('opt-interval');
     const datasourceSel = document.getElementById('opt-datasource');
     const gpuSel = document.getElementById('opt-gpu');
+    const metingUrlInput = document.getElementById('opt-meting-url');
+    const lyricsWhitelistInput = document.getElementById('opt-lyrics-whitelist');
 
     // Weather
     const wxLat = document.getElementById('opt-wx-lat');
@@ -2355,6 +2500,8 @@ function initSettings() {
         // Data
         intervalSel.value = String(s.refresh_interval || 1000);
         datasourceSel.value = s.data_source || 'lhm';
+        metingUrlInput.value = s.meting_api_base || '';
+        lyricsWhitelistInput.value = s.lyrics_process_whitelist || '';
 
         // GPU list
         try {
@@ -2466,6 +2613,7 @@ function initSettings() {
         serverAuthChk.checked = s.server_auth_enabled === true;
         serverUserInput.value = s.server_auth_user || '';
         serverPassInput.value = s.server_auth_pass || '';
+        debugLogsChk.checked = s.debug_logs === true;
 
         // Feature toggles
         const ft = s.feature_toggles || {};
@@ -2502,6 +2650,8 @@ function initSettings() {
             refresh_interval: parseInt(intervalSel.value),
             data_source: datasourceSel.value,
             gpu_index: parseInt(gpuSel.value) || 0,
+            meting_api_base: metingUrlInput.value.trim(),
+            lyrics_process_whitelist: lyricsWhitelistInput.value.trim(),
             weather_lat: wxLat.value.trim(),
             weather_lon: wxLon.value.trim(),
             weather_key_id: wxKid.value.trim(),
@@ -2528,6 +2678,7 @@ function initSettings() {
             server_auth_enabled: serverAuthChk.checked,
             server_auth_user: serverUserInput.value.trim(),
             server_auth_pass: serverPassInput.value,
+            debug_logs: debugLogsChk.checked,
         };
 
         // Feature toggles
@@ -2914,6 +3065,7 @@ window.addEventListener('pywebviewready', async () => {
     bindMusicCtrl('h-music-prev', () => pywebview.api.music_prev());
     bindMusicCtrl('h-music-toggle', () => pywebview.api.music_play_pause());
     bindMusicCtrl('h-music-next', () => pywebview.api.music_next());
+    bindLyricHover();
 
     // Top process interactions
     const procListEl = document.getElementById('proc-list');

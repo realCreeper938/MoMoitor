@@ -1270,8 +1270,8 @@ html, body {
 }
 
 #music-section .h-music-cover {
-    width: calc(76px * var(--font-scale));
-    height: calc(76px * var(--font-scale));
+    width: calc(92px * var(--font-scale));
+    height: calc(92px * var(--font-scale));
     object-fit: cover;
     border-radius: var(--radius-sm);
     background: var(--nord1);
@@ -1359,6 +1359,42 @@ html, body {
     font-size: calc(24px * var(--font-scale));
     width: 44px;
     height: 44px;
+}
+
+/* 播放控件与歌词的容器：内部二选一显示，hover 容器可切换 */
+#music-section .music-player-zone {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+}
+
+/* 播放中显示的歌词（当前句 + 下一句），替换播放控件 */
+#music-section .music-lyrics {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    min-width: 0;
+}
+
+#music-section .h-lyric-current {
+    font-size: calc(15px * var(--font-scale));
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;      /* 长句用 scrollLeft 水平滚动，不用省略号 */
+    line-height: 1.2;
+}
+
+#music-section .h-lyric-next {
+    font-size: calc(13px * var(--font-scale));
+    font-weight: 400;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
 }
 
 /* Click ripple spawned from the pointer position */

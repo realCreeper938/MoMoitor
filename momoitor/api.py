@@ -34,6 +34,7 @@ from momoitor.services.calendar import show_calendar, hide_calendar, get_huangli
 from momoitor.services.weather import WeatherService
 from momoitor.services.holiday import HolidayService
 from momoitor.services.traffic import TrafficService
+from momoitor.services.lyrics import LyricsService
 from momoitor.services.update import check_latest as check_latest_release
 
 
@@ -48,6 +49,7 @@ class Api:
         self._weather = WeatherService(lambda: self._settings)
         self._holiday = HolidayService()
         self._traffic = TrafficService()
+        self._lyrics = LyricsService(lambda: self._settings)
         logger.info("API initialized")
 
     def set_window(self, window):
@@ -248,6 +250,15 @@ class Api:
         except Exception as e:
             logger.warning("get_music failed: {}", e)
             return {"available": False, "error": str(e)}
+
+    def get_lyrics(self, title, artist=""):
+        if not self._settings.get("meting_api_base", "").strip():
+            return {"lines": []}
+        try:
+            return {"lines": self._lyrics.get_lyrics(title or "", artist or "")}
+        except Exception as e:
+            logger.warning("get_lyrics failed: {}", e)
+            return {"lines": []}
 
     def get_fps(self):
         if not self._settings.get("feature_toggles", {}).get("fps", True):

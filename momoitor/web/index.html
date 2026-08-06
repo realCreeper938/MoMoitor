@@ -302,10 +302,16 @@
                             <div class="h-music-title" id="h-music-title">--</div>
                             <div class="h-music-artist" id="h-music-artist">--</div>
                         </div>
-                        <div class="music-controls" id="h-music-controls">
-                            <button type="button" class="music-ctrl" id="h-music-prev" title="Previous" aria-label="Previous">&#9198;</button>
-                            <button type="button" class="music-ctrl music-ctrl-toggle" id="h-music-toggle" title="Play/Pause" aria-label="Play/Pause">&#9199;</button>
-                            <button type="button" class="music-ctrl" id="h-music-next" title="Next" aria-label="Next">&#9197;</button>
+                        <div class="music-player-zone" id="h-music-player-zone">
+                            <div class="music-controls" id="h-music-controls">
+                                <button type="button" class="music-ctrl" id="h-music-prev" title="Previous" aria-label="Previous">&#9198;</button>
+                                <button type="button" class="music-ctrl music-ctrl-toggle" id="h-music-toggle" title="Play/Pause" aria-label="Play/Pause">&#9199;</button>
+                                <button type="button" class="music-ctrl" id="h-music-next" title="Next" aria-label="Next">&#9197;</button>
+                            </div>
+                            <div class="music-lyrics" id="h-music-lyrics" style="display:none">
+                                <div class="h-lyric-current" id="h-lyric-current">--</div>
+                                <div class="h-lyric-next" id="h-lyric-next"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -522,33 +528,54 @@
                     </div>
                     <!-- Data Tab -->
                     <div class="tab-content" id="tab-data">
-                        <div class="setting-group">
-                            <div class="setting-group-title" data-i18n="settings-source">Source</div>
-                            <div class="setting-item">
-                                <span data-i18n="label-datasource">Data Source</span>
-                                <select id="opt-datasource">
-                                    <option value="lhm">LibreHardwareMonitor</option>
-                                    <option value="hwinfo">HWiNFO</option>
-                                </select>
+                        <div class="subtab-bar">
+                            <button type="button" class="subtab-btn active" data-subtab="source" data-i18n="subtab-source">Source</button>
+                            <button type="button" class="subtab-btn" data-subtab="lyrics" data-i18n="subtab-lyrics">Lyrics</button>
+                        </div>
+                        <div class="subtab-content active" id="subtab-source">
+                            <div class="setting-group">
+                                <div class="setting-group-title" data-i18n="settings-source">Source</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-datasource">Data Source</span>
+                                    <select id="opt-datasource">
+                                        <option value="lhm">LibreHardwareMonitor</option>
+                                        <option value="hwinfo">HWiNFO</option>
+                                    </select>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-datasource">HWiNFO must be running for its shared memory to work</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-interval">Refresh Interval</span>
+                                    <select id="opt-interval">
+                                        <option value="500">500ms</option>
+                                        <option value="1000">1s</option>
+                                        <option value="1500">1.5s</option>
+                                        <option value="2000">2s</option>
+                                        <option value="5000">5s</option>
+                                    </select>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-gpu">GPU</span>
+                                    <select id="opt-gpu">
+                                        <option value="0">Auto</option>
+                                    </select>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-gpu">Select which GPU to monitor on multi-GPU systems</div>
                             </div>
-                            <div class="setting-desc" data-i18n="desc-datasource">HWiNFO must be running for its shared memory to work</div>
-                            <div class="setting-item">
-                                <span data-i18n="label-interval">Refresh Interval</span>
-                                <select id="opt-interval">
-                                    <option value="500">500ms</option>
-                                    <option value="1000">1s</option>
-                                    <option value="1500">1.5s</option>
-                                    <option value="2000">2s</option>
-                                    <option value="5000">5s</option>
-                                </select>
+                        </div>
+                        <div class="subtab-content" id="subtab-lyrics">
+                            <div class="setting-group">
+                                <div class="setting-group-title" data-i18n="settings-lyrics">Lyrics</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-meting-url">Meting API URL</span>
+                                    <input type="text" id="opt-meting-url" placeholder="https://meting.spr-aachen.com/api">
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-meting-url">Meting API endpoint used to fetch lyrics. Leave empty to disable lyrics.</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-lyrics-whitelist">Process Whitelist</span>
+                                    <input type="text" id="opt-lyrics-whitelist" placeholder="cloudmusic,foobar2000,potplayer,QQMusic">
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-lyrics-whitelist">Only fetch lyrics when media is played by these processes (comma-separated). Leave empty to allow all.</div>
                             </div>
-                            <div class="setting-item">
-                                <span data-i18n="label-gpu">GPU</span>
-                                <select id="opt-gpu">
-                                    <option value="0">Auto</option>
-                                </select>
-                            </div>
-                            <div class="setting-desc" data-i18n="desc-gpu">Select which GPU to monitor on multi-GPU systems</div>
                         </div>
                     </div>
                     <!-- Weather Tab -->
@@ -772,6 +799,17 @@
                                 <input type="password" id="opt-server-pass" placeholder="" class="input-sm">
                             </div>
                             <div class="setting-desc" data-i18n="desc-server-mode">Launch as a web server accessible via browser instead of a desktop window</div>
+                        </div>
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-diagnostics">Diagnostics</div>
+                            <div class="setting-item">
+                                <span data-i18n="label-debug-logs">Debug Logs</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="opt-debug-logs">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-desc" data-i18n="desc-debug-logs">Write verbose debug logs (momonitor.log) to help diagnose issues. Requires restart to take effect.</div>
                         </div>
                     </div>
                     <!-- Features Tab -->
