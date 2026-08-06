@@ -106,9 +106,6 @@ DEFAULT_SETTINGS = {
     "font_data": "IoskeleyMono",
     "font_clock": "Departure Mono",
     "feature_toggles": {
-        "weather": True,
-        "music": True,
-        "fps": True,
         "calendar": True,
         "top_process": True,
         "sysinfo": True,
