@@ -820,6 +820,21 @@ async function refreshMusic() {
     } catch (e) { console.warn('refreshMusic:', e && e.message ? e.message : String(e), e); }
 }
 
+/* Spawn a ripple from the pointer position on a music control button */
+function spawnCtrlRipple(btn, event) {
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const cx = (event && event.clientX != null) ? event.clientX : rect.left + rect.width / 2;
+    const cy = (event && event.clientY != null) ? event.clientY : rect.top + rect.height / 2;
+    const ripple = document.createElement('span');
+    ripple.className = 'ctrl-ripple';
+    ripple.style.width = ripple.style.height = size + 'px';
+    ripple.style.left = (cx - rect.left - size / 2) + 'px';
+    ripple.style.top = (cy - rect.top - size / 2) + 'px';
+    btn.appendChild(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove());
+}
+
 /* ── Click MEM % to clean memory (sweep animation + count-down) ── */
 let _memCleanPending = false;
 let _lastCleanAt = 0;
@@ -2857,7 +2872,8 @@ window.addEventListener('pywebviewready', async () => {
     // Music transport controls — previous / play-pause / next buttons
     const bindMusicCtrl = (id, action) => {
         const el = document.getElementById(id);
-        if (el) el.addEventListener('click', async () => {
+        if (el) el.addEventListener('click', async (e) => {
+            spawnCtrlRipple(el, e);
             try {
                 await action();
                 refreshMusic();

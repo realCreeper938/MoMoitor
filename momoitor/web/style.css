@@ -1321,19 +1321,28 @@ html, body {
 }
 
 .music-ctrl {
+    position: relative;
     appearance: none;
     border: none;
     background: transparent;
     color: var(--text-dim);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: calc(19px * var(--font-scale));
     line-height: 1;
-    padding: 2px;
+    padding: 0;
     cursor: pointer;
-    transition: color 0.15s ease, transform 0.1s ease;
+    overflow: hidden;
+    transition: color 0.15s ease, background 0.15s ease, transform 0.1s ease;
 }
 
 .music-ctrl:hover {
     color: var(--text);
+    background: color-mix(in srgb, var(--text) 8%, transparent);
 }
 
 .music-ctrl:active {
@@ -1342,6 +1351,26 @@ html, body {
 
 .music-ctrl-toggle {
     font-size: calc(24px * var(--font-scale));
+    width: 44px;
+    height: 44px;
+}
+
+/* Click ripple spawned from the pointer position */
+.ctrl-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.3;
+    transform: scale(0);
+    pointer-events: none;
+    animation: ctrl-ripple-anim 0.5s ease-out forwards;
+}
+
+@keyframes ctrl-ripple-anim {
+    to {
+        transform: scale(2.3);
+        opacity: 0;
+    }
 }
 
 /* Weather popup: float to the right, vertically centered */
