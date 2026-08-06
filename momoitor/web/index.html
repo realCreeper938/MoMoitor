@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoMoitor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 首次启动提示：右上角，15 秒后或按 S 键消失 -->
+    <div id="first-launch-hint" class="first-launch-hint" style="display:none">
+        <span class="first-launch-hint-key">S</span>
+        <span class="first-launch-hint-text" data-i18n="first-launch-hint">Press S to open settings.</span>
+        <button type="button" class="first-launch-hint-close" id="first-launch-hint-close" aria-label="Close">×</button>
+    </div>
+
+<!-- Top-hover Control Popup (brightness & volume) -->
+<div id="top-control-popup" class="top-control-popup">
+    <div class="top-control-item">
+        <span class="top-control-icon nf-icon top-control-brightness" title="Brightness">󰖨</span>
+        <input type="range" id="brightness-slider" class="top-control-slider" min="0" max="100" value="50">
+        <span class="top-control-value mono" id="brightness-value">--</span>
+    </div>
+    <div class="top-control-divider"></div>
+    <div class="top-control-item">
+        <span class="top-control-icon nf-icon top-control-volume" title="Volume">󰕾</span>
+        <input type="range" id="volume-slider" class="top-control-slider" min="0" max="100" value="50">
+        <span class="top-control-value mono" id="volume-value">--</span>
+    </div>
+</div>
+
+    <div id="terminal">
+        <!-- Main grid -->
+        <div class="term-grid">
+            <!-- CPU -->
+            <div class="term-box" id="cpu-section">
+                <svg class="sparkline-bg" data-spark="cpu" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="corner-label">CPU</div>
+                <div class="box-header" id="cpu-header">CPU
+                    <div class="hw-detail-popup" id="cpu-detail-popup">
+                        <div class="hw-detail-row">
+                            <div class="hw-detail-info">
+                                <div class="hw-detail-model" id="cpu-detail-model">--</div>
+                                <div class="hw-detail-specs" id="cpu-detail-specs"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="box-content">
+                    <div class="split-row">
+                        <div class="data-col">
+                            <div class="value-row">
+                                <span class="metric-value big mono" id="cpu-load">--</span><span class="pct">%</span>
+                            </div>
+                            <div class="info-line"><span class="mono" id="cpu-clock">--</span><span class="unit">MHz</span> · <span class="mono" id="cpu-temp">--</span><span class="unit">°C</span></div>
+                            <div class="info-line"><span class="mono" id="cpu-power">--</span><span class="unit">W</span> · <span class="mono" id="cpu-voltage">--</span><span class="unit">V</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hw-name" id="cpu-hw-name"></div>
+            </div>
+
+            <!-- GPU -->
+            <div class="term-box" id="gpu-section">
+                <svg class="sparkline-bg" data-spark="gpu" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="corner-label">GPU</div>
+                <div class="box-header" id="gpu-header">GPU
+                    <div class="hw-detail-popup" id="gpu-detail-popup">
+                        <div class="hw-detail-row">
+                            <div class="hw-detail-info">
+                                <div class="hw-detail-model" id="gpu-detail-model">--</div>
+                                <div class="hw-detail-specs" id="gpu-detail-specs"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="box-content">
+                    <div class="split-row">
+                        <div class="data-col">
+                            <div class="value-row">
+                                <span class="metric-value big mono" id="gpu-load">--</span><span class="pct">%</span>
+                            </div>
+                            <div class="info-line"><span class="mono" id="gpu-temp">--</span><span class="unit">°C</span> · <span class="mono" id="gpu-power">--</span><span class="unit">W</span></div>
+                            <div class="info-line"><span class="mono" id="gpu-vram-used">--</span>/<span class="mono" id="gpu-vram-total">--</span><span class="unit">GB</span> · <span class="mono" id="gpu-vram-temp">--</span><span class="unit">°C</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="hw-name" id="gpu-hw-name"></div>
+            </div>
+
+            <!-- Memory -->
+            <div class="term-box" id="mem-section">
+                <svg class="sparkline-bg" data-spark="mem" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="box-header" id="mem-header">Memory
+                    <div class="hw-detail-popup" id="mem-detail-popup">
+                        <div class="hw-detail-row">
+                            <div class="hw-detail-info">
+                                <div class="hw-detail-model" id="mem-detail-model">--</div>
+                                <div class="hw-detail-specs" id="mem-detail-specs"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="box-content">
+                    <div class="split-row">
+                        <div class="data-col">
+                            <div class="value-row">
+                                <span class="metric-value big mono" id="mem-pct">--</span><span class="pct">%</span>
+                            </div>
+                            <div class="info-line"><span class="mono" id="mem-clock">--</span><span class="unit">MHz</span> · <span class="mono" id="mem-volt">--</span><span class="unit">V</span></div>
+                            <div class="info-line"><span class="mono" id="mem-used">--</span>/<span class="mono" id="mem-total">--</span><span class="unit">GB</span> · <span class="mono" id="mem-temp">--</span><span class="unit">°C</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network & Sysinfo -->
+            <div class="term-box" id="net-section">
+                <svg class="sparkline-bg" data-spark="net_down" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <svg class="sparkline-bg sparkline-bg-over" data-spark="net_up" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="box-header">Network</div>
+                <div class="box-content">
+                    <div class="split-row">
+                        <div class="data-col">
+                            <div class="value-row"><span class="arrow">↓</span><span class="metric-value mono" id="net-down">--</span><span class="unit" id="net-down-unit">KB/s</span></div>
+                            <div class="value-row"><span class="arrow">↑</span><span class="metric-value mono" id="net-up">--</span><span class="unit" id="net-up-unit">KB/s</span></div>
+                            <div class="info-line net-host-row"><span class="mono" id="sysinfo-ip">--</span><span class="host-dim" id="sysinfo-host">--</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traffic Popup -->
+            <div id="traffic-popup-overlay" class="modal-overlay" style="display:none">
+                <div id="traffic-popup" class="modal-panel traffic-popup">
+                    <div class="traffic-popup-header">
+                        <span class="traffic-popup-title" data-i18n="traffic-title">流量记录</span>
+                        <button class="traffic-popup-close" id="traffic-popup-close">&times;</button>
+                    </div>
+                    <div class="traffic-popup-body">
+                        <!-- Today Summary Cards -->
+                        <div class="traffic-cards">
+                            <div class="traffic-card">
+                                <div class="traffic-card-label" data-i18n="traffic-total">今日总流量</div>
+                                <div class="traffic-card-value mono" id="traffic-total">--</div>
+                            </div>
+                            <div class="traffic-card traffic-card-proc">
+                                <div class="traffic-card-label" data-i18n="traffic-top-proc">消耗最多</div>
+                                <div class="traffic-card-value mono" id="traffic-top-proc">--</div>
+                            </div>
+                            <div class="traffic-card traffic-card-down">
+                                <div class="traffic-card-label" data-i18n="traffic-down">今日下载</div>
+                                <div class="traffic-card-value mono" id="traffic-down-today">--</div>
+                            </div>
+                            <div class="traffic-card traffic-card-up">
+                                <div class="traffic-card-label" data-i18n="traffic-up">今日上传</div>
+                                <div class="traffic-card-value mono" id="traffic-up-today">--</div>
+                            </div>
+                        </div>
+                        <!-- Calendar -->
+                        <div class="traffic-cal-header">
+                            <button id="traffic-cal-prev" class="traffic-cal-nav">&lt;</button>
+                            <span class="traffic-cal-title" id="traffic-cal-title">----年--月</span>
+                            <button id="traffic-cal-next" class="traffic-cal-nav">&gt;</button>
+                        </div>
+                        <div class="traffic-weekdays">
+                            <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="traffic-weekend">六</span><span class="traffic-weekend">日</span>
+                        </div>
+                        <div class="traffic-cal-grid" id="traffic-cal-grid"></div>
+                    </div>
+                    <div class="traffic-popup-footer">
+                        <span class="traffic-legend">
+                            <span class="traffic-legend-item"><span class="traffic-legend-swatch" style="background:#1a2744"></span><span data-i18n="traffic-low">少</span></span>
+                            <span class="traffic-legend-item"><span class="traffic-legend-swatch" style="background:#1e3d6b"></span></span>
+                            <span class="traffic-legend-item"><span class="traffic-legend-swatch" style="background:#1f5a9e"></span></span>
+                            <span class="traffic-legend-item"><span class="traffic-legend-swatch" style="background:#1f6dc4"></span></span>
+                            <span class="traffic-legend-item"><span class="traffic-legend-swatch" style="background:#1a7ae8"></span><span data-i18n="traffic-high">多</span></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Listening Ports Popup -->
+            <div id="ports-popup-overlay" class="modal-overlay" style="display:none">
+                <div id="ports-popup" class="modal-panel ports-popup">
+                    <div class="ports-popup-header">
+                        <span class="ports-popup-title" data-i18n="ports-title">监听端口列表</span>
+                        <button class="ports-popup-close" id="ports-popup-close">&times;</button>
+                    </div>
+                    <div class="ports-popup-search">
+                        <input type="text" id="ports-search-input" class="ports-search-input" data-i18n-placeholder="ports-search-placeholder" placeholder="搜索端口/进程名...">
+                    </div>
+                    <div class="ports-popup-body" id="ports-popup-body">
+                        <div class="ports-loading" id="ports-loading" data-i18n="ports-scanning">正在扫描...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clock -->
+            <div class="term-box" id="clock-section">
+                <div class="clock-bg-layer" id="clock-bg-image" aria-hidden="true"></div>
+                <div class="box-content">
+                    <!-- Sidebar elements -->
+                    <div class="h-sidebar">
+                        <div class="h-date mono" id="h-clock-date">--</div>
+                        <div class="h-lunar mono" id="h-clock-lunar">--</div>
+                        <div class="h-time-block" id="h-clock-block">
+                            <div class="h-period mono" id="h-clock-period"></div>
+                            <div class="h-time-row mono" id="h-clock-h">--</div>
+                            <div class="h-time-row mono" id="h-clock-m">--</div>
+                            <div class="h-time-row mono" id="h-clock-s">--</div>
+                        </div>
+                        <div class="h-weather weather-compact" id="h-weather-compact">
+                            <span class="wx-icon" id="h-wx-icon">#</span>
+                            <span class="mono" id="h-clock-weather-temp">--&#8451;</span>
+                            <div class="wx-popup" id="wx-popup">
+                                <div class="wx-popup-body">
+                                    <span class="wx-popup-icon" id="wx-popup-icon"></span>
+                                    <div class="wx-popup-main">
+                                        <div class="wx-popup-temp-row"><span class="wx-popup-temp mono" id="wx-popup-temp">--</span><span class="wx-popup-unit">&deg;C</span></div>
+                                        <div class="wx-popup-meta">
+                                            <span class="wx-popup-text" id="wx-popup-text">--</span>
+                                            <span class="wx-popup-dot"></span>
+                                            <span class="wx-popup-city"><span class="nf-icon">&#xF034E;</span><span class="mono" id="wx-popup-city">--</span></span>
+                                            <span class="wx-popup-dot"></span>
+                                            <span class="wx-popup-updated"><span class="nf-icon">&#xF0150;</span><span class="mono" id="wx-popup-updated">--:--</span></span>
+                                        </div>
+                                    </div>
+                                    <div class="wx-popup-details">
+                                        <div class="wx-detail-item"><span class="nf-icon">&#xF050F;</span><span class="mono" id="wx-feels">--</span><span class="wx-detail-unit">&deg;</span></div>
+                                        <div class="wx-detail-item"><span class="nf-icon">&#xF058E;</span><span class="mono" id="wx-humidity">--</span><span class="wx-detail-unit">%</span></div>
+                                        <div class="wx-detail-item"><span class="nf-icon">&#xF059D;</span><span class="mono" id="wx-wind-dir">--</span><span class="mono" id="wx-wind-scale">--</span></div>
+                                        <div class="wx-detail-item" id="wx-aqi-row" style="display:none"><span class="nf-icon">&#xF032A;</span><span class="mono" id="wx-aqi-val">--</span></div>
+                                    </div>
+                                </div>
+                                <div class="wx-precip" id="wx-precip-row" style="display:none">
+                                    <div class="wx-precip-title"><span class="nf-icon">&#xF0597;</span> <span data-i18n="wx-precip">Precipitation</span></div>
+                                    <div class="wx-precip-text" id="wx-precip-text">--</div>
+                                    <div class="wx-precip-chart" id="wx-precip-chart"></div>
+                                </div>
+                                <div class="wx-alerts" id="wx-alerts-row" style="display:none">
+                                    <div class="wx-alerts-title"><span class="nf-icon">&#xF05D6;</span> <span data-i18n="wx-alerts">Alerts</span></div>
+                                    <div id="wx-alerts-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Calendar popup — shown when hovering over the date -->
+                    <div id="clock-cal-popup" class="clock-cal-popup">
+                        <div class="cal-popup-today">
+                            <span class="cal-weather-icon" id="cal-weather-icon">☀</span>
+                            <div class="cal-popup-today-info">
+                                <span class="cal-weather-temp" id="cal-weather-temp">--°</span>
+                                <span class="cal-weather-text" id="cal-weather-text">--</span>
+                            </div>
+                            <span class="cal-popup-lunar" id="cal-popup-lunar">--</span>
+                        </div>
+                        <div class="calendar-header">
+                            <button id="cal-prev" class="cal-nav-btn">&lt;</button>
+                            <div class="cal-title">
+                                <span id="cal-year">----</span>
+                                <span id="cal-month">--</span>
+                            </div>
+                            <button id="cal-next" class="cal-nav-btn">&gt;</button>
+                            <button id="cal-today" class="cal-nav-btn cal-today-btn">今</button>
+                        </div>
+                        <div class="calendar-weekdays">
+                            <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="cal-weekend">六</span><span class="cal-weekend">日</span>
+                        </div>
+                        <div id="calendar-grid" class="calendar-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FPS -->
+            <div class="term-box" id="fps-section">
+                <svg class="sparkline-bg" data-spark="fps" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="box-header">FPS</div>
+                <div class="box-content">
+                    <div class="split-row">
+                        <div class="data-col">
+                            <div class="value-row">
+                                <span class="metric-value big mono" id="fps-val">--</span><span class="pct">FPS</span>
+                            </div>
+                            <div class="info-line"><span class="mono" id="fps-ft">--</span><span class="unit">ms</span> · 1% <span class="mono" id="fps-low1">--</span></div>
+                            <div class="info-line">AVG <span class="mono" id="fps-avg">--</span> · 99% <span class="mono" id="fps-p99">--</span></div>
+                        </div>
+                    </div>
+                    <div class="fps-process" id="fps-process" style="display:none">
+                        <span class="fps-process-name" id="fps-process-name"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Music (left of process list) -->
+            <div class="term-box" id="music-section" style="display:none">
+                <span class="hw-name" id="h-music-process"></span>
+                <div class="box-content music-content">
+                    <img class="h-music-cover" id="h-music-cover" src="" alt="">
+                    <div class="music-main">
+                        <div class="h-music-meta">
+                            <div class="h-music-title" id="h-music-title">--</div>
+                            <div class="h-music-artist" id="h-music-artist">--</div>
+                        </div>
+                        <div class="music-controls" id="h-music-controls">
+                            <button type="button" class="music-ctrl" id="h-music-prev" title="Previous" aria-label="Previous">&#9198;</button>
+                            <button type="button" class="music-ctrl music-ctrl-toggle" id="h-music-toggle" title="Play/Pause" aria-label="Play/Pause">&#9199;</button>
+                            <button type="button" class="music-ctrl" id="h-music-next" title="Next" aria-label="Next">&#9197;</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top process (horizontal mode only, beside FPS) -->
+            <div class="term-box" id="proc-section">
+                <div class="box-content proc-content">
+                    <div class="proc-list" id="proc-list"></div>
+                    <div class="proc-taskmgr-btn" id="proc-taskmgr-btn" data-i18n="taskmgr-btn">任务管理器</div>
+                </div>
+            </div>
+
+            <!-- Disk -->
+            <div class="term-box" id="disk-section">
+                <svg class="sparkline-bg" data-spark="disk_read" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <svg class="sparkline-bg sparkline-bg-over" data-spark="disk_write" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="box-header">Disk</div>
+                <div class="box-content">
+                    <div class="split-row">
+                        <div class="data-col">
+                            <div class="value-row"><span class="arrow">R</span><span class="metric-value mono" id="disk-read">--</span><span class="unit" id="disk-read-unit">KB/s</span></div>
+                            <div class="value-row"><span class="arrow">W</span><span class="metric-value mono" id="disk-write">--</span><span class="unit" id="disk-write-unit">KB/s</span></div>
+                            <div class="info-line"><span class="mono" id="disk-temp">--</span><span class="unit">°C</span></div>
+                            <div class="info-line"><span class="mono" id="disk-used">--</span>/<span class="mono" id="disk-total">--</span><span class="unit">GB</span></div>
+                        </div>
+                    </div>
+                    <div class="disk-partitions" id="disk-partitions"></div>
+                </div>
+            </div>
+        </div>
+
+
+
+        </div>
+    </div>
+
+    
+
+    <!-- Temperature warning -->
+    <div id="temp-warning" style="display:none">
+        <span id="temp-warning-text"> HIGH TEMP</span>
+    </div>
+
+    <!-- Data error -->
+    <div id="data-error" style="display:none">
+        <span id="data-error-text">󰀦 ERROR</span>
+    </div>
+
+    <!-- Kill process confirmation -->
+    <div id="kill-confirm-overlay" class="modal-overlay" style="display:none">
+        <div class="modal-panel">
+            <div class="modal-header kill-confirm-header">终止进程</div>
+            <div class="modal-body">
+                <span id="kill-confirm-body">--</span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="text-btn" id="kill-btn-cancel">取消</button>
+                <button type="button" class="primary-btn kill-btn-ok" id="kill-btn-ok">终止</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic app confirm dialog -->
+    <div id="app-confirm-overlay" class="modal-overlay" style="display:none">
+        <div class="modal-panel small-modal">
+            <div class="modal-header" data-i18n="confirm-title">Confirm</div>
+            <div class="modal-body">
+                <span id="app-confirm-body">--</span>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="text-btn" id="app-confirm-cancel" data-i18n="confirm-cancel">Cancel</button>
+                <button type="button" class="primary-btn" id="app-confirm-ok" data-i18n="confirm-ok">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update available modal -->
+    <div id="update-overlay" class="modal-overlay" style="display:none">
+        <div class="modal-panel update-modal">
+            <div class="modal-header" data-i18n="update-title">New Version Available</div>
+            <div class="modal-body">
+                <div class="update-version" id="update-version">--</div>
+                <div class="update-changelog" id="update-changelog"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="text-btn" id="update-later" data-i18n="update-later">Later</button>
+                <a class="primary-btn update-goto" id="update-goto" data-i18n="update-goto" href="#" target="_blank" rel="noopener">View / Download</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backend connection error -->
+    <div id="backend-error" class="backend-error" style="display:none">
+        <span class="backend-error-icon">󰀦</span>
+        <span class="backend-error-text">无法连接至后端</span>
+    </div>
+
+    <!-- Exit popup -->
+    <div id="exit-popup" class="modal-overlay" style="display:none">
+        <div class="modal-panel">
+            <span class="exit-popup-text">正在退出...</span>
+        </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="settings-overlay" class="modal-overlay" style="display:none">
+        <div class="modal-panel settings-panel">
+            <div class="settings-header" data-i18n="settings-title">Settings</div>
+            <div class="settings-layout">
+                <div class="settings-sidebar">
+                    <button class="nav-btn active" data-tab="general">
+                        <span data-i18n="nav-general">General</span>
+                    </button>
+                    <button class="nav-btn" data-tab="data">
+                        <span data-i18n="nav-data">Data</span>
+                    </button>
+                    <button class="nav-btn" data-tab="weather">
+                        <span data-i18n="nav-weather">Weather</span>
+                    </button>
+                    <button class="nav-btn" data-tab="monitor">
+                        <span data-i18n="nav-monitor">Monitor</span>
+                    </button>
+                    <button class="nav-btn" data-tab="theme">
+                        <span data-i18n="nav-theme">Theme</span>
+                    </button>
+                    <button class="nav-btn" data-tab="advanced">
+                        <span data-i18n="nav-advanced">Advanced</span>
+                    </button>
+                    <button class="nav-btn" data-tab="features">
+                        <span data-i18n="nav-features">Features</span>
+                    </button>
+                    <button class="nav-btn" data-tab="about">
+                        <span data-i18n="nav-about">About</span>
+                    </button>
+                </div>
+                <div class="settings-body">
+                    <!-- General Tab -->
+                    <div class="tab-content active" id="tab-general">
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-interface">Interface</div>
+                            <div class="setting-item">
+                                <span data-i18n="label-language">Language</span>
+                                <select id="opt-language">
+                                    <option value="en">English</option>
+                                    <option value="zh">中文</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-fontsize">Font Size</span>
+                                <input type="range" id="opt-fontsize" min="60" max="200" value="100">
+                                <span class="range-val" id="fontsize-val">100%</span>
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-fullscreen">Fullscreen</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="opt-fullscreen" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-updates">Updates</div>
+                            <div class="setting-item">
+                                <span data-i18n="label-update-notify">Update Notifications</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="opt-update-notify" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-startup">Startup</div>
+                            <div class="setting-item">
+                                <span data-i18n="label-autostart">Auto-start at logon</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="opt-autostart">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-shortcuts">Shortcuts</div>
+                            <div class="shortcuts-list">
+                                <div class="shortcut-item"><span class="shortcut-key">S</span><span data-i18n="short-s">S Settings</span></div>
+                                <div class="shortcut-item"><span class="shortcut-key">R</span><span data-i18n="short-r">R Refresh</span></div>
+                                <div class="shortcut-item"><span class="shortcut-key">Ctrl+F5</span><span data-i18n="short-ctrlf5">Ctrl+F5 Refresh All</span></div>
+                                <div class="shortcut-item"><span class="shortcut-key">F2</span><span data-i18n="short-f2">F2 Minimize</span></div>
+                                <div class="shortcut-item"><span class="shortcut-key">Esc</span><span data-i18n="short-esc">Esc Exit</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Data Tab -->
+                    <div class="tab-content" id="tab-data">
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-source">Source</div>
+                            <div class="setting-item">
+                                <span data-i18n="label-datasource">Data Source</span>
+                                <select id="opt-datasource">
+                                    <option value="lhm">LibreHardwareMonitor</option>
+                                    <option value="hwinfo">HWiNFO</option>
+                                </select>
+                            </div>
+                            <div class="setting-desc" data-i18n="desc-datasource">HWiNFO must be running for its shared memory to work</div>
+                            <div class="setting-item">
+                                <span data-i18n="label-interval">Refresh Interval</span>
+                                <select id="opt-interval">
+                                    <option value="500">500ms</option>
+                                    <option value="1000">1s</option>
+                                    <option value="1500">1.5s</option>
+                                    <option value="2000">2s</option>
+                                    <option value="5000">5s</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-gpu">GPU</span>
+                                <select id="opt-gpu">
+                                    <option value="0">Auto</option>
+                                </select>
+                            </div>
+                            <div class="setting-desc" data-i18n="desc-gpu">Select which GPU to monitor on multi-GPU systems</div>
+                        </div>
+                    </div>
+                    <!-- Weather Tab -->
+                    <div class="tab-content" id="tab-weather">
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-location">Location</div>
+                            <div class="setting-item">
+                                <span data-i18n="label-lat">Latitude</span>
+                                <input type="text" id="opt-wx-lat" placeholder="39.92">
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-lon">Longitude</span>
+                                <input type="text" id="opt-wx-lon" placeholder="116.41">
+                            </div>
+                        </div>
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-apikeys">API Keys</div>
+                            <div class="setting-desc" data-i18n="desc-apikeys">Credentials from QWeather console (EdDSA JWT authentication)</div>
+                            <div class="setting-item">
+                                <span data-i18n="label-kid">Key ID</span>
+                                <input type="text" id="opt-wx-kid" placeholder="Credential ID">
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-project">Project ID</span>
+                                <input type="text" id="opt-wx-sub" placeholder="Project ID">
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-pem">Private Key</span>
+                                <textarea id="opt-wx-key" rows="3" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Monitor Tab -->
+                    <div class="tab-content" id="tab-monitor">
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-display">Display</div>
+                            <div class="setting-item">
+                                <span data-i18n="label-display">Display</span>
+                                <select id="opt-monitor">
+                                    <option value="0">Monitor 1</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-hidemissing">Hide if missing</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="opt-hide-missing">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-desc" data-i18n="desc-hidemissing">Hide the window when the selected display is unavailable</div>
+                        </div>
+                    </div>
+                    <!-- Theme Tab -->
+                    <div class="tab-content" id="tab-theme">
+                        <div class="subtab-bar">
+                            <button type="button" class="subtab-btn active" data-subtab="appearance" data-i18n="subtab-appearance">Appearance</button>
+                            <button type="button" class="subtab-btn" data-subtab="background" data-i18n="subtab-background">Background</button>
+                            <button type="button" class="subtab-btn" data-subtab="fonts" data-i18n="subtab-fonts">Fonts</button>
+                            <button type="button" class="subtab-btn" data-subtab="time" data-i18n="subtab-time">Time</button>
+                        </div>
+                        <div class="subtab-content active" id="subtab-appearance">
+                            <div class="setting-group">
+                                <div class="setting-group-title" data-i18n="settings-appearance">Appearance</div>
+                                <div class="theme-picker" id="theme-picker">
+                                    <div class="theme-picker-section">
+                                        <div class="theme-picker-label" data-i18n="theme-group-dark">Dark</div>
+                                        <div class="theme-card-grid" id="theme-grid-dark"></div>
+                                    </div>
+                                    <div class="theme-picker-section">
+                                        <div class="theme-picker-label" data-i18n="theme-group-light">Light</div>
+                                        <div class="theme-card-grid" id="theme-grid-light"></div>
+                                    </div>
+                                </div>
+                                <select id="opt-colorscheme" style="display:none">
+                                    <optgroup label="Dark">
+                                        <option value="gruvbox">Gruvbox</option>
+                                        <option value="nord">Nord</option>
+                                        <option value="ayu">Ayu Dark</option>
+                                        <option value="tokyo-night">Tokyo Night</option>
+                                        <option value="tokyo-night-storm">Tokyo Night Storm</option>
+                                        <option value="catppuccin">Catppuccin Mocha</option>
+                                        <option value="rose-pine-moon">Rosé Pine Moon</option>
+                                        <option value="alucard">Alucard</option>
+                                        <option value="monokai-pro">Monokai Pro</option>
+                                        <option value="everforest-dark">Everforest Dark</option>
+                                        <option value="dracula">Dracula</option>
+                                        <option value="one-dark">One Dark</option>
+                                    </optgroup>
+                                    <optgroup label="Light">
+                                        <option value="gruvbox-light">Gruvbox (Light)</option>
+                                        <option value="catppuccin-latte">Catppuccin Latte</option>
+                                        <option value="rose-pine-dawn">Rosé Pine Dawn</option>
+                                        <option value="papercolor-light">PaperColor Light</option>
+                                        <option value="github-light">GitHub Light</option>
+                                        <option value="atom-one-light">Atom One Light</option>
+                                        <option value="selenized-light">Selenized Light</option>
+                                        <option value="everforest-light">Everforest Light</option>
+                                        <option value="brackets-light-pro">Brackets Light Pro</option>
+                                        <option value="nord-light">Nord Light</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="subtab-content" id="subtab-background">
+                            <div class="setting-group" id="clock-bg-group">
+                                <div class="setting-group-title" data-i18n="settings-clock-bg">Clock Sidebar Background</div>
+                                <div class="setting-item-block">
+                                    <span class="setting-item-label" data-i18n="label-bgimg">Background Image</span>
+                                    <div class="image-picker" id="clockbgimg-picker"></div>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-clockbg-fit">Fit Mode</span>
+                                    <div class="segmented" id="opt-clockbgfit">
+                                        <button type="button" data-value="fit" data-i18n="clockbg-fit-fit">Fit + Gradient</button>
+                                        <button type="button" data-value="cover" data-i18n="clockbg-fit-cover">Cover</button>
+                                        <button type="button" data-value="stretch" data-i18n="clockbg-fit-stretch">Stretch</button>
+                                    </div>
+                                </div>
+                                <div class="setting-item" id="clockbg-offset-row" style="display:none">
+                                    <span data-i18n="label-clockbg-offset">Image Offset</span>
+                                    <button type="button" class="text-btn" id="opt-clockbg-offset" data-i18n="clockbg-adjust">Adjust...</button>
+                                </div>
+                                <div class="setting-desc" id="clockbg-offset-desc" data-i18n="desc-clockbg-offset" style="display:none">Drag the image in the preview to choose the visible region</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-bgopacity">Image Opacity</span>
+                                    <input type="range" id="opt-clockbgopacity" min="0" max="100" value="80">
+                                    <span class="range-val" id="clockbgopacity-val">80%</span>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-bgblur">Blur</span>
+                                    <input type="range" id="opt-clockbgblur" min="0" max="50" value="0">
+                                    <span class="range-val" id="clockbgblur-val">0px</span>
+                                </div>
+                                <div class="setting-item" id="clockbg-gradient-row">
+                                    <span data-i18n="label-clockbg-gradient">Auto Gradient Fill</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-clockbggradient">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-desc" id="clockbg-gradient-desc" data-i18n="desc-clockbg-gradient">Extend image upward with a seamless gradient when height is insufficient</div>
+                            </div>
+                        </div>
+                        <div class="subtab-content" id="subtab-fonts">
+                            <div class="setting-group">
+                                <div class="setting-group-title" data-i18n="settings-fonts">Fonts</div>
+                                <div class="font-picker-section">
+                                    <div class="font-picker-label" data-i18n="font-slot-ui">Interface</div>
+                                    <div class="font-card-grid" id="font-grid-ui"></div>
+                                </div>
+                                <div class="font-picker-section">
+                                    <div class="font-picker-label" data-i18n="font-slot-data">Data Values</div>
+                                    <div class="font-card-grid" id="font-grid-data"></div>
+                                </div>
+                                <div class="font-picker-section">
+                                    <div class="font-picker-label" data-i18n="font-slot-clock">Clock</div>
+                                    <div class="font-card-grid" id="font-grid-clock"></div>
+                                </div>
+                            </div>
+                            <div class="setting-desc" data-i18n="desc-fonts">Pick a font for each content area. Previews show the font in use.</div>
+                        </div>
+                        <div class="subtab-content" id="subtab-time">
+                            <div class="setting-group">
+                                <div class="setting-group-title" data-i18n="settings-time">Time</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-clock-format">Clock Format</span>
+                                    <div class="segmented" id="opt-clockformat">
+                                        <button type="button" data-value="24" data-i18n="clock-24h">24-Hour</button>
+                                        <button type="button" data-value="12" data-i18n="clock-12h">12-Hour</button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-show-seconds">Show Seconds</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-show-seconds" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Advanced Tab -->
+                    <div class="tab-content" id="tab-advanced">
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-server">Server Mode</div>
+                            <div class="setting-item">
+                                <span data-i18n="label-server-mode">Enable Server Mode (next launch)</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="opt-server-mode">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-server-host">Listen Host</span>
+                                <input type="text" id="opt-server-host" placeholder="0.0.0.0" class="input-sm">
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-server-port">Port</span>
+                                <input type="number" id="opt-server-port" placeholder="20622" min="1" max="65535" class="input-sm">
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-server-auth">BasicAuth</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="opt-server-auth">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-server-user">Username</span>
+                                <input type="text" id="opt-server-user" placeholder="admin" class="input-sm">
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-server-pass">Password</span>
+                                <input type="password" id="opt-server-pass" placeholder="" class="input-sm">
+                            </div>
+                            <div class="setting-desc" data-i18n="desc-server-mode">Launch as a web server accessible via browser instead of a desktop window</div>
+                        </div>
+                    </div>
+                    <!-- Features Tab -->
+                    <div class="tab-content" id="tab-features">
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-features">Feature Toggles</div>
+                            <div class="setting-desc" data-i18n="desc-features">Disable features you don't need to reduce API calls and CPU usage. Hardware monitoring (CPU, GPU, Memory, Network, Disk) is always on.</div>
+                            <div class="feature-toggle-list" id="feature-toggle-list">
+                                <div class="setting-item">
+                                    <span data-i18n="ft-weather">Weather</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="ft-weather" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="ft-music">Music</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="ft-music" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="ft-fps">FPS</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="ft-fps" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="ft-calendar">Calendar Popup</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="ft-calendar" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="ft-top-process">Top Processes</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="ft-top_process" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="ft-sysinfo">System Info</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="ft-sysinfo" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="ft-traffic">Traffic Record</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="ft-traffic" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- About Tab -->
+                    <div class="tab-content" id="tab-about">
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-about">About</div>
+                            <div class="about-list" id="about-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="settings-footer">
+                <button id="settings-save" data-i18n="btn-save">Save</button>
+                <button id="settings-close" data-i18n="btn-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clock background offset adjust modal -->
+    <div id="clockbg-offset-overlay" class="modal-overlay" style="display:none">
+        <div class="modal-panel small-modal">
+            <div class="modal-header" data-i18n="clockbg-adjust-title">Adjust Image Offset</div>
+            <div class="modal-body">
+                <div class="offset-preview-wrap">
+                    <div class="offset-preview" id="offset-preview"></div>
+                    <span class="offset-hint" data-i18n="clockbg-offset-hint">Drag to move</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="text-btn" id="offset-reset" data-i18n="btn-reset">Reset</button>
+                <button type="button" class="primary-btn" id="offset-done" data-i18n="btn-done">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <link rel="stylesheet" href="calendar.css">
+    <script src="i18n.js"></script>
+    <script src="lunar.js"></script>
+    <script src="app.js"></script>
+    <script src="calendar.js"></script>
+    <script src="traffic.js"></script>
+    <script>
+    // pywebview shim for server mode: if pywebview is not injected (i.e. served over HTTP),
+    // create an API proxy that forwards method calls to POST /api/<method> and dispatch
+    // the pywebviewready event so existing business JS works unchanged.
+    (function() {
+        // WebView2 环境：pywebview 会在页面加载完成后注入真实 API（chrome.webview
+        // 从文档创建起即存在）。此时若创建代理会派发两次 pywebviewready 导致重复初始化，
+        // 故仅 HTTP 服务器模式（浏览器）才启用 shim。
+        if (window.chrome && window.chrome.webview) return;
+        if (window.pywebview && window.pywebview.api) return;
+        window.pywebview = {
+            api: new Proxy({}, {
+                get: function(_target, method) {
+                    if (method === 'then') return undefined; // avoid thenable detection
+                    return function() {
+                        var args = Array.prototype.slice.call(arguments);
+                        return fetch('/api/' + String(method), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(args)
+                        }).then(function(r) {
+                            if (!r.ok) {
+                                return r.text().then(function(t) {
+                                    throw new Error('API ' + method + ' failed (' + r.status + '): ' + t);
+                                });
+                            }
+                            return r.json();
+                        });
+                    };
+                }
+            })
+        };
+        window.dispatchEvent(new Event('pywebviewready'));
+    })();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,14 @@
+# MoMoitor 运行时依赖（均为实际使用，无冗余）
+pywebview>=5.0
+pythonnet>=3.0
+psutil>=5.9
+# PyJWT 的 EdDSA 签名需要 cryptography（weather.py 和风天气 JWT 认证）
+cryptography>=42.0
+PyJWT>=2.8
+requests>=2.31
+loguru>=0.7
+Pillow>=10.0
+pycaw>=20230407
+cnlunar>=0.2
+winrt-Windows.Media.Control; sys_platform == "win32"
+winrt-Windows.Storage.Streams; sys_platform == "win32"

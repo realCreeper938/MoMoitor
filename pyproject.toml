@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "momoitor"
+description = "Windows hardware monitor desktop app (pywebview + LibreHardwareMonitor)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = { attr = "momoitor.config.APP_VERSION" }
+
+[project.scripts]
+momoitor = "momoitor.main:main"
+
+[tool.setuptools.packages.find]
+include = ["momoitor*"]
+
+[tool.setuptools.package-data]
+momoitor = ["web/**/*", "libs/*"]
+
+[tool.setuptools.exclude-package-data]
+momoitor = ["web/bg/*", "web/system_wallpaper.*"]
