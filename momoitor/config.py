@@ -114,6 +114,7 @@ DEFAULT_SETTINGS = {
         "sysinfo": True,
         "traffic": True,
         "clock_bg": True,
+        "top_control": True,  # 鼠标移到界面顶端时的亮度/音量调节条
     },
     "server_mode": False,
     "server_host": "0.0.0.0",

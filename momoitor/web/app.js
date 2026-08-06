@@ -2052,6 +2052,16 @@ function applyFeatureToggles(toggles) {
     const weatherEl = document.getElementById('h-weather-compact');
     if (weatherEl) weatherEl.style.display =
         (ft.weather !== false && _weatherConfigured) ? '' : 'none';
+    // Top brightness/volume controls
+    _topControlEnabled = ft.top_control !== false;
+    const topControlPopup = document.getElementById('top-control-popup');
+    if (topControlPopup) topControlPopup.style.display = _topControlEnabled ? '' : 'none';
+    if (!_topControlEnabled) {
+        // ensure it isn't left visible when the feature is turned off
+        if (topControlPopup) topControlPopup.classList.remove('visible');
+        _topControlVisible = false;
+        if (_topControlHideTimer) { clearTimeout(_topControlHideTimer); _topControlHideTimer = null; }
+    }
 }
 
 function initSettings() {
@@ -2388,7 +2398,7 @@ function initSettings() {
 
         // Feature toggles
         const ft = s.feature_toggles || {};
-        ['weather','music','fps','calendar','top_process','sysinfo','traffic','background'].forEach(key => {
+        ['weather','music','fps','top_control','calendar','top_process','sysinfo','traffic','background'].forEach(key => {
             const cb = document.getElementById('ft-' + key);
             if (cb) cb.checked = ft[key] !== false;
         });
@@ -2450,7 +2460,7 @@ function initSettings() {
 
         // Feature toggles
         s.feature_toggles = {};
-        ['weather','music','fps','calendar','top_process','sysinfo','traffic','background'].forEach(key => {
+        ['weather','music','fps','top_control','calendar','top_process','sysinfo','traffic','background'].forEach(key => {
             const cb = document.getElementById('ft-' + key);
             s.feature_toggles[key] = cb ? cb.checked : true;
         });
@@ -2531,6 +2541,7 @@ function initSettings() {
 
 /* Top-hover Control Popup (brightness & volume) */
 const TOP_HOVER_THRESHOLD = 6;
+let _topControlEnabled = true; // 顶部亮度/音量条是否开启（由功能开关控制）
 let _topControlVisible = false;
 let _topControlHideTimer = null;
 let _brightnessSetTimer = null;
@@ -2597,7 +2608,7 @@ function setupTopControl() {
 
     // Trigger when mouse enters the top edge of the window — only on hidden→visible transition
     document.addEventListener('mousemove', (e) => {
-        if (e.clientY <= TOP_HOVER_THRESHOLD && !_topControlVisible) {
+        if (e.clientY <= TOP_HOVER_THRESHOLD && !_topControlVisible && _topControlEnabled) {
             showTopControlPopup();
         }
     });
