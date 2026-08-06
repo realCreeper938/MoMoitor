@@ -3948,20 +3948,6 @@ html, body {
     filter: brightness(1.15);
 }
 
-/* 贡献者 contrib.rocks 头像网格 */
-.about-row-contrib {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-}
-.contrib-rocks {
-    width: 100%;
-    max-width: 340px;
-    border-radius: var(--radius-sm);
-    background: var(--surface);
-    display: block;
-}
-
 /* 首次启动右上角提示 */
 .first-launch-hint {
     position: fixed;

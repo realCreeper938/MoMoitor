@@ -2237,20 +2237,9 @@ function initSettings() {
         else if (chrome) browser = 'Chromium ' + chrome[1];
         else browser = ua || '--';
         const backend = info.backend || {};
-        const repo = info.github_repo || '';
-        // 贡献者：配置了 GitHub repo 时用 contrib.rocks 头像网格，否则显示 '--'
-        const contributorsRow = repo
-            ? '<div class="about-row about-row-contrib">'
-              + '<span class="about-row-label" data-i18n="about-contributors">' + t('about-contributors') + '</span>'
-              + '<img class="contrib-rocks" src="https://contrib.rocks/image?repo=' + encodeURIComponent(repo) + '" alt="Contributors" loading="lazy">'
-              + '</div>'
-            : null;
         const rows = [
             { key: 'about-program', value: info.program || '--' },
             { key: 'about-author', value: info.author || '--' },
-            ...(contributorsRow
-                ? [{ html: contributorsRow }]
-                : [{ key: 'about-contributors', value: '--' }]),
             { key: 'about-project', value: info.homepage || '--', link: info.homepage || '' },
             { key: 'about-python', value: info.python || '--' },
             { key: 'about-pywebview', value: info.pywebview || '--' },
@@ -2258,7 +2247,6 @@ function initSettings() {
             { key: 'about-backend', value: (backend.name || '--') + (backend.version ? ' ' + backend.version : '') },
         ];
         list.innerHTML = rows.map(r => {
-            if (r.html) return r.html;   // 预渲染的贡献者头像行
             // 项目地址渲染为可点击链接（复用 i18n-link 委托打开系统浏览器）
             const valueHtml = (r.link && /^https?:\/\//i.test(r.link))
                 ? '<a class="i18n-link about-row-link" href="' + escapeHtml(r.link) + '" target="_blank" rel="noopener">' + escapeHtml(r.link) + '</a>'
