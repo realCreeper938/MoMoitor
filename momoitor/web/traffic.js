@@ -18,16 +18,18 @@ function formatTrafficBytes(bytes) {
     return (bytes / (1024 * 1024 * 1024 * 1024)).toFixed(2) + ' TB';
 }
 
-/* Get color intensity for a given day's traffic (bytes) */
-function getTrafficColor(total, maxTotal) {
-    if (!total || total <= 0 || !maxTotal || maxTotal <= 0) return 'transparent';
+/* Get heat (0..0.65) for a given day's traffic (bytes).
+   The cell background is computed in CSS via color-mix against the theme's
+   --blue, so the ramp adapts to both dark and light color schemes. */
+function getTrafficHeat(total, maxTotal) {
+    if (!total || total <= 0 || !maxTotal || maxTotal <= 0) return 0;
     const ratio = Math.min(1, total / maxTotal);
-    // 5 levels: none -> light -> medium -> strong -> deep blue
-    if (ratio <= 0.1) return 'rgba(52, 119, 235, 0.08)';
-    if (ratio <= 0.25) return 'rgba(52, 119, 235, 0.15)';
-    if (ratio <= 0.5) return 'rgba(52, 119, 235, 0.28)';
-    if (ratio <= 0.75) return 'rgba(52, 119, 235, 0.45)';
-    return 'rgba(52, 119, 235, 0.65)';
+    // 5 levels: none -> light -> medium -> strong -> deep
+    if (ratio <= 0.1) return 0.12;
+    if (ratio <= 0.25) return 0.25;
+    if (ratio <= 0.5) return 0.4;
+    if (ratio <= 0.75) return 0.55;
+    return 0.65;
 }
 
 /* Render traffic calendar grid */
@@ -91,9 +93,14 @@ async function renderTrafficCalendar(year, month) {
         const dayData = monthData[dateKey];
         const total = dayData ? (dayData.up || 0) + (dayData.down || 0) : 0;
 
-        // Background color based on traffic amount
-        if (total > 0) {
-            cell.style.background = getTrafficColor(total, maxTotal);
+        // Background tint based on traffic amount (theme-aware via --heat)
+        const heat = getTrafficHeat(total, maxTotal);
+        if (heat > 0) {
+            cell.style.setProperty('--heat', heat);
+            // Hover tooltip: exact up / down split
+            cell.title = '↓ ' + formatTrafficBytes(dayData.down || 0)
+                + '   ↑ ' + formatTrafficBytes(dayData.up || 0)
+                + '   (' + formatTrafficBytes(total) + ')';
         }
 
         // Day number
