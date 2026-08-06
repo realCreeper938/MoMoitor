@@ -1414,6 +1414,11 @@ html, body {
     padding: 2px 20px;
 }
 
+/* Pull the FPS value further left for better balance */
+#fps-section > .box-content {
+    padding-left: 5px;
+}
+
 #cpu-section .split-row,
 #gpu-section .split-row,
 #mem-section .split-row,
@@ -1548,13 +1553,15 @@ html, body {
     min-width: 0;
 }
 
-/* Read/write value-rows on the left, temp · used info on the right (like net) */
+/* Read/write value-rows on the left, temp · used info on the right (like net).
+   Row gap 8px matches memory's info-line spacing; a larger column gap keeps the
+   left read/write values clear of the right info column. */
 #disk-section .data-col {
     display: grid;
     grid-template-columns: auto 1fr;
     grid-template-rows: auto auto;
     align-items: center;
-    gap: 0 32px;
+    gap: 8px 48px;
     width: 100%;
 }
 
@@ -1794,6 +1801,19 @@ html, body {
 #net-section .info-line .unit,
 #disk-section .info-line .unit {
     font-size: calc(clamp(13px, 1.25vw, 18px) * var(--font-scale));
+}
+
+/* Slightly smaller FPS info-lines, so the box stays tidy around the big value */
+#fps-section .info-line {
+    font-size: calc(clamp(15px, 1.45vw, 19px) * var(--font-scale));
+}
+
+#fps-section .info-line .mono {
+    font-size: calc(clamp(13px, 1.35vw, 19px) * var(--font-scale));
+}
+
+#fps-section .info-line .unit {
+    font-size: calc(clamp(11px, 1.05vw, 14px) * var(--font-scale));
 }
 
 /* Larger disk labels and values in side column */

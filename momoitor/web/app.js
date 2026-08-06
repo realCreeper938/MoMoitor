@@ -481,6 +481,16 @@ function renderDiskPartitions() {
 
 /* FPS */
 let _lastFpsColorCls = '__init__';
+let _lastFpsScale = 1; // font-size multiplier for the FPS big value (fewer for more digits)
+// More digits -> smaller font, so high FPS / high refresh values fit the box
+function fpsShrinkScale(str) {
+    const digits = String(str || '').replace(/\D/g, '').length;
+    if (digits <= 2) return 1;     // 0-99
+    if (digits === 3) return 0.7;  // 100-999
+    if (digits === 4) return 0.55; // 1000-9999
+    return 0.45;                   // 10000+
+}
+
 async function refreshFps() {
     try {
         const f = await pywebview.api.get_fps();
@@ -491,6 +501,11 @@ async function refreshFps() {
             const fpsStr = hasFps ? fmt(f.fps, 0) : '--';
             if (fpsEl.textContent !== fpsStr) {
                 fpsEl.textContent = fpsStr;
+            }
+            const scale = fpsShrinkScale(fpsStr);
+            if (_lastFpsScale !== scale) {
+                _lastFpsScale = scale;
+                fpsEl.style.fontSize = `calc(${scale} * clamp(72px, 8vw, 120px) * var(--font-scale))`;
             }
             const colorCls = hasFps ? fpsColorClass(f.fps) : '';
             if (_lastFpsColorCls !== colorCls) {
