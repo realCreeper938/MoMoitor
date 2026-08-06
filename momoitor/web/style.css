@@ -3084,6 +3084,13 @@ html, body {
     font-weight: 700;
     font-size: calc(16px * var(--font-scale));
     color: var(--accent);
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+}
+
+.update-date {
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text-dim);
     margin-bottom: 10px;
     font-variant-numeric: tabular-nums;
 }

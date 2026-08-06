@@ -98,6 +98,7 @@ const LANGS = {
         "settings-updates": "Updates",
         "label-update-notify": "Update Notifications",
         "update-title": "New Version Available",
+        "update-published": "Released on",
         "update-later": "Later",
         "update-goto": "View / Download",
         "update-no-notes": "No release notes.",
@@ -312,6 +313,7 @@ const LANGS = {
         "settings-updates": "更新",
         "label-update-notify": "更新通知",
         "update-title": "发现新版本",
+        "update-published": "发布于",
         "update-later": "稍后",
         "update-goto": "查看 / 下载",
         "update-no-notes": "无更新说明。",
@@ -435,6 +437,10 @@ let _currentLang = "en";
 
 function t(key) {
     return (LANGS[_currentLang] && LANGS[_currentLang][key]) || LANGS.en[key] || key;
+}
+
+function getCurrentLang() {
+    return _currentLang;
 }
 
 /* ── i18n 内嵌链接 ──────────────────────────────────────────────

@@ -688,6 +688,12 @@ function showUpdateModal(info) {
     if (!overlay) return;
     const verEl = document.getElementById('update-version');
     if (verEl) verEl.textContent = (info.current_version || '--') + '  →  ' + (info.latest_version || '--');
+    const dateEl = document.getElementById('update-date');
+    if (dateEl) {
+        const pub = formatUpdateDate(info.published_at);
+        dateEl.textContent = pub ? ((t && t('update-published')) || 'Published') + ' ' + pub : '';
+        dateEl.style.display = pub ? '' : 'none';
+    }
     const body = document.getElementById('update-changelog');
     if (body) body.textContent = (info.body || '').trim() || (t && t('update-no-notes')) || 'No release notes.';
     const gotoEl = document.getElementById('update-goto');
@@ -1250,6 +1256,16 @@ function formatWxUpdateTime(t) {
     if (isNaN(d.getTime())) return '--:--';
     const p = (n) => String(n).padStart(2, '0');
     return p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+function formatUpdateDate(t) {
+    if (!t) return '';
+    const d = new Date(t);
+    if (isNaN(d.getTime())) return '';
+    const opts = { year: 'numeric', month: 'long', day: 'numeric' };
+    const lang = (typeof getCurrentLang === 'function') ? getCurrentLang() : 'en';
+    const locale = lang === 'zh' ? 'zh-CN' : 'en-US';
+    return d.toLocaleDateString(locale, opts);
 }
 
 async function refreshWeatherDetail() {
