@@ -1507,7 +1507,8 @@ html, body {
 #gpu-section .split-row,
 #mem-section .split-row,
 #net-section .split-row,
-#fps-section .split-row {
+#fps-section .split-row,
+#disk-section .split-row {
     width: 100%;
     display: flex;
     flex-direction: row;
@@ -1645,7 +1646,7 @@ html, body {
     grid-template-columns: auto 1fr;
     grid-template-rows: auto auto;
     align-items: center;
-    gap: 8px 48px;
+    gap: 0 48px;
     width: 100%;
 }
 
@@ -1675,6 +1676,7 @@ html, body {
 #disk-section .info-line:nth-of-type(4) {
     grid-row: 2;
     align-self: start;
+    margin-top: 8px;
 }
 
 #disk-section .arrow {
@@ -1693,7 +1695,7 @@ html, body {
     min-width: 4ch;
     text-align: right;
     font-family: var(--font-data);
-    font-size: calc(clamp(24px, 3vw, 42px) * var(--font-scale));
+    font-size: calc(clamp(30px, 3.6vw, 50px) * var(--font-scale));
     font-weight: 700;
     line-height: 1.2;
 }
@@ -1916,15 +1918,6 @@ html, body {
     font-size: calc(clamp(13px, 1.25vw, 18px) * var(--font-scale));
 }
 
-/* Larger disk labels and values in side column */
-#disk-section .disk-label {
-    font-size: calc(13px * var(--font-scale));
-}
-
-#disk-section .disk-value {
-    font-size: calc(clamp(16px, 1.5vw, 20px) * var(--font-scale));
-}
-
 /* Larger process list text */
 .proc-item .proc-name,
 .proc-item .proc-value {
@@ -2094,7 +2087,7 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 1px;
+    gap: 8px;
 }
 
 #net-section .net-host-row #sysinfo-ip {
@@ -2110,7 +2103,7 @@ html, body {
 
 .host-dim {
     color: var(--text-dim);
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(clamp(16px, 1.6vw, 24px) * var(--font-scale));
 }
 
 /* Value row */
@@ -2208,61 +2201,6 @@ html, body {
 }
 
 /* Disk section */
-
-.disk-content {
-    padding: 8px 18px !important;
-}
-
-.disk-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    min-height: 0;
-}
-
-.disk-item {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-width: 0;
-    flex: 1 1 0;
-}
-
-.disk-label {
-    color: var(--text-dim);
-    font-size: calc(11px * var(--font-scale));
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    flex-shrink: 0;
-}
-
-.disk-value {
-    color: var(--text);
-    font-size: calc(clamp(14px, 1.25vw, 17px) * var(--font-scale));
-    font-weight: 700;
-    display: flex;
-    align-items: baseline;
-    gap: 2px;
-    min-width: 0;
-    justify-content: center;
-    white-space: nowrap;
-}
-
-.disk-value .mono {
-    color: var(--text);
-    display: inline-block;
-    min-width: 40px;
-    text-align: right;
-}
-
-.disk-value .unit {
-    color: var(--text-dim);
-    font-weight: 500;
-}
 
 .unit {
     color: var(--text-dim);
