@@ -106,6 +106,18 @@ DEFAULT_SETTINGS = {
     "font_ui": "JetBrains Maple Mono",
     "font_data": "IoskeleyMono",
     "font_clock": "Departure Mono",
+    # 布局：各监控卡片在网格中的位置（col 列 / row 行 / span 行跨度 / hidden 是否隐藏）。
+    # span=2 为大卡片（CPU/GPU 风格），span=1 为小卡片（内存风格）。CPU/GPU 固定大卡片。
+    "layout": {
+        "cpu-section": {"col": 2, "row": 2, "span": 2, "hidden": False},
+        "gpu-section": {"col": 3, "row": 2, "span": 2, "hidden": False},
+        "mem-section": {"col": 2, "row": 4, "span": 1, "hidden": False},
+        "disk-section": {"col": 3, "row": 1, "span": 1, "hidden": False},
+        "net-section": {"col": 2, "row": 1, "span": 1, "hidden": False},
+        "fps-section": {"col": 3, "row": 4, "span": 1, "hidden": False},
+        "proc-section": {"col": 3, "row": 5, "span": 1, "hidden": False},
+        "music-section": {"col": 2, "row": 5, "span": 1, "hidden": False},
+    },
     "feature_toggles": {
         "calendar": True,
         "top_process": True,

@@ -2288,6 +2288,451 @@ function applyFeatureToggles(toggles) {
     }
 }
 
+/* ===== Layout Adjustment ===== */
+const LAYOUT_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'disk-section', 'proc-section', 'music-section'];
+const RESIZABLE_IDS = ['fps-section'];
+
+const DEFAULT_LAYOUT = {
+    'cpu-section':    { col: 2, row: 2, span: 2, hidden: false },
+    'gpu-section':    { col: 3, row: 2, span: 2, hidden: false },
+    'mem-section':    { col: 2, row: 4, span: 1, hidden: false },
+    'disk-section':   { col: 3, row: 1, span: 1, hidden: false },
+    'net-section':    { col: 2, row: 1, span: 1, hidden: false },
+    'fps-section':    { col: 3, row: 4, span: 1, hidden: false },
+    'proc-section':   { col: 3, row: 5, span: 1, hidden: false },
+    'music-section':  { col: 2, row: 5, span: 1, hidden: false },
+};
+
+let _layout = {};
+
+function _normLayout(id) {
+    const saved = _layout[id] || {};
+    const def = DEFAULT_LAYOUT[id];
+    return {
+        col: saved.col || def.col,
+        row: saved.row || def.row,
+        span: saved.span != null ? saved.span : def.span,
+        hidden: saved.hidden === true,
+    };
+}
+
+function getLayoutSpan(id) {
+    return _normLayout(id).span;
+}
+
+function applyLayout(layout) {
+    _layout = layout && typeof layout === 'object' ? layout : {};
+    LAYOUT_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const pos = _normLayout(id);
+        el.style.gridColumn = String(pos.col);
+        el.style.gridRow = pos.row + ' / span ' + pos.span;
+        el.style.display = pos.hidden ? 'none' : '';
+        el.dataset.span = String(pos.span);
+        if (id === 'fps-section') {
+            const pct = el.querySelector('.pct');
+            if (pct) pct.style.display = pos.span === 2 ? 'none' : '';
+        }
+    });
+}
+
+function readLayout() {
+    const layout = {};
+    LAYOUT_IDS.forEach(id => {
+        const pos = _normLayout(id);
+        layout[id] = {
+            col: pos.col,
+            row: pos.row,
+            span: pos.span,
+            hidden: pos.hidden,
+        };
+    });
+    return layout;
+}
+
+function _colCards(col) {
+    return LAYOUT_IDS
+        .map(id => document.getElementById(id))
+        .filter(el => el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === col)
+        .sort((a, b) => parseInt(a.style.gridRow) - parseInt(b.style.gridRow));
+}
+
+let _layoutMode = false;
+let _layoutSaved = null;
+let _layoutControlsAdded = false;
+
+function enterLayoutMode() {
+    if (_layoutMode) return;
+    _layoutMode = true;
+    _layoutSaved = readLayout();
+    document.body.classList.add('layout-mode');
+    _addLayoutControls();
+    LAYOUT_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.setAttribute('draggable', 'true');
+        el.addEventListener('dragstart', onLayoutDragStart);
+        el.addEventListener('dragover', onLayoutDragOver);
+        el.addEventListener('dragleave', onLayoutDragLeave);
+        el.addEventListener('dragend', onLayoutDragEnd);
+        el.addEventListener('drop', onLayoutDrop);
+    });
+}
+
+function exitLayoutMode() {
+    if (!_layoutMode) return;
+    _layoutMode = false;
+    document.body.classList.remove('layout-mode');
+    _removeLayoutControls();
+    LAYOUT_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.removeAttribute('draggable');
+        el.classList.remove('dragging', 'drag-over');
+        el.removeEventListener('dragstart', onLayoutDragStart);
+        el.removeEventListener('dragover', onLayoutDragOver);
+        el.removeEventListener('dragleave', onLayoutDragLeave);
+        el.removeEventListener('dragend', onLayoutDragEnd);
+        el.removeEventListener('drop', onLayoutDrop);
+    });
+}
+
+function _addLayoutControls() {
+    if (_layoutControlsAdded) return;
+    _layoutControlsAdded = true;
+    LAYOUT_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const group = document.createElement('div');
+        group.className = 'layout-control-group';
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = 'layout-del-btn';
+        delBtn.textContent = '×';
+        delBtn.addEventListener('click', function(e) { e.stopPropagation(); _deleteCard(id); });
+        group.appendChild(delBtn);
+        el.appendChild(group);
+        if (RESIZABLE_IDS.includes(id)) {
+            const handle = document.createElement('div');
+            handle.className = 'layout-resize-handle';
+            handle.setAttribute('data-card', id);
+            handle.setAttribute('draggable', 'false');
+            handle.addEventListener('pointerdown', function(e) { _resizeHandleDown(e, id); });
+            el.appendChild(handle);
+        }
+    });
+    _updateRestoreBtn();
+}
+
+function _removeLayoutControls() {
+    _layoutControlsAdded = false;
+    document.querySelectorAll('.layout-control-group').forEach(el => el.remove());
+    document.querySelectorAll('.layout-resize-handle').forEach(el => el.remove());
+    document.body.classList.remove('resizing');
+    document.getElementById('layout-restore')?.classList.add('hidden');
+}
+
+function _toggleCardSize(id) {
+    const pos = _normLayout(id);
+    if (pos.span === 1) {
+        const col = pos.col;
+        const otherCol = col === 2 ? 3 : 2;
+        const colHeight = _columnHeight(col);
+        const otherHeight = _columnHeight(otherCol);
+        const selfHeight = 1;
+        const newColHeight = colHeight - selfHeight + 2;
+        if (newColHeight > 6 && otherHeight + 1 > 6) {
+            showToast('空间不足');
+            return;
+        }
+    }
+    pos.span = pos.span === 2 ? 1 : 2;
+    _layout[id] = { col: pos.col, row: pos.row, span: pos.span, hidden: pos.hidden };
+    const el = document.getElementById(id);
+    if (el) {
+        el.style.gridRow = pos.row + ' / span ' + pos.span;
+        el.dataset.span = String(pos.span);
+        if (id === 'fps-section') {
+            const pct = el.querySelector('.pct');
+            if (pct) pct.style.display = pos.span === 2 ? 'none' : '';
+        }
+    }
+    _repackColumn(pos.col, null, null);
+    _rebalanceOverflow();
+}
+
+function _deleteCard(id) {
+    const pos = _normLayout(id);
+    pos.hidden = true;
+    _layout[id] = { col: pos.col, row: pos.row, span: pos.span, hidden: true };
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+    _repackColumn(pos.col, null, null);
+    _rebalanceOverflow();
+    _updateRestoreBtn();
+}
+
+/* ---- Resize handle drag (toggle card size) ---- */
+let _resizingCard = null;
+let _resizeDelta = 0;
+
+function _resizeHandleDown(e, id) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!_resizingCard) {
+        _resizingCard = id;
+        _resizeDelta = 0;
+        document.body.classList.add('resizing');
+        const el = document.getElementById(id);
+        if (el) el.classList.add('resizing');
+        window.addEventListener('pointermove', _resizeHandleMove);
+        window.addEventListener('pointerup', _resizeHandleUp);
+    }
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+}
+
+function _resizeHandleMove(e) {
+    if (!_resizingCard) return;
+    _resizeDelta += e.movementY || 0;
+    const threshold = 25;
+    const pos = _normLayout(_resizingCard);
+    if (pos.span === 1 && _resizeDelta > threshold) {
+        _toggleCardSize(_resizingCard);
+        _resizeDelta = 0;
+    } else if (pos.span === 2 && _resizeDelta < -threshold) {
+        _toggleCardSize(_resizingCard);
+        _resizeDelta = 0;
+    }
+}
+
+function _resizeHandleUp() {
+    const id = _resizingCard;
+    if (!id) return;
+    _resizingCard = null;
+    _resizeDelta = 0;
+    document.body.classList.remove('resizing');
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('resizing');
+    window.removeEventListener('pointermove', _resizeHandleMove);
+    window.removeEventListener('pointerup', _resizeHandleUp);
+}
+
+function _restoreDeleted() {
+    let changed = false;
+    LAYOUT_IDS.forEach(id => {
+        const pos = _normLayout(id);
+        if (pos.hidden) {
+            pos.hidden = false;
+            _layout[id] = { col: pos.col, row: pos.row, span: pos.span, hidden: false };
+            const el = document.getElementById(id);
+            if (el) el.style.display = '';
+            changed = true;
+        }
+    });
+    if (changed) {
+        _packColumn(2);
+        _packColumn(3);
+        _rebalanceOverflow();
+        _updateRestoreBtn();
+    }
+}
+
+function _updateRestoreBtn() {
+    const restoreBtn = document.getElementById('layout-restore');
+    if (!restoreBtn) return;
+    const hasHidden = LAYOUT_IDS.some(id => _normLayout(id).hidden);
+    restoreBtn.classList.toggle('hidden', !hasHidden);
+}
+
+let _toastEl = null;
+
+function showToast(msg, duration) {
+    const ms = duration || 5000;
+    if (!_toastEl) {
+        _toastEl = document.createElement('div');
+        _toastEl.className = 'first-launch-hint';
+        _toastEl.style.display = 'none';
+        document.body.appendChild(_toastEl);
+    }
+    _toastEl.textContent = msg;
+    _toastEl.style.display = 'flex';
+    requestAnimationFrame(function() {
+        _toastEl.classList.remove('hint-hide');
+        _toastEl.classList.add('hint-show');
+    });
+    clearTimeout(_toastEl._hideTimer);
+    _toastEl._hideTimer = setTimeout(function() {
+        _toastEl.classList.remove('hint-show');
+        _toastEl.classList.add('hint-hide');
+        setTimeout(function() { _toastEl.style.display = 'none'; }, 250);
+    }, ms);
+}
+
+let _dragId = null;
+
+function onLayoutDragStart(e) {
+    _dragId = e.currentTarget.id;
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', _dragId);
+}
+
+function onLayoutDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (e.currentTarget.id !== _dragId) e.currentTarget.classList.add('drag-over');
+}
+
+function onLayoutDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+}
+
+function onLayoutDragEnd(e) {
+    e.currentTarget.classList.remove('dragging', 'drag-over');
+    LAYOUT_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('drag-over');
+    });
+    _dragId = null;
+}
+
+function onLayoutDrop(e) {
+    e.preventDefault();
+    const target = e.currentTarget;
+    target.classList.remove('drag-over');
+    const fromId = _dragId;
+    const toId = target.id;
+    if (!fromId || fromId === toId) return;
+    const fromEl = document.getElementById(fromId);
+    const toEl = target;
+    const fromCol = fromEl.style.gridColumn;
+    const fromRow = parseInt(fromEl.style.gridRow);
+    const toRow = parseInt(toEl.style.gridRow);
+    fromEl.style.gridColumn = toEl.style.gridColumn;
+    fromEl.style.gridRow = toRow + ' / span ' + getLayoutSpan(fromId);
+    toEl.style.gridColumn = fromCol;
+    toEl.style.gridRow = fromRow + ' / span ' + getLayoutSpan(toId);
+    _repackColumn(parseInt(fromEl.style.gridColumn), fromId, toRow);
+    _repackColumn(parseInt(toEl.style.gridColumn), null, null);
+    _rebalanceOverflow();
+}
+
+function _repackColumn(col, fixedId, fixedRow) {
+    const els = _colCards(col);
+    if (fixedId) {
+        const fixedEl = document.getElementById(fixedId);
+        if (fixedEl && fixedEl.style.display !== 'none' && parseInt(fixedEl.style.gridColumn) === col) {
+            fixedEl.style.gridRow = fixedRow + ' / span ' + getLayoutSpan(fixedId);
+        }
+    }
+    const fixedSpan = fixedId ? getLayoutSpan(fixedId) : 0;
+    const fixedEnd = fixedId ? fixedRow + fixedSpan : -1;
+    let nextRow = 1;
+    els.forEach(function(el) {
+        if (el.id === fixedId) return;
+        if (fixedId && nextRow >= fixedRow && nextRow < fixedEnd) {
+            nextRow = fixedEnd;
+        }
+        el.style.gridRow = nextRow + ' / span ' + getLayoutSpan(el.id);
+        nextRow = parseInt(el.style.gridRow) + getLayoutSpan(el.id);
+    });
+}
+
+function _packColumn(col) {
+    const els = _colCards(col);
+    let nextRow = 1;
+    els.forEach(function(el) {
+        el.style.gridRow = nextRow + ' / span ' + getLayoutSpan(el.id);
+        nextRow = parseInt(el.style.gridRow) + getLayoutSpan(el.id);
+    });
+}
+
+function _columnHeight(col) {
+    let maxEnd = 0;
+    LAYOUT_IDS.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === col) {
+            const end = parseInt(el.style.gridRow) + getLayoutSpan(id);
+            if (end > maxEnd) maxEnd = end;
+        }
+    });
+    return maxEnd;
+}
+
+function _moveBottomCard(fromCol, toCol) {
+    let bottomId = null;
+    let bottomRow = -1;
+    LAYOUT_IDS.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === fromCol) {
+            const row = parseInt(el.style.gridRow);
+            if (row > bottomRow) {
+                bottomRow = row;
+                bottomId = id;
+            }
+        }
+    });
+    if (bottomId) {
+        const el = document.getElementById(bottomId);
+        el.style.gridColumn = String(toCol);
+        el.style.gridRow = '1 / span ' + getLayoutSpan(bottomId);
+    }
+}
+
+function _rebalanceOverflow() {
+    let guard = 0;
+    while (guard++ < 10) {
+        const h2 = _columnHeight(2);
+        const h3 = _columnHeight(3);
+        if (h2 <= 5 && h3 <= 5) break;
+        if (h2 > 5) _moveBottomCard(2, 3);
+        else _moveBottomCard(3, 2);
+        _packColumn(2);
+        _packColumn(3);
+    }
+}
+
+function resetLayout() {
+    _layout = {};
+    applyLayout(DEFAULT_LAYOUT);
+}
+
+function initLayoutControls() {
+    const modeBtn = document.getElementById('btn-layout-mode');
+    const resetBtn = document.getElementById('btn-layout-reset');
+    const saveBtn = document.getElementById('layout-save');
+    const cancelBtn = document.getElementById('layout-cancel');
+    const restoreBtn = document.getElementById('layout-restore');
+    if (modeBtn) modeBtn.addEventListener('click', () => {
+        const overlay = document.getElementById('settings-overlay');
+        if (overlay) overlay.style.display = 'none';
+        enterLayoutMode();
+    });
+    if (resetBtn) resetBtn.addEventListener('click', async () => {
+        resetLayout();
+        try {
+            const s = await pywebview.api.get_settings();
+            s.layout = DEFAULT_LAYOUT;
+            await pywebview.api.save_settings(s);
+        } catch (e) { console.warn('reset layout:', e); }
+    });
+    if (saveBtn) saveBtn.addEventListener('click', async () => {
+        const layout = readLayout();
+        try {
+            const s = await pywebview.api.get_settings();
+            s.layout = layout;
+            await pywebview.api.save_settings(s);
+        } catch (e) { console.warn('save layout:', e); }
+        exitLayoutMode();
+    });
+    if (cancelBtn) cancelBtn.addEventListener('click', () => {
+        applyLayout(_layoutSaved);
+        exitLayoutMode();
+    });
+    if (restoreBtn) restoreBtn.addEventListener('click', _restoreDeleted);
+}
+
 function initSettings() {
     const overlay = document.getElementById('settings-overlay');
     const saveBtn = document.getElementById('settings-save');
@@ -3030,6 +3475,7 @@ window.addEventListener('pywebviewready', async () => {
     oldWeatherKey = s.weather_private_key || '';
 
     initSettings();
+    initLayoutControls();
     setupTopControl();
     // Disk partition hover: populate details on mouseenter
     const diskSection = document.getElementById('disk-section');
@@ -3046,6 +3492,8 @@ window.addEventListener('pywebviewready', async () => {
 
     // Apply feature toggles - hide UI elements for disabled features
     applyFeatureToggles(s.feature_toggles || {});
+    // Apply saved layout
+    applyLayout(s.layout);
     const ft = s.feature_toggles || {};
 
     // Start intervals only for enabled features (weather also needs credentials configured)

@@ -35,6 +35,7 @@
             <!-- CPU -->
             <div class="term-box" id="cpu-section">
                 <svg class="sparkline-bg" data-spark="cpu" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="layout-drag-handle">⠿</div>
                 <div class="corner-label">CPU</div>
                 <div class="box-header" id="cpu-header">CPU
                     <div class="hw-detail-popup" id="cpu-detail-popup">
@@ -63,6 +64,7 @@
             <!-- GPU -->
             <div class="term-box" id="gpu-section">
                 <svg class="sparkline-bg" data-spark="gpu" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="layout-drag-handle">⠿</div>
                 <div class="corner-label">GPU</div>
                 <div class="box-header" id="gpu-header">GPU
                     <div class="hw-detail-popup" id="gpu-detail-popup">
@@ -91,6 +93,7 @@
             <!-- Memory -->
             <div class="term-box" id="mem-section">
                 <svg class="sparkline-bg" data-spark="mem" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="layout-drag-handle">⠿</div>
                 <div class="box-header" id="mem-header">Memory
                     <div class="hw-detail-popup" id="mem-detail-popup">
                         <div class="hw-detail-row">
@@ -118,6 +121,7 @@
             <div class="term-box" id="net-section">
                 <svg class="sparkline-bg" data-spark="net_down" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
                 <svg class="sparkline-bg sparkline-bg-over" data-spark="net_up" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="layout-drag-handle">⠿</div>
                 <div class="box-header">Network</div>
                 <div class="box-content">
                     <div class="split-row">
@@ -199,6 +203,7 @@
             <!-- Clock -->
             <div class="term-box" id="clock-section">
                 <div class="clock-bg-layer" id="clock-bg-image" aria-hidden="true"></div>
+                <div class="layout-drag-handle">⠿</div>
                 <div class="box-content">
                     <!-- Sidebar elements -->
                     <div class="h-sidebar">
@@ -275,6 +280,8 @@
             <!-- FPS -->
             <div class="term-box" id="fps-section">
                 <svg class="sparkline-bg" data-spark="fps" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="layout-drag-handle">⠿</div>
+                <div class="corner-label">FPS</div>
                 <div class="box-header">FPS</div>
                 <div class="box-content">
                     <div class="split-row">
@@ -294,6 +301,7 @@
 
             <!-- Music (left of process list) -->
             <div class="term-box" id="music-section" style="display:none">
+                <div class="layout-drag-handle">⠿</div>
                 <span class="hw-name" id="h-music-process"></span>
                 <div class="box-content music-content">
                     <img class="h-music-cover" id="h-music-cover" src="" alt="">
@@ -319,6 +327,7 @@
 
             <!-- Top process (horizontal mode only, beside FPS) -->
             <div class="term-box" id="proc-section">
+                <div class="layout-drag-handle">⠿</div>
                 <div class="box-content proc-content">
                     <div class="proc-list" id="proc-list"></div>
                     <div class="proc-taskmgr-btn" id="proc-taskmgr-btn" data-i18n="taskmgr-btn">任务管理器</div>
@@ -329,6 +338,7 @@
             <div class="term-box" id="disk-section">
                 <svg class="sparkline-bg" data-spark="disk_read" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
                 <svg class="sparkline-bg sparkline-bg-over" data-spark="disk_write" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="layout-drag-handle">⠿</div>
                 <div class="box-header">Disk</div>
                 <div class="box-content">
                     <div class="split-row">
@@ -437,6 +447,14 @@
         <div class="modal-panel">
             <span class="exit-popup-text">正在退出...</span>
         </div>
+    </div>
+
+    <!-- Layout mode toolbar -->
+    <div class="layout-toolbar" id="layout-toolbar">
+        <span class="layout-toolbar-label" data-i18n="layout-mode-active">Layout Mode Active</span>
+        <button type="button" class="text-btn hidden" id="layout-restore" data-i18n="layout-restore">Restore Deleted</button>
+        <button type="button" class="text-btn" id="layout-cancel" data-i18n="btn-close">Close</button>
+        <button type="button" class="text-btn" id="layout-save" data-i18n="layout-mode-done">Save Layout</button>
     </div>
 
     <!-- Settings -->
@@ -638,6 +656,7 @@
                             <button type="button" class="subtab-btn" data-subtab="background" data-i18n="subtab-background">Background</button>
                             <button type="button" class="subtab-btn" data-subtab="fonts" data-i18n="subtab-fonts">Fonts</button>
                             <button type="button" class="subtab-btn" data-subtab="time" data-i18n="subtab-time">Time</button>
+                            <button type="button" class="subtab-btn" data-subtab="layout" data-i18n="subtab-layout">Layout</button>
                         </div>
                         <div class="subtab-content active" id="subtab-appearance">
                             <div class="setting-group">
@@ -763,6 +782,20 @@
                                         <input type="checkbox" id="opt-show-seconds" checked>
                                         <span class="toggle-slider"></span>
                                     </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="subtab-content" id="subtab-layout">
+                            <div class="setting-group">
+                                <div class="setting-group-title" data-i18n="settings-layout">Layout</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-layout-mode">Layout Mode</span>
+                                    <button type="button" class="text-btn" id="btn-layout-mode" data-i18n="layout-mode-start">Enable Layout Mode</button>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-layout-mode">Drag cards in the main grid to rearrange. CPU and GPU cards always keep their size.</div>
+                                <div class="setting-desc" data-i18n="layout-resize-hint">Drag cards to rearrange, pull the bottom edge handle to resize, click × to delete.</div>
+                                <div class="setting-item">
+                                    <button type="button" class="text-btn" id="btn-layout-reset" data-i18n="btn-layout-reset">Reset to Default</button>
                                 </div>
                             </div>
                         </div>

@@ -1048,9 +1048,6 @@ html, body {
     text-transform: uppercase;
     color: var(--text-dim);
     border-bottom: 1px solid transparent;
-    background:
-        linear-gradient(color-mix(in srgb, currentColor 7%, transparent), color-mix(in srgb, currentColor 7%, transparent)) padding-box,
-        linear-gradient(90deg, currentColor 0%, color-mix(in srgb, currentColor 25%, transparent) 70%, transparent 100%) border-box;
     flex-shrink: 0;
 }
 
@@ -1154,11 +1151,11 @@ html, body {
     grid-row: 1 / -1;
 }
 
-#cpu-section  { grid-column: 2;          grid-row: 1 / 3; }
-#gpu-section  { grid-column: 3;          grid-row: 1 / 3; }
+#cpu-section  { grid-column: 2;          grid-row: 2 / span 2; }
+#gpu-section  { grid-column: 3;          grid-row: 2 / span 2; }
 #mem-section  { grid-column: 2;          grid-row: 4; }
-#disk-section { grid-column: 3;          grid-row: 3; }
-#net-section  { grid-column: 2;          grid-row: 3; }
+#disk-section { grid-column: 3;          grid-row: 1; }
+#net-section  { grid-column: 2;          grid-row: 1; }
 #fps-section  { grid-column: 3;          grid-row: 4; }
 #proc-section { grid-column: 3;          grid-row: 5; }
 #music-section { grid-column: 2;         grid-row: 5; }
@@ -1501,8 +1498,8 @@ html, body {
     padding: 2px 20px;
 }
 
-/* Pull the FPS value further left for better balance */
-#fps-section > .box-content {
+/* Pull the FPS value further left for better balance (small form only) */
+#fps-section:not([data-span="2"]) > .box-content {
     padding-left: 5px;
 }
 
@@ -1891,16 +1888,32 @@ html, body {
 }
 
 /* Slightly smaller FPS info-lines, so the box stays tidy around the big value */
-#fps-section .info-line {
+#fps-section:not([data-span="2"]) .info-line {
     font-size: calc(clamp(15px, 1.45vw, 19px) * var(--font-scale));
 }
 
-#fps-section .info-line .mono {
+#fps-section:not([data-span="2"]) .info-line .mono {
     font-size: calc(clamp(13px, 1.35vw, 19px) * var(--font-scale));
 }
 
-#fps-section .info-line .unit {
+#fps-section:not([data-span="2"]) .info-line .unit {
     font-size: calc(clamp(11px, 1.05vw, 14px) * var(--font-scale));
+}
+
+/* FPS large card info-lines: match CPU/GPU font size and line spacing */
+#fps-section[data-span="2"] .info-line,
+#fps-section[data-span="2"] .info-line:nth-of-type(2),
+#fps-section[data-span="2"] .info-line:nth-of-type(3) {
+    font-size: calc(clamp(19px, 1.9vw, 26px) * var(--font-scale));
+    line-height: 1;
+}
+
+#fps-section[data-span="2"] .info-line .mono {
+    font-size: calc(clamp(16px, 1.6vw, 24px) * var(--font-scale));
+}
+
+#fps-section[data-span="2"] .info-line .unit {
+    font-size: calc(clamp(13px, 1.25vw, 18px) * var(--font-scale));
 }
 
 /* Larger disk labels and values in side column */
@@ -1977,7 +1990,8 @@ html, body {
    anchored to the bottom of the tall card. box-content / split-row are
    row-direction flex, so the vertical pin lives on `align-items`. */
 #cpu-section > .box-content,
-#gpu-section > .box-content {
+#gpu-section > .box-content,
+#fps-section[data-span="2"] > .box-content {
     align-items: flex-end;
     padding-bottom: 30px;
 }
@@ -2003,12 +2017,15 @@ html, body {
 }
 
 #cpu-section:hover .corner-label,
-#gpu-section:hover .corner-label {
+#gpu-section:hover .corner-label,
+#fps-section[data-span="2"]:hover .corner-label {
     opacity: 0;
 }
 
+/* CPU/GPU (and FPS large) data-col: flex column, value on top, info-lines below */
 #cpu-section .data-col,
-#gpu-section .data-col {
+#gpu-section .data-col,
+#fps-section[data-span="2"] .data-col {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -2018,22 +2035,26 @@ html, body {
     min-width: 0;
 }
 
-/* CPU/GPU usage value: flush left, % immediately adjacent (no reserved gap) */
+/* CPU/GPU (and FPS large) value: flush left, suffix immediately adjacent */
 #cpu-section .metric-value.big,
-#gpu-section .metric-value.big {
+#gpu-section .metric-value.big,
+#fps-section[data-span="2"] .metric-value.big {
     text-align: left;
     min-width: 0;
 }
 
-/* CPU/GPU info-lines: all left-aligned. In the old 2-col grid these used
-   align-self: end/start to meet in the middle — in the flex column that now
-   pushes them right, so force them back to the left. */
+/* CPU/GPU (and FPS large) info-lines: all left-aligned. In the old 2-col
+   grid these used align-self: end/start to meet in the middle — in the flex
+   column that now pushes them right, so force them back to the left. */
 #cpu-section .info-line,
 #gpu-section .info-line,
+#fps-section[data-span="2"] .info-line,
 #cpu-section .info-line:nth-of-type(2),
 #gpu-section .info-line:nth-of-type(2),
+#fps-section[data-span="2"] .info-line:nth-of-type(2),
 #cpu-section .info-line:nth-of-type(3),
-#gpu-section .info-line:nth-of-type(3) {
+#gpu-section .info-line:nth-of-type(3),
+#fps-section[data-span="2"] .info-line:nth-of-type(3) {
     align-self: flex-start;
 }
 
@@ -2108,15 +2129,12 @@ html, body {
 }
 
 /* Section specific colors for values */
-/* CPU / GPU / Memory big values use the scheme's plain text color (no brand coloring) */
+/* CPU / GPU / Memory / FPS big values use the scheme's plain text color (no brand coloring) */
 #cpu-section .metric-value.big,
 #gpu-section .metric-value.big,
-#mem-section .metric-value.big {
-    color: var(--text);
-}
-
+#mem-section .metric-value.big,
 #fps-section .metric-value.big {
-    color: var(--metric-fps);
+    color: var(--text);
 }
 
 #fps-section .pct {
@@ -4169,4 +4187,189 @@ html, body {
 .first-launch-hint-close:hover {
     color: var(--text);
 }
+
+/* ===== Layout Mode ===== */
+body.layout-mode .term-grid {
+    cursor: grab;
+}
+body.layout-mode .term-box {
+    cursor: grab;
+    border-width: 1px;
+    transition: grid-row 0.35s cubic-bezier(0.22, 1, 0.36, 1), grid-column 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.15s ease, border-width 0.15s ease;
+}
+body.layout-mode .term-box.drag-over {
+    border-width: 4px;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+body.layout-mode .term-box.dragging {
+    opacity: 0.4;
+}
+body.layout-mode .term-box .layout-drag-handle {
+    display: flex;
+}
+.layout-drag-handle {
+    display: none;
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 20;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--surface) 80%, var(--accent) 20%);
+    color: var(--accent);
+    font-size: calc(12px * var(--font-scale));
+    cursor: grab;
+    pointer-events: none;
+}
+.layout-toolbar {
+    display: none;
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    z-index: 1000;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+body.layout-mode .layout-toolbar {
+    display: flex;
+}
+
+/* Resize handle — bottom-right corner of resizable cards, visible only in layout mode */
+.layout-resize-handle {
+    display: none;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    width: 18px;
+    height: 18px;
+    cursor: ns-resize;
+    align-items: flex-end;
+    justify-content: flex-end;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    padding: 3px;
+}
+.layout-resize-handle::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid var(--text-dim);
+    border-bottom: 2px solid var(--text-dim);
+    opacity: 0.5;
+    transition: opacity 0.15s;
+    box-sizing: border-box;
+}
+.layout-resize-handle:hover::before {
+    opacity: 0.8;
+}
+body.layout-mode .term-box .layout-resize-handle {
+    display: flex;
+}
+
+body.layout-mode .layout-control-group {
+    display: flex;
+}
+
+body.layout-mode .layout-control-group .layout-del-btn {
+    display: flex;
+}
+
+.layout-control-group {
+    display: none;
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 20;
+    gap: 4px;
+    pointer-events: none;
+}
+
+.layout-control-group .layout-del-btn {
+    display: none;
+    pointer-events: auto;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--red);
+    background: color-mix(in srgb, var(--surface) 80%, var(--red) 20%);
+    font-size: calc(14px * var(--font-scale));
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    line-height: 1;
+    padding: 0;
+}
+
+.layout-control-group .layout-del-btn:hover {
+    background: var(--red);
+    color: var(--surface);
+}
+
+.layout-toolbar-label {
+    font-family: var(--font-data);
+    font-size: calc(13px * var(--font-scale));
+    color: var(--text);
+    margin-right: 4px;
+}
+
+#layout-restore {
+    margin-right: auto;
+}
+
+#layout-restore.hidden {
+    display: none;
+}
+
+/* FPS large card: show corner-label, hide box-header (matches CPU/GPU large form) */
+#fps-section .corner-label {
+    display: none;
+}
+
+#fps-section[data-span="2"] .corner-label {
+    display: block;
+}
+
+#fps-section[data-span="2"] .box-header {
+    display: none;
+}
+
+/* FPS large value: bigger than the small form to fill the card */
+#fps-section[data-span="2"] .metric-value.big {
+    font-size: calc(clamp(64px, 8vw, 120px) * var(--font-scale));
+}
+
+/* FPS large card process name: top-right, shown only on hover (like CPU/GPU .hw-name) */
+#fps-section[data-span="2"] .fps-process {
+    top: 10px;
+    right: 14px;
+    bottom: auto;
+    max-width: 70%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+#fps-section[data-span="2"]:hover .fps-process {
+    opacity: 0.85;
+}
+
+/* Hidden cards */
+.term-box[style*="display: none"] {
+    display: none !important;
+}
+
+
 
