@@ -219,6 +219,11 @@ const LANGS = {
         "ports-name": "Process",
         "ports-addr": "Address",
         "ports-port": "Port",
+        // Behavior
+        "nav-behavior": "Behavior",
+        "settings-behavior": "Behavior",
+        "label-auto-launch": "Auto-launch music player",
+        "desc-auto-launch": "When no music is playing, clicking the play button will automatically launch the last music player process and start playback.",
         // About
         "nav-about": "About",
         "settings-about": "About",
@@ -438,6 +443,11 @@ const LANGS = {
         "ports-name": "进程",
         "ports-addr": "地址",
         "ports-port": "端口",
+        // Behavior
+        "nav-behavior": "行为",
+        "settings-behavior": "行为",
+        "label-auto-launch": "自动启动音乐播放器",
+        "desc-auto-launch": "当没有音乐在播放时，点击播放按钮会自动启动上次播放音乐的进程，并在检测到音乐后立即开始播放。",
         // About
         "nav-about": "关于",
         "settings-about": "关于",

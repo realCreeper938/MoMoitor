@@ -25,6 +25,14 @@ def get_fps() -> dict:
     return fps.get_current()
 
 
+def get_last_player() -> dict:
+    return music.get_last_player()
+
+
+def launch_last_player() -> bool:
+    return music.launch_last_player()
+
+
 def music_play_pause() -> bool:
     return music.play_pause()
 

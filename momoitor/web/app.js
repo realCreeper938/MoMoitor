@@ -2312,6 +2312,7 @@ function initSettings() {
     const serverUserInput = document.getElementById('opt-server-user');
     const serverPassInput = document.getElementById('opt-server-pass');
     const debugLogsChk = document.getElementById('opt-debug-logs');
+    const autoLaunchChk = document.getElementById('opt-auto-launch');
 
     // Data
     const intervalSel = document.getElementById('opt-interval');
@@ -2615,6 +2616,9 @@ function initSettings() {
         serverPassInput.value = s.server_auth_pass || '';
         debugLogsChk.checked = s.debug_logs === true;
 
+        // Behavior
+        if (autoLaunchChk) autoLaunchChk.checked = s.auto_launch_music_player !== false;
+
         // Feature toggles
         const ft = s.feature_toggles || {};
         ['top_control','calendar','top_process','sysinfo','traffic','background'].forEach(key => {
@@ -2679,6 +2683,7 @@ function initSettings() {
             server_auth_user: serverUserInput.value.trim(),
             server_auth_pass: serverPassInput.value,
             debug_logs: debugLogsChk.checked,
+            auto_launch_music_player: autoLaunchChk ? autoLaunchChk.checked : true,
         };
 
         // Feature toggles
@@ -3063,7 +3068,25 @@ window.addEventListener('pywebviewready', async () => {
         });
     };
     bindMusicCtrl('h-music-prev', () => pywebview.api.music_prev());
-    bindMusicCtrl('h-music-toggle', () => pywebview.api.music_play_pause());
+    bindMusicCtrl('h-music-toggle', async () => {
+    const s = window._appSettings || {};
+    const autoLaunch = s.auto_launch_music_player !== false;
+    const music = await pywebview.api.get_music();
+    if (!music.available && autoLaunch) {
+        const ok = await pywebview.api.launch_last_player();
+        if (ok) {
+            for (let i = 0; i < 30; i++) {
+                await new Promise(r => setTimeout(r, 1000));
+                const m = await pywebview.api.get_music();
+                if (m.available) {
+                    await pywebview.api.music_play_pause();
+                    return;
+                }
+            }
+        }
+    }
+    await pywebview.api.music_play_pause();
+});
     bindMusicCtrl('h-music-next', () => pywebview.api.music_next());
     bindLyricHover();
 

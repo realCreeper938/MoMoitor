@@ -19,6 +19,8 @@
 """
 
 import base64
+import os
+import subprocess
 import threading
 import time
 from loguru import logger
@@ -55,6 +57,7 @@ _lock = threading.Lock()
 _running = False
 _last_track_key = ""
 _cover_key = ""  # 已抓取过封面的曲目标识
+_last_player = {"name": "", "path": ""}  # 上次播放音乐的进程信息
 
 
 def _get_session():
@@ -128,6 +131,100 @@ def _get_app_name(aumid):
         return ""
 
 
+def _track_last_player(name, aumid):
+    """记录上次播放音乐的进程信息，供「未播放时点击播放」自动启动使用。
+
+    仅在进程名变化时尝试解析可执行文件路径（psutil 遍历 + UWP 包信息），
+    避免在每轮轮询中重复做昂贵的进程查找。
+    """
+    global _last_player
+    if not name:
+        return
+    with _lock:
+        if _last_player["name"] == name:
+            return
+    path = _resolve_player_path(name, aumid)
+    with _lock:
+        _last_player = {"name": name, "path": path}
+        logger.info("Last music player recorded: {} -> {}", name, path or "(no path)")
+
+
+def _resolve_player_path(name, aumid):
+    """解析播放器进程的可执行文件路径。
+
+    优先匹配正在运行的进程名；若为 UWP 应用（AUMID 含 '!'），退回识别其
+    AppUserModelID 对应的包，以便后续通过 shell:AppsFolder 启动。
+    """
+    try:
+        import psutil
+        name_lower = name.lower()
+        for proc in psutil.process_iter(['name', 'exe']):
+            try:
+                pname = (proc.info.get('name') or '').lower()
+                pexe = proc.info.get('exe') or ''
+                if pname == name_lower or pname.startswith(name_lower + '.exe'):
+                    if pexe and os.path.exists(pexe):
+                        return pexe
+            except Exception:
+                continue
+    except Exception:
+        pass
+    # UWP 应用：aumid 形如 "Publisher.App_publisherhash!AppId"
+    if aumid and "!" in aumid:
+        return "shell:AppsFolder\\" + aumid
+    return ""
+
+
+def get_last_player():
+    """返回上次播放音乐的进程信息 {"name": ..., "path": ...}。"""
+    with _lock:
+        return dict(_last_player)
+
+
+def launch_last_player():
+    """启动上次播放音乐的进程。返回是否成功启动。"""
+    with _lock:
+        info = dict(_last_player)
+    name = info.get("name", "")
+    path = info.get("path", "")
+    if not name:
+        return False
+    try:
+        if path and path.startswith("shell:AppsFolder"):
+            # UWP 应用通过 explorer 启动
+            subprocess.Popen(["explorer.exe", path], cwd=os.environ.get("WINDIR", "C:\\Windows"))
+            logger.info("Launching UWP music player: {}", path)
+            return True
+        exe = path
+        if not exe:
+            exe = _find_in_path(name)
+        if not exe:
+            logger.warning("Cannot find executable for music player '{}'", name)
+            return False
+        subprocess.Popen([exe], cwd=os.path.dirname(exe) or None)
+        logger.info("Launching music player: {}", exe)
+        return True
+    except Exception as e:
+        logger.error("launch_last_player failed: {}", e)
+        return False
+
+
+def _find_in_path(name):
+    """在 PATH 中查找可执行文件路径（兼容带 / 不带 .exe 后缀）。"""
+    candidates = [name]
+    if not name.lower().endswith(".exe"):
+        candidates.append(name + ".exe")
+    for cand in candidates:
+        resolved = subprocess.run(
+            ["where", cand], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW
+        )
+        if resolved.returncode == 0 and resolved.stdout.strip():
+            first = resolved.stdout.strip().splitlines()[0].strip()
+            if os.path.exists(first):
+                return first
+    return ""
+
+
 def _poll():
     global _last_track_key, _cover_key
     while _running:
@@ -147,8 +244,10 @@ def _poll():
 
             try:
                 source = session.source_app_user_model_id
+                name = _get_app_name(source)
                 with _lock:
-                    _current["process_name"] = _get_app_name(source)
+                    _current["process_name"] = name
+                _track_last_player(name, source)
             except Exception:
                 pass
 

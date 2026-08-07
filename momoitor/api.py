@@ -29,7 +29,7 @@ from momoitor.services import autostart, background as bg_svc, window as win_svc
 from momoitor.services.window import adjust_brightness, adjust_volume
 from momoitor.services.hardware import HardwareService
 from momoitor.services.system import get_time, get_sysinfo, get_idle_time, get_top_processes, kill_process, scan_listening_ports, clean_memory
-from momoitor.services.media import get_music, get_fps, music_play_pause, music_next, music_prev, music_refresh_cover
+from momoitor.services.media import get_music, get_fps, music_play_pause, music_next, music_prev, music_refresh_cover, get_last_player, launch_last_player
 from momoitor.services.calendar import show_calendar, hide_calendar, get_huangli
 from momoitor.services.weather import WeatherService
 from momoitor.services.holiday import HolidayService
@@ -264,6 +264,12 @@ class Api:
         if not self._settings.get("feature_toggles", {}).get("fps", True):
             return {"fps": 0, "frametime": 0, "low1pct": 0, "avg_fps": 0, "p99_fps": 0}
         return get_fps()
+
+    def get_last_player(self):
+        return get_last_player()
+
+    def launch_last_player(self):
+        return launch_last_player()
 
     def music_play_pause(self):
         if not self._settings.get("feature_toggles", {}).get("music", True):
