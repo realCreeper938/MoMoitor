@@ -1,3 +1,3 @@
 @echo off
 cd /d "%~dp0"
-powershell -Command "Start-Process pythonw.exe -ArgumentList '-m','momoitor.main' -Verb RunAs -WorkingDirectory '%~dp0'"
+start /b pythonw -m momoitor.main

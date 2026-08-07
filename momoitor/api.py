@@ -73,13 +73,9 @@ class Api:
         """服务端模式：注入 HTTP 后端用于关闭等操作。"""
         self._server_backend = backend
 
-    # ── JS 桥接 ──────────────────────────────────────────────
-
     def js_log(self, level, message):
         log_func = getattr(logger, level, logger.debug)
         log_func("[JS] {}", message)
-
-    # ── 硬件数据（委托给服务）────────────────────────────────
 
     def get_data(self):
         return self._hw.snapshot()
@@ -100,8 +96,6 @@ class Api:
         if '_traffic' in self.__dict__:
             self._traffic.stop()
         self._hw.close()
-
-    # ── 系统信息（委托给服务）────────────────────────────────
 
     def get_time(self):
         return get_time()
@@ -146,12 +140,8 @@ class Api:
             return {"error": "disabled"}
         return kill_process(int(pid))
 
-    # ── 端口扫描 ──────────────────────────────────────────────
-
     def get_listening_ports(self):
         return scan_listening_ports()
-
-    # ── 天气（委托给服务）────────────────────────────────────
 
     def get_weather(self):
         if not self._settings.get("feature_toggles", {}).get("weather", True):
@@ -236,8 +226,6 @@ class Api:
     def get_feature_toggles(self):
         return self._settings.get("feature_toggles", {})
 
-    # ── 流量（委托给服务）────────────────────────────────────
-
     def get_traffic_today(self):
         if not self._settings.get("feature_toggles", {}).get("traffic", True):
             return {"error": "disabled"}
@@ -252,8 +240,6 @@ class Api:
         if not self._settings.get("feature_toggles", {}).get("traffic", True):
             return {"error": "disabled"}
         return self._traffic.get_top_processes(int(limit))
-
-    # ── 音乐 / FPS（委托给服务）──────────────────────────────
 
     def get_music(self):
         if not self._settings.get("feature_toggles", {}).get("music", True):
@@ -311,8 +297,6 @@ class Api:
         idx = monitor_index if monitor_index is not None else self._settings.get("monitor", 0)
         return adjust_brightness(action, level, idx)
 
-    # ── 壁纸 / Material You（委托给服务）─────────────────────
-
     def get_bg_list(self):
         if not self._settings.get("feature_toggles", {}).get("clock_bg", True):
             return []
@@ -342,8 +326,6 @@ class Api:
         if not self._settings.get("feature_toggles", {}).get("clock_bg", True):
             return False
         return bg_svc.delete_wallpaper(path)
-
-    # ── 设置 / 自启动 ────────────────────────────────────────
 
     def clean_memory(self, deep=False):
         """回收所有进程的工作集 —— 点击内存占用百分比时触发。
@@ -439,8 +421,6 @@ class Api:
     def set_autostart(self, enabled):
         return autostart.enable() if enabled else autostart.disable()
 
-    # ── 显示器 / 窗口 ────────────────────────────────────────
-
     def get_monitors(self):
         return win_svc.get_monitors()
 
@@ -469,15 +449,11 @@ class Api:
         if self._window:
             win_svc.minimize(self._window)
 
-    # ── 日历（委托给服务）────────────────────────────────────
-
     def show_calendar(self):
         return show_calendar(self._window)
 
     def hide_calendar(self):
         return hide_calendar(self._window)
-
-    # ── 生命周期 ─────────────────────────────────────────────
 
     def close_app(self):
         logger.info("Closing app")
@@ -490,8 +466,6 @@ class Api:
             self._window.destroy()
         if self._server_backend:
             self._server_backend.stop()
-
-    # ── 辅助 ─────────────────────────────────────────────────
 
     def _remove_window_shadow(self):
         try:

@@ -6,12 +6,10 @@
 - get_idle_time(): 获取系统空闲时间（秒）
 - get_top_processes(sort_by, limit): 获取占用 CPU/内存最高的进程列表
 - kill_process(pid): 终止指定 PID 的进程
-- scan_listening_ports(): 扫描所有监听 0.0.0.0 的端口，返回进程名、地址、端口
-- generate_qr_code(data): 生成二维码图片，返回 base64 编码的 PNG
+- scan_listening_ports(): 扫描所有监听端口，返回进程名、地址、端口
 """
 
 import ctypes
-import io
 import os
 import re
 import socket
