@@ -148,7 +148,7 @@ def set_caption(window, enabled: bool):
 
 
 def move_to_monitor(window, index: int) -> bool:
-    """移动并调整窗口到目标显示器。"""
+    """移动并调整窗口到目标显示器，失败时最多重试 3 次。"""
     monitors = get_monitors()
     if not (0 <= index < len(monitors)):
         logger.debug("Monitor index {} out of range ({} monitors), falling back to monitor 0", index, len(monitors))
@@ -158,7 +158,6 @@ def move_to_monitor(window, index: int) -> bool:
             return False
 
     m = monitors[index]
-    time.sleep(0.2)
 
     hwnd = _resolve_hwnd(window)
     if not hwnd:
@@ -172,14 +171,21 @@ def move_to_monitor(window, index: int) -> bool:
     SWP_SHOWWINDOW = 0x0040
     flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW
 
-    result = ctypes.windll.user32.SetWindowPos(
-        hwnd, 0, m["x"], m["y"], m["width"], m["height"], flags
-    )
-    if result:
-        logger.info("Window -> monitor {}: {}x{} at ({},{})", index + 1, m["width"], m["height"], m["x"], m["y"])
-    else:
-        logger.warning("SetWindowPos failed, err={}", ctypes.windll.kernel32.GetLastError())
-    return bool(result)
+    for attempt in range(4):
+        result = ctypes.windll.user32.SetWindowPos(
+            hwnd, 0, m["x"], m["y"], m["width"], m["height"], flags
+        )
+        if result:
+            logger.info("Window -> monitor {}: {}x{} at ({},{})", index + 1, m["width"], m["height"], m["x"], m["y"])
+            return True
+        err = ctypes.windll.kernel32.GetLastError()
+        if err == 5 and attempt < 3:
+            logger.debug("SetWindowPos attempt {} failed (err=5), retrying...", attempt + 1)
+            time.sleep(0.5 * (attempt + 1))
+        else:
+            logger.warning("SetWindowPos failed, err={}", err)
+            return False
+    return False
 
 
 def get_idle_time() -> float:

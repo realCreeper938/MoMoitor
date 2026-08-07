@@ -520,10 +520,20 @@ def create_monitor():
 def create_window(monitor):
     api = Api(monitor)
     index = os.path.join(WEB_DIR, "index.html")
+
+    mon_idx = api._settings.get("monitor", 0)
+    monitors = win_svc.get_monitors()
+    wx = wy = None
+    ww, wh = 800, 600
+    if 0 <= mon_idx < len(monitors):
+        m = monitors[mon_idx]
+        wx, wy, ww, wh = m["x"], m["y"], m["width"], m["height"]
+
     window = webview.create_window(
         "MoMoitor", url=index, js_api=api,
         fullscreen=False, frameless=False, easy_drag=False,
         background_color="#050505", on_top=True,
+        x=wx, y=wy, width=ww, height=wh,
     )
     api.set_window(window)
     from momoitor import fps as _fps
