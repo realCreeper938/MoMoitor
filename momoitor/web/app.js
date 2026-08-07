@@ -1516,7 +1516,7 @@ async function refreshAlerts() {
             div.className = 'wx-alert-item';
             const pub = a.publishTime ? new Date(a.publishTime) : null;
             const timeStr = pub ? pub.toLocaleString('zh', {month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : '';
-            div.innerHTML = `<span class="alert-type">${a.eventType || ''}</span>${a.headline || ''}${timeStr ? '<br><span class="alert-time">发布于 ' + timeStr + '</span>' : ''}`;
+            div.innerHTML = `<span class="alert-type">${a.eventType || ''}</span><span class="alert-headline">${escapeHtml(a.headline || '')}</span>${a.description ? '<br><span class="alert-desc">' + escapeHtml(a.description) + '</span>' : ''}${timeStr ? '<br><span class="alert-time">发布于 ' + timeStr + '</span>' : ''}`;
             div.style.borderLeftColor = a.colorCode ? `rgb(${a.colorR},${a.colorG},${a.colorB})` : '';
             list.appendChild(div);
         }

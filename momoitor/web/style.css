@@ -752,6 +752,7 @@ html, body {
     transform: translateY(6px);
     transition: opacity 0.2s, transform 0.2s, visibility 0s 0.2s;
     z-index: 100;
+    max-width: min(400px, 90vw);
 }
 
 .weather-compact:hover .wx-popup {
@@ -936,6 +937,7 @@ html, body {
     margin-top: 12px;
     padding-top: 12px;
     border-top: 1px solid var(--border);
+    white-space: normal;
 }
 
 .wx-alerts-title {
@@ -959,6 +961,8 @@ html, body {
     margin-bottom: 3px;
     border-left: 3px solid var(--red);
     background: rgba(var(--bg-rgb), 0.5);
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .wx-alert-item .alert-type {
@@ -969,6 +973,24 @@ html, body {
 .wx-alert-item .alert-time {
     font-size: calc(10px * var(--font-scale));
     color: var(--text-dim);
+}
+
+.wx-alert-item .alert-desc {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    font-size: calc(10px * var(--font-scale));
+    color: var(--text-dim);
+    margin-top: 2px;
+    line-height: 1.4;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.wx-alert-item .alert-headline {
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .wx-alert-more {
