@@ -91,21 +91,10 @@ def _run_server(monitor, settings, t0):
     return api
 
 
-def _migrate_legacy_autostart():
-    """启动时自动迁移旧版开机自启（计划任务 + VBScript）到注册表 Run 键。"""
-    try:
-        from momoitor.services.migration import migrate_autostart
-        from momoitor.services.autostart import get_command
-        migrate_autostart(get_command())
-    except Exception as e:
-        logger.warning("Legacy auto-start migration failed: {}", e)
-
-
 def main():
     t0 = time.monotonic()
     logger.info("Starting MoMoitor")
     _cleanup_webview2_data()
-    _migrate_legacy_autostart()
     settings = load_settings()
     try:
         logger.debug("Initializing hardware monitor")
