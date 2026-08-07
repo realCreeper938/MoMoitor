@@ -46,11 +46,23 @@ class Api:
         self._hw = HardwareService(monitor, self._settings)
         self._fullscreen = False
         self._random_bg = {}
-        self._weather = WeatherService(lambda: self._settings)
-        self._holiday = HolidayService()
-        self._traffic = TrafficService()
-        self._lyrics = LyricsService(lambda: self._settings)
+        # 以下服务按需延迟初始化，避免启动时不必要的开销。
+        # _weather / _holiday / _traffic / _lyrics 通过 __getattr__ 惰性创建。
         logger.info("API initialized")
+
+    def __getattr__(self, name):
+        if name == '_weather':
+            svc = WeatherService(lambda: self._settings)
+        elif name == '_holiday':
+            svc = HolidayService()
+        elif name == '_traffic':
+            svc = TrafficService()
+        elif name == '_lyrics':
+            svc = LyricsService(lambda: self._settings)
+        else:
+            raise AttributeError(name)
+        setattr(self, name, svc)
+        return svc
 
     def set_window(self, window):
         self._window = window
@@ -85,7 +97,8 @@ class Api:
         return self._hw.change_backend(source)
 
     def close_monitor(self):
-        self._traffic.stop()
+        if '_traffic' in self.__dict__:
+            self._traffic.stop()
         self._hw.close()
 
     # ── 系统信息（委托给服务）────────────────────────────────
@@ -393,7 +406,8 @@ class Api:
         old_monitor = self._settings.get("monitor", 0)
         old_fullscreen = self._settings.get("fullscreen", True)
         self._settings = settings
-        self._weather.invalidate()
+        if '_weather' in self.__dict__:
+            self._weather.invalidate()
         save_settings(settings)
         if self._window:
             mon_idx = settings.get("monitor", 0)

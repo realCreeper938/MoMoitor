@@ -125,11 +125,19 @@ DEFAULT_SETTINGS = {
     "meting_api_base": "",  # 音乐歌词 Meting API 地址，留空关闭歌词
     "lyrics_process_whitelist": "cloudmusic,foobar2000,potplayer,QQMusic",  # 仅这些进程播放媒体时获取歌词，逗号分隔，留空则不限
     "debug_logs": False,  # 是否输出 debug 级别日志（设置 → 高级 可开启），默认关闭
-    "auto_launch_music_player": True,  # 未播放时点击播放按钮自动启动上次播放音乐的进程
+    "auto_launch_music_player": False,  # 未播放时点击播放按钮自动启动上次播放音乐的进程
 }
 
 
+# load_settings 结果缓存：启动时 main / create_monitor / Api 会多次调用，
+# 磁盘 IO 对启动速度有影响，缓存可避免重复读取。save_settings 会同步更新缓存。
+_settings_cache = None
+
+
 def load_settings() -> dict:
+    global _settings_cache
+    if _settings_cache is not None:
+        return copy.deepcopy(_settings_cache)
     os.makedirs(DATA_DIR, exist_ok=True)
     if os.path.exists(SETTINGS_FILE):
         try:
@@ -141,15 +149,19 @@ def load_settings() -> dict:
                 if k not in s:
                     s[k] = copy.deepcopy(v)
 
+            _settings_cache = copy.deepcopy(s)
             return s
         except (json.JSONDecodeError, ValueError) as e:
             logger.warning("Settings file corrupt, using defaults: {}", e)
     else:
         logger.warning("Settings file not found: {}", SETTINGS_FILE)
+    _settings_cache = copy.deepcopy(DEFAULT_SETTINGS)
     return copy.deepcopy(DEFAULT_SETTINGS)
 
 
 def save_settings(settings: dict):
+    global _settings_cache
+    _settings_cache = copy.deepcopy(settings)
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(settings, f, indent=2, ensure_ascii=False)

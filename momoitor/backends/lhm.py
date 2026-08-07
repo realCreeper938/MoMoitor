@@ -50,17 +50,10 @@ def _lower_keywords(keywords):
 class LHMMonitor(BaseMonitor):
     def __init__(self):
         super().__init__()
-        import clr
-        clr.AddReference(DLL_PATH)
-        from LibreHardwareMonitor.Hardware import Computer
-        self._computer = Computer()
-        self._computer.IsCpuEnabled = True
-        self._computer.IsGpuEnabled = True
-        self._computer.IsMemoryEnabled = True
-        self._computer.IsStorageEnabled = True
-        # 网络吞吐来自 BaseMonitor 中的 psutil。
-        self._computer.IsNetworkEnabled = False
-        self._computer.Open()
+        # 延迟初始化：clr.AddReference + Computer.Open 会加载 .NET 运行时并枚举
+        # 硬件，耗时可达数百毫秒。窗口应先弹出，硬件初始化推迟到首次真正读取数据。
+        self._computer = None
+        self._initialized = False
         self._disk_cache = []
         self._disk_cache_ts = 0
         # 元数据缓存
@@ -74,11 +67,34 @@ class LHMMonitor(BaseMonitor):
         self._mem_detail_ts = 0
         self._mem_name_cache = None
         self._mem_name_ts = 0
-        logger.info("LHM backend initialized")
+
+    def _ensure_init(self):
+        """首次访问时初始化 LHM（加载程序集 + 打开硬件）。线程安全。"""
+        if self._initialized:
+            return
+        import threading
+        with threading.Lock():
+            if self._initialized:
+                return
+            import clr
+            clr.AddReference(DLL_PATH)
+            from LibreHardwareMonitor.Hardware import Computer
+            computer = Computer()
+            computer.IsCpuEnabled = True
+            computer.IsGpuEnabled = True
+            computer.IsMemoryEnabled = True
+            computer.IsStorageEnabled = True
+            # 网络吞吐来自 BaseMonitor 中的 psutil。
+            computer.IsNetworkEnabled = False
+            computer.Open()
+            self._computer = computer
+            self._initialized = True
+            logger.info("LHM backend initialized")
 
     def close(self):
-        self._computer.Close()
-        logger.info("LHM backend closed")
+        if self._computer is not None:
+            self._computer.Close()
+            logger.info("LHM backend closed")
 
     def get_backend_info(self) -> dict:
         """LibreHardwareMonitorLib.dll 程序集版本。"""
@@ -167,6 +183,7 @@ class LHMMonitor(BaseMonitor):
     # ── 单遍快照 ─────────────────────────────────────────────
 
     def snapshot(self, gpu_index=None) -> dict:
+        self._ensure_init()
         cpu_data = {"clock": None, "temp": None, "power": None, "load": None, "voltage": None}
         gpu_data = {"temp": None, "power": None, "vram_used_gb": None, "vram_total_gb": None, "load": None, "vram_temp": None}
         mem_temp = None
@@ -262,6 +279,7 @@ class LHMMonitor(BaseMonitor):
     # ── 独立 getter（为兼容保留）─────────────────────────────
 
     def get_cpu(self):
+        self._ensure_init()
         for hw in self._computer.Hardware:
             if str(hw.HardwareType).startswith("Cpu"):
                 hw.Update()
@@ -279,6 +297,7 @@ class LHMMonitor(BaseMonitor):
         return {"clock": None, "temp": None, "power": None, "load": None, "voltage": None}
 
     def get_gpu(self, index=None):
+        self._ensure_init()
         gpu_hw = []
         for hw in self._computer.Hardware:
             if "Gpu" in str(hw.HardwareType):
@@ -311,6 +330,7 @@ class LHMMonitor(BaseMonitor):
 
     def get_gpu_list(self):
         """返回可用 GPU 名称列表。"""
+        self._ensure_init()
         gpus = []
         for hw in self._computer.Hardware:
             if "Gpu" in str(hw.HardwareType):
@@ -327,6 +347,7 @@ class LHMMonitor(BaseMonitor):
             "volt": None,
             "clock": None,
         }
+        self._ensure_init()
         for hw in self._computer.Hardware:
             ht = str(hw.HardwareType)
             name = str(hw.Name)
@@ -349,6 +370,7 @@ class LHMMonitor(BaseMonitor):
         return self._get_disk_partitions()
 
     def get_disk_status(self):
+        self._ensure_init()
         status = {"activity": None, "temp": None, "read": None, "write": None}
         for hw in self._computer.Hardware:
             if str(hw.HardwareType) == "Storage":
@@ -375,6 +397,7 @@ class LHMMonitor(BaseMonitor):
     # ── 硬件名称 ─────────────────────────────────────────────
 
     def get_hw_names(self):
+        self._ensure_init()
         now = time.monotonic()
         if self._hw_names_cache is not None and now - self._hw_names_ts < _META_TTL:
             return self._hw_names_cache
@@ -422,6 +445,7 @@ class LHMMonitor(BaseMonitor):
         }
 
     def _get_cpu_detail(self):
+        self._ensure_init()
         now = time.monotonic()
         if self._cpu_detail_cache is not None and now - self._cpu_detail_ts < _META_TTL:
             return self._cpu_detail_cache
@@ -473,6 +497,7 @@ class LHMMonitor(BaseMonitor):
         return info
 
     def _get_gpu_detail(self, gpu_index=None):
+        self._ensure_init()
         now = time.monotonic()
         cache_key = gpu_index if gpu_index is not None else -1
         cached = self._gpu_detail_cache.get(cache_key)
@@ -516,6 +541,7 @@ class LHMMonitor(BaseMonitor):
         return info
 
     def _get_mem_detail(self):
+        self._ensure_init()
         now = time.monotonic()
         if self._mem_detail_cache is not None and now - self._mem_detail_ts < _META_TTL:
             return self._mem_detail_cache
