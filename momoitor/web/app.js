@@ -578,6 +578,8 @@ function recalcProcLimit() {
 }
 
 async function refreshTopProcess() {
+    const procSection = document.getElementById('proc-section');
+    if (procSection && procSection.style.display === 'none') return; // 卡片被删除时不再获取进程信息
     try {
         const list = await pywebview.api.get_top_processes(procMode, procLimit);
         const listEl = document.getElementById('proc-list');

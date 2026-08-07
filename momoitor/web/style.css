@@ -2299,6 +2299,7 @@ html, body {
 /* 提高特异性以覆盖 .modal-panel 的 max-width: 500px（定义顺序在后） */
 .modal-panel.settings-panel {
     max-width: 860px;
+    height: 82vh;   /* 固定高度，切换标签时不随内容伸缩 */
 }
 
 .settings-header {
