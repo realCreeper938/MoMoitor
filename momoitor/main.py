@@ -71,13 +71,14 @@ def _show_error(title, msg):
         pass
 
 
-def _run_webview(monitor, t0):
+def _run_webview(monitor, settings, t0):
     """启动 pywebview 窗口模式。"""
     logger.debug("Creating webview window")
     _hide_console()
     window, api = create_window(monitor)
     logger.info("Window created ({:.0f}ms), entering event loop", (time.monotonic() - t0) * 1000)
-    webview.start(debug=False)
+    debug = bool(settings.get("debug", False))
+    webview.start(debug=debug)
     logger.debug("Event loop exited normally")
     return api
 
@@ -109,7 +110,7 @@ def main():
         if settings.get("server_mode", False):
             api = _run_server(monitor, settings, t0)
         else:
-            api = _run_webview(monitor, t0)
+            api = _run_webview(monitor, settings, t0)
     except Exception as e:
         logger.error("Runtime error: {}", e)
         logger.debug(traceback.format_exc())

@@ -2312,6 +2312,7 @@ function initSettings() {
     const serverUserInput = document.getElementById('opt-server-user');
     const serverPassInput = document.getElementById('opt-server-pass');
     const debugLogsChk = document.getElementById('opt-debug-logs');
+    const debugChk = document.getElementById('opt-debug');
     const autoLaunchChk = document.getElementById('opt-auto-launch');
 
     // Data
@@ -2615,6 +2616,7 @@ function initSettings() {
         serverUserInput.value = s.server_auth_user || '';
         serverPassInput.value = s.server_auth_pass || '';
         debugLogsChk.checked = s.debug_logs === true;
+        if (debugChk) debugChk.checked = s.debug === true;
 
         // Behavior
         if (autoLaunchChk) autoLaunchChk.checked = s.auto_launch_music_player !== false;
@@ -2683,6 +2685,7 @@ function initSettings() {
             server_auth_user: serverUserInput.value.trim(),
             server_auth_pass: serverPassInput.value,
             debug_logs: debugLogsChk.checked,
+            debug: debugChk ? debugChk.checked : false,
             auto_launch_music_player: autoLaunchChk ? autoLaunchChk.checked : true,
         };
 
