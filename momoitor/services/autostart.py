@@ -10,11 +10,11 @@
 """
 
 import os
-import subprocess
 import sys
 
 from loguru import logger
 
+from momoitor.common import run_hidden
 from momoitor.config import DATA_DIR, PROJECT_ROOT
 
 TASK_NAME = "MoMoitor"
@@ -50,7 +50,7 @@ def _vbs_content() -> str:
 def is_enabled() -> bool:
     """Check if auto-start task exists."""
     try:
-        r = subprocess.run(["schtasks", "/query", "/tn", TASK_NAME], capture_output=True, text=True)
+        r = run_hidden(["schtasks", "/query", "/tn", TASK_NAME], text=True)
         return r.returncode == 0
     except Exception:
         return False
@@ -59,7 +59,7 @@ def is_enabled() -> bool:
 def enable() -> bool:
     """Create a scheduled task to run at logon."""
     try:
-        subprocess.run(["schtasks", "/delete", "/tn", TASK_NAME, "/f"], capture_output=True)
+        run_hidden(["schtasks", "/delete", "/tn", TASK_NAME, "/f"])
         vbs_path = os.path.join(_vbs_location(), "autostart.vbs")
         os.makedirs(os.path.dirname(vbs_path), exist_ok=True)
         with open(vbs_path, "w", encoding="utf-8") as f:
@@ -69,7 +69,7 @@ def enable() -> bool:
             "/tr", f'wscript.exe "{vbs_path}"',
             "/sc", "ONLOGON", "/rl", "LIMITED", "/f",
         ]
-        r = subprocess.run(cmd, capture_output=True, text=True)
+        r = run_hidden(cmd)
         if r.returncode == 0:
             logger.info("Auto-start enabled: Task '{}' created", TASK_NAME)
             return True
@@ -83,7 +83,7 @@ def enable() -> bool:
 def disable() -> bool:
     """Remove the scheduled task."""
     try:
-        r = subprocess.run(["schtasks", "/delete", "/tn", TASK_NAME, "/f"], capture_output=True, text=True)
+        r = run_hidden(["schtasks", "/delete", "/tn", TASK_NAME, "/f"], text=True)
         if r.returncode == 0:
             logger.info("Auto-start disabled")
             return True

@@ -11,31 +11,26 @@
   - holiday == false : 调休补班（工作日上班），如周末调休
 """
 
-import threading
-import time
-
-import requests
 from loguru import logger
+
+from momoitor.common import http_get
+from momoitor.services.cache import TTLCache
 
 HOLIDAY_API = "https://timor.tech/api/holiday/year/{year}"
 CACHE_TTL = 86400
-UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-      "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
 
 
 class HolidayService:
     """带按年缓存的线程安全节假日数据提供者。"""
 
     def __init__(self):
-        self._lock = threading.Lock()
-        self._cache = {}  # 年份 -> {"data": dict, "ts": float}
+        self._cache = TTLCache()
 
     def invalidate(self):
-        with self._lock:
-            self._cache.clear()
+        self._cache.clear()
 
     def _fetch(self, year):
-        resp = requests.get(HOLIDAY_API.format(year=year), headers={"User-Agent": UA}, timeout=10)
+        resp = http_get(HOLIDAY_API.format(year=year), timeout=10)
         resp.raise_for_status()
         data = resp.json()
         if data.get("code") != 0:
@@ -48,19 +43,15 @@ class HolidayService:
             year = int(year)
         except (TypeError, ValueError):
             return {}
-        with self._lock:
-            cached = self._cache.get(year)
-            if cached and time.time() - cached["ts"] < CACHE_TTL:
-                return cached["data"]
+        data, hit = self._cache.get(year, CACHE_TTL)
+        if hit:
+            return data
         try:
             data = self._fetch(year)
         except Exception as e:
             logger.warning("Holiday fetch failed for {}: {}", year, e)
-            with self._lock:
-                cached = self._cache.get(year)
-                if cached:
-                    return cached["data"]
-            return {}
-        with self._lock:
-            self._cache[year] = {"data": data, "ts": time.time()}
+            # 过期缓存兜底
+            stale, hit = self._cache.get(year, None)
+            return stale if hit else {}
+        self._cache.set(year, data)
         return data

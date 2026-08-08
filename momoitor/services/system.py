@@ -3,7 +3,6 @@
 主要方法:
 - get_time(): 获取当前时间字符串 (HH:MM:SS)
 - get_sysinfo(): 获取系统信息（主机名、IP、运行时间）
-- get_idle_time(): 获取系统空闲时间（秒）
 - get_top_processes(sort_by, limit): 获取占用 CPU/内存最高的进程列表
 - kill_process(pid): 终止指定 PID 的进程
 - scan_listening_ports(): 扫描所有监听 0.0.0.0 的端口，返回进程名、地址、端口
@@ -15,13 +14,12 @@ import io
 import os
 import re
 import socket
-import subprocess
 import time
 
 import psutil
 from loguru import logger
 
-from momoitor.services import window as win_svc
+from momoitor.common import run_hidden
 
 # 逻辑核心数不变，启动时缓存一次
 _CPU_COUNT = psutil.cpu_count(logical=True) or 1
@@ -97,10 +95,6 @@ def get_sysinfo() -> dict:
     }
 
 
-def get_idle_time() -> float:
-    return win_svc.get_idle_time()
-
-
 def get_top_processes(sort_by: str = "cpu", limit: int = 1) -> list:
     """获取占用 CPU 或内存最高的进程。
 
@@ -171,11 +165,7 @@ def scan_listening_ports() -> list:
     [{"pid": int, "name": str, "address": str, "port": int, "protocol": str}, ...]
     """
     try:
-        result = subprocess.run(
-            ["netstat", "-ano"],
-            capture_output=True, timeout=10,
-            creationflags=subprocess.CREATE_NO_WINDOW if hasattr(subprocess, "CREATE_NO_WINDOW") else 0,
-        )
+        result = run_hidden(["netstat", "-ano"], timeout=10)
         # 尝试多种编码解码 netstat 输出
         raw = result.stdout
         text = None

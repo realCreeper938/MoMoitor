@@ -55,15 +55,11 @@ class BaseMonitor(abc.ABC):
     @staticmethod
     def _run_powershell(script, timeout=5):
         """运行 PowerShell 命令并返回解码后的 stdout；失败时返回空字符串。"""
-        import subprocess
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        startupinfo.wShowWindow = 0  # SW_HIDE（隐藏窗口）
+        from momoitor.common import run_hidden
         try:
-            r = subprocess.run(
+            r = run_hidden(
                 ["powershell", "-NoProfile", "-Command", script],
-                capture_output=True, text=True, timeout=timeout,
-                startupinfo=startupinfo,
+                timeout=timeout, text=True,
             )
             return r.stdout.strip() if r.returncode == 0 else ""
         except Exception:

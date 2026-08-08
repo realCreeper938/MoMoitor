@@ -25,6 +25,8 @@ import threading
 import time
 from loguru import logger
 
+from momoitor.common import run_hidden
+
 _have_smtc = False
 _have_buffer = False
 try:
@@ -215,9 +217,7 @@ def _find_in_path(name):
     if not name.lower().endswith(".exe"):
         candidates.append(name + ".exe")
     for cand in candidates:
-        resolved = subprocess.run(
-            ["where", cand], capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW
-        )
+        resolved = run_hidden(["where", cand], text=True)
         if resolved.returncode == 0 and resolved.stdout.strip():
             first = resolved.stdout.strip().splitlines()[0].strip()
             if os.path.exists(first):

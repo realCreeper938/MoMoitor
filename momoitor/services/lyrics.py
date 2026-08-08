@@ -12,22 +12,26 @@
 
 import os
 import re
-import sqlite3
 import time
-from contextlib import contextmanager
 
-import requests
 from loguru import logger
 
+from momoitor.common import http_get
 from momoitor.config import DATA_DIR
+from momoitor.services.db import get_conn, init_db
 
 DB_PATH = os.path.join(DATA_DIR, "lyrics.db")
-# 歌词缓存永久保留：命中即用，仅完全未命中才请求服务器，避免给歌词服务器造成压力。
-UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-      "(KHTML, like Gecko) Chrome/120.0 Safari/537.36")
 
 # 匹配形如 [00:09.499] 或 [00:11] 的 LRC 时间戳标签
 _LRC_RE = re.compile(r"^\[(\d+):(\d+(?:\.\d+)?)\](.*)$")
+
+_SCHEMA = """
+    CREATE TABLE IF NOT EXISTS lyrics (
+        key TEXT PRIMARY KEY,
+        lrc TEXT NOT NULL DEFAULT '',
+        updated_at REAL NOT NULL
+    );
+"""
 
 
 class LyricsService:
@@ -37,32 +41,9 @@ class LyricsService:
         self._settings_getter = settings_getter
         self._init_db()
 
-    @contextmanager
-    def _connect(self):
-        """SQLite 连接的上下文管理器。"""
-        conn = sqlite3.connect(DB_PATH, timeout=5)
-        try:
-            yield conn
-        finally:
-            conn.close()
-
     def _init_db(self):
         """初始化 SQLite 数据库和表结构。"""
-        try:
-            os.makedirs(DATA_DIR, exist_ok=True)
-            with self._connect() as conn:
-                conn.execute("PRAGMA journal_mode=WAL")
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS lyrics (
-                        key TEXT PRIMARY KEY,
-                        lrc TEXT NOT NULL DEFAULT '',
-                        updated_at REAL NOT NULL
-                    )
-                """)
-                conn.commit()
-                logger.info("SQLite lyrics DB initialized")
-        except Exception as e:
-            logger.warning("Failed to init lyrics DB: {}", e)
+        init_db(DB_PATH, _SCHEMA)
 
     @staticmethod
     def _parse_lrc(text):
@@ -89,7 +70,7 @@ class LyricsService:
     def _load_cached(self, key):
         """读取缓存，返回 (lrc_text, updated_at) 或 (None, None)。"""
         try:
-            with self._connect() as conn:
+            with get_conn(DB_PATH) as conn:
                 cur = conn.execute(
                     "SELECT lrc, updated_at FROM lyrics WHERE key = ?", (key,)
                 )
@@ -102,7 +83,7 @@ class LyricsService:
 
     def _save_cache(self, key, lrc):
         try:
-            with self._connect() as conn:
+            with get_conn(DB_PATH) as conn:
                 conn.execute(
                     "INSERT OR REPLACE INTO lyrics (key, lrc, updated_at) VALUES (?, ?, ?)",
                     (key, lrc, time.time())
@@ -161,7 +142,7 @@ class LyricsService:
         keyword = f"{title} - {artist}".strip(" -") if artist else title
         search_url = base + "?server=" + server + "&type=search&id=" + urllib.parse.quote(keyword)
         try:
-            resp = requests.get(search_url, headers={"User-Agent": UA}, timeout=8)
+            resp = http_get(search_url, timeout=8)
             resp.raise_for_status()
             results = self._as_list(resp)
             if not results:
@@ -169,8 +150,8 @@ class LyricsService:
             lrc_url = (results[0] or {}).get("lrc", "") or ""
             if not lrc_url:
                 return ""
-            lresp = requests.get(lrc_url, headers={"User-Agent": UA}, timeout=8)
-            lresp.raise_for_status()
+            lresp = http_get(lrc_url, timeout=8)
+            resp.raise_for_status()
             return lresp.text
         except Exception as e:
             logger.opt(exception=True).debug("Lyrics search/lrc failed for '{}': {}", keyword, e)
@@ -202,7 +183,7 @@ class LyricsService:
     def invalidate(self):
         """清空歌词缓存（保留表结构）。"""
         try:
-            with self._connect() as conn:
+            with get_conn(DB_PATH) as conn:
                 conn.execute("DELETE FROM lyrics")
                 conn.commit()
         except Exception as e:
