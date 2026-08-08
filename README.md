@@ -137,6 +137,8 @@ python scripts/build.py run         # 开发模式启动
 
 * **有没有支持 Linux 的计划？** 由于使用了太多 Windows 独有的特性和 API，Linux 适配过于复杂，未来可期
 
+* **为什么这个项目叫 "MoMoitor" 而不叫 "MoMonitor"？** 因为当时没仔细看拼写错了
+
 ## Todo
 
 - [ ] 插件系统
