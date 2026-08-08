@@ -4,9 +4,8 @@
 - minimize(window): 最小化窗口
 - set_caption(window, enabled): 添加或移除窗口标题栏
 - move_to_monitor(window, index): 将窗口移动到指定显示器
+- get_monitors(): 枚举所有显示器（物理像素坐标 + 友好设备名）
 - get_idle_time(): 获取系统空闲时间（秒）
-
-显示器枚举见 display.get_monitors()。
 """
 
 import ctypes
@@ -14,8 +13,6 @@ import ctypes.wintypes
 import time
 
 from loguru import logger
-
-from momoitor.services.display import get_monitors
 
 
 def _get_hwnd(window) -> int:
@@ -146,3 +143,60 @@ def get_idle_time() -> float:
     except Exception as e:
         logger.debug("get_idle_time failed: {}", e)
     return 0.0
+
+
+def get_monitors() -> list:
+    """获取所有显示器的物理像素坐标列表（含友好设备名）。"""
+    monitors = []
+
+    class MONITORINFOEXW(ctypes.Structure):
+        _fields_ = [
+            ("cbSize", ctypes.wintypes.DWORD),
+            ("rcMonitor", ctypes.wintypes.RECT),
+            ("rcWork", ctypes.wintypes.RECT),
+            ("dwFlags", ctypes.wintypes.DWORD),
+            ("szDevice", ctypes.wintypes.WCHAR * 32),
+        ]
+
+    class DISPLAY_DEVICE(ctypes.Structure):
+        _fields_ = [
+            ("cb", ctypes.wintypes.DWORD),
+            ("DeviceName", ctypes.wintypes.WCHAR * 32),
+            ("DeviceString", ctypes.wintypes.WCHAR * 128),
+            ("StateFlags", ctypes.wintypes.DWORD),
+            ("DeviceID", ctypes.wintypes.WCHAR * 128),
+            ("DeviceKey", ctypes.wintypes.WCHAR * 128),
+        ]
+
+    def _device_name(device: str) -> str:
+        """通过设备路径（\\\\.\\DISPLAY1）查询友好的显示器型号名称。"""
+        dd = DISPLAY_DEVICE()
+        dd.cb = ctypes.sizeof(DISPLAY_DEVICE)
+        if ctypes.windll.user32.EnumDisplayDevicesW(device, 0, ctypes.byref(dd), 0):
+            return dd.DeviceString.strip("\x00 ").strip()
+        return ""
+
+    def callback(hMonitor, hdcMonitor, lprcMonitor, dwData):
+        mi = MONITORINFOEXW()
+        mi.cbSize = ctypes.sizeof(MONITORINFOEXW)
+        ctypes.windll.user32.GetMonitorInfoW(hMonitor, ctypes.byref(mi))
+        r = mi.rcMonitor
+        device = mi.szDevice.strip("\x00 ").strip()
+        monitors.append({
+            "x": r.left,
+            "y": r.top,
+            "width": r.right - r.left,
+            "height": r.bottom - r.top,
+            "name": _device_name(device) or "Monitor",
+        })
+        return True
+
+    MONITORENUMPROC = ctypes.WINFUNCTYPE(
+        ctypes.wintypes.BOOL,
+        ctypes.wintypes.HMONITOR,
+        ctypes.wintypes.HDC,
+        ctypes.POINTER(ctypes.wintypes.RECT),
+        ctypes.wintypes.LPARAM,
+    )
+    ctypes.windll.user32.EnumDisplayMonitors(None, None, MONITORENUMPROC(callback), 0)
+    return monitors
