@@ -1646,7 +1646,7 @@ html, body {
     grid-template-columns: auto 1fr;
     grid-template-rows: auto auto;
     align-items: center;
-    gap: 0 48px;
+    gap: 8px 48px;
     width: 100%;
 }
 
@@ -1676,7 +1676,6 @@ html, body {
 #disk-section .info-line:nth-of-type(4) {
     grid-row: 2;
     align-self: start;
-    margin-top: 8px;
 }
 
 #disk-section .arrow {
@@ -1695,9 +1694,9 @@ html, body {
     min-width: 4ch;
     text-align: right;
     font-family: var(--font-data);
-    font-size: calc(clamp(30px, 3.6vw, 50px) * var(--font-scale));
+    font-size: calc(clamp(24px, 3vw, 42px) * var(--font-scale));
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.1;
 }
 
 #disk-section .unit {
