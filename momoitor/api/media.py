@@ -99,7 +99,7 @@ class MediaMixin:
             return {"error": "disabled"}
         return self._traffic.get_top_processes(int(limit))
 
-    # ── 壁纸 / Material You ──────────────────────────────────
+    # ── 壁纸 ──────────────────────────────────────────────────
 
     def get_bg_list(self):
         if not self._feature_on("clock_bg"):
@@ -115,9 +115,6 @@ class MediaMixin:
         if not self._feature_on("clock_bg"):
             return ""
         return bg_svc.get_image_top_color(image, self._random_bg)
-
-    def get_monet_colors(self, source="wallpaper", bg_image=""):
-        return bg_svc.get_monet_colors(source, bg_image)
 
     def save_wallpaper(self, filename="", data_url=""):
         """前端导入壁纸：接收 base64 data URL，保存到用户壁纸目录，返回 wp/ 路径。"""

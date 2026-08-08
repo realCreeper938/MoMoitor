@@ -70,7 +70,6 @@
 | `get_bg_list()` | `clock_bg` | 背景列表（`bg/*` 内置、`wp/*` 用户） |
 | `resolve_background_image(image)` | `clock_bg` | 解析可加载背景路径 |
 | `get_clock_bg_top_color(image)` | `clock_bg` | 图片顶部平均色 `#rrggbb` |
-| `get_monet_colors(source="wallpaper", bg_image="")` | — | Material You 配色 |
 | `save_wallpaper(filename, data_url)` | `clock_bg` | 保存导入壁纸，返回 `wp/` 路径 |
 | `delete_wallpaper(path)` | `clock_bg` | 删除用户壁纸 |
 

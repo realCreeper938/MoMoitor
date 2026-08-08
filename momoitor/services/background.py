@@ -1,9 +1,9 @@
-"""背景图片与 Material You 颜色提取。
+"""背景图片管理。
 
 主要方法:
 - get_bg_list(): 列出web/bg/目录中可用的背景图片
 - resolve_background(image, random_state): 解析背景设置值为可加载的相对路径
-- get_monet_colors(source, bg_image): 从壁纸或背景图片提取Material You颜色
+- get_image_top_color(image, random_state): 提取背景图片顶部边缘平均色
 
 主要变量:
 - WEB_DIR: 前端web文件目录路径
@@ -157,67 +157,3 @@ def get_image_top_color(image: str, random_state: dict) -> str:
     except Exception as e:
         logger.warning("get_image_top_color failed: {}", e)
         return ""
-
-
-def get_monet_colors(source: str = "wallpaper", bg_image: str = "") -> dict:
-    """从壁纸或背景图片提取 Material You 颜色。"""
-    try:
-        from PIL import Image
-        import colorsys
-    except ImportError:
-        return {"error": "PIL not installed"}
-
-    img_path = None
-    if source == "wallpaper":
-        try:
-            import winreg
-            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Control Panel\Desktop") as key:
-                img_path, _ = winreg.QueryValueEx(key, "WallPaper")
-        except Exception:
-            pass
-    elif source == "bg":
-        img_path = _to_fs_path(bg_image) if (bg_image.startswith("bg/") or bg_image.startswith("wp/")) else bg_image
-
-    if not img_path or not os.path.exists(img_path):
-        return {"error": "no_image"}
-
-    try:
-        img = Image.open(img_path).convert("RGB")
-        img = img.resize((64, 64), Image.LANCZOS)
-        pixels = list(img.getdata())
-
-        hue_counts = {}
-        for r, g, b in pixels:
-            h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-            if s > 0.15 and v > 0.2:
-                hue_bin = int(h * 36)
-                hue_counts[hue_bin] = hue_counts.get(hue_bin, 0) + 1
-
-        if not hue_counts:
-            dominant_hue = 210
-        else:
-            dominant_bin = max(hue_counts, key=hue_counts.get)
-            dominant_hue = dominant_bin * 10 + 5
-
-        h1 = dominant_hue / 360
-        h2 = ((dominant_hue + 60) % 360) / 360
-        h3 = ((dominant_hue + 120) % 360) / 360
-
-        def hue_to_hex(h, s, l):
-            r, g, b = colorsys.hls_to_rgb(h, l, s)
-            return "#{:02x}{:02x}{:02x}".format(int(r*255), int(g*255), int(b*255))
-
-        return {
-            "primary": hue_to_hex(h1, 0.5, 0.45),
-            "primary_dim": hue_to_hex(h1, 0.35, 0.25),
-            "primary_container": hue_to_hex(h1, 0.25, 0.9),
-            "secondary": hue_to_hex(h2, 0.4, 0.4),
-            "tertiary": hue_to_hex(h3, 0.4, 0.4),
-            "surface": hue_to_hex(h1, 0.08, 0.98),
-            "surface_dark": hue_to_hex(h1, 0.08, 0.06),
-            "on_surface_light": "#1a1a1a",
-            "on_surface_dark": "#e0e0e0",
-        }
-    except Exception as e:
-        logger.error("Monet color extraction failed: {}", e)
-        return {"error": str(e)}

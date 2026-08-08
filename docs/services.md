@@ -12,7 +12,7 @@
 
 ## background
 
-背景图片与 Material You 颜色。虚拟路径前缀：`bg/` = 内置 `web/bg/`，`wp/` = 用户 `data/wallpapers/`。
+背景图片管理。虚拟路径前缀：`bg/` = 内置 `web/bg/`，`wp/` = 用户 `data/wallpapers/`。
 
 | 函数 | 说明 |
 |---|---|
@@ -21,7 +21,6 @@
 | `save_wallpaper(filename, data_url)` -> str | 保存 base64 导入壁纸（重名自动加序号），返回 `wp/` 路径 |
 | `delete_wallpaper(vpath)` -> bool | 删除 `wp/` 下用户壁纸；`_system*` 与内置禁止 |
 | `get_image_top_color(image, random_state)` -> str | 顶部几行平均色 `#rrggbb` |
-| `get_monet_colors(source, bg_image)` -> dict | Material You 配色（primary/secondary/tertiary/surface…），失败返回 `{"error":...}` |
 
 ## brightness
 
