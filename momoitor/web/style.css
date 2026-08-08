@@ -2243,6 +2243,7 @@ body.layout-mode .drop-slot.hide {
 #cpu-section[data-span="2"] > .box-content,
 #gpu-section[data-span="2"] > .box-content,
 #mem-section[data-span="2"] > .box-content,
+#net-section[data-span="2"] > .box-content,
 #fps-section[data-span="2"] > .box-content {
     align-items: flex-end;
     padding-bottom: 30px;
@@ -2271,6 +2272,7 @@ body.layout-mode .drop-slot.hide {
 #cpu-section[data-span="2"]:hover .corner-label,
 #gpu-section[data-span="2"]:hover .corner-label,
 #mem-section[data-span="2"]:hover .corner-label,
+#net-section[data-span="2"]:hover .corner-label,
 #fps-section[data-span="2"]:hover .corner-label {
     opacity: 0;
 }
@@ -2278,7 +2280,8 @@ body.layout-mode .drop-slot.hide {
 /* CPU/GPU/MEM small card (span 1): hide the corner label — it only fits the tall form */
 #cpu-section:not([data-span="2"]) .corner-label,
 #gpu-section:not([data-span="2"]) .corner-label,
-#mem-section:not([data-span="2"]) .corner-label {
+#mem-section:not([data-span="2"]) .corner-label,
+#net-section:not([data-span="2"]) .corner-label {
     display: none;
 }
 
@@ -2286,6 +2289,7 @@ body.layout-mode .drop-slot.hide {
 #cpu-section[data-span="2"] .data-col,
 #gpu-section[data-span="2"] .data-col,
 #mem-section[data-span="2"] .data-col,
+#net-section[data-span="2"] .data-col,
 #fps-section[data-span="2"] .data-col {
     display: flex;
     flex-direction: column;
@@ -2311,14 +2315,17 @@ body.layout-mode .drop-slot.hide {
 #cpu-section[data-span="2"] .info-line,
 #gpu-section[data-span="2"] .info-line,
 #mem-section[data-span="2"] .info-line,
+#net-section[data-span="2"] .info-line,
 #fps-section[data-span="2"] .info-line,
 #cpu-section[data-span="2"] .info-line:nth-of-type(2),
 #gpu-section[data-span="2"] .info-line:nth-of-type(2),
 #mem-section[data-span="2"] .info-line:nth-of-type(2),
+#net-section[data-span="2"] .info-line:nth-of-type(2),
 #fps-section[data-span="2"] .info-line:nth-of-type(2),
 #cpu-section[data-span="2"] .info-line:nth-of-type(3),
 #gpu-section[data-span="2"] .info-line:nth-of-type(3),
 #mem-section[data-span="2"] .info-line:nth-of-type(3),
+#net-section[data-span="2"] .info-line:nth-of-type(3),
 #fps-section[data-span="2"] .info-line:nth-of-type(3) {
     align-self: flex-start;
 }
@@ -2353,6 +2360,30 @@ body.layout-mode .drop-slot.hide {
 
 #net-section .unit {
     font-size: calc(13px * var(--font-scale));
+}
+
+/* Net large card (span 2): bigger down/up values + arrows to fill the tall card */
+#net-section[data-span="2"] .metric-value {
+    font-size: calc(clamp(44px, 5.2vw, 80px) * var(--font-scale));
+}
+
+#net-section[data-span="2"] .arrow {
+    font-size: calc(clamp(28px, 3.2vw, 46px) * var(--font-scale));
+    margin-right: 8px;
+}
+
+#net-section[data-span="2"] .unit {
+    font-size: calc(clamp(17px, 1.8vw, 24px) * var(--font-scale));
+}
+
+#net-section[data-span="2"] .value-row {
+    grid-template-columns: clamp(26px, 2.6vw, 40px) minmax(42px, max-content) max-content;
+    column-gap: 6px;
+}
+
+#net-section[data-span="2"] .net-host-row {
+    gap: 4px;
+    margin-top: 6px;
 }
 
 #net-section .net-host-row {
@@ -4570,6 +4601,14 @@ body.layout-mode .layout-control-group .layout-del-btn {
     font-size: calc(11px * var(--font-scale));
     font-weight: 600;
     color: var(--text);
+}
+/* Size options shown next to the card name for cards that support both sizes */
+.card-list-item .card-list-sizes {
+    font-family: var(--font-ui);
+    font-size: calc(9px * var(--font-scale));
+    font-weight: 400;
+    color: var(--text-dim);
+    margin-left: 6px;
 }
 /* Mini card preview — echoes the real card's small (memory-style) look */
 .card-list-preview {

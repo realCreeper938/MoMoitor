@@ -2366,7 +2366,7 @@ function applyFeatureToggles(toggles) {
 
 /* ===== Layout Adjustment ===== */
 const LAYOUT_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'disk-section', 'proc-section', 'music-section'];
-const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'fps-section', 'music-section'];
+const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'music-section'];
 
 const DEFAULT_LAYOUT = {
     'cpu-section':    { col: 2, row: 2, span: 2, hidden: false },
@@ -2725,9 +2725,10 @@ function _renderCardList() {
         item.className = 'card-list-item';
         item.dataset.card = id;
         item.setAttribute('draggable', 'true');
+        const sizes = _cardSizesHTML(id);
         item.innerHTML = '<div class="card-list-preview" style="--card-accent:' + meta.color + '">'
             + _cardPreviewHTML(id) + '</div>'
-            + '<div class="card-list-name">' + meta.name + '</div>';
+            + '<div class="card-list-name">' + meta.name + sizes + '</div>';
         item.addEventListener('click', () => _addCard(id));
         item.addEventListener('dragstart', onLayoutDragStart);
         item.addEventListener('dragend', onLayoutDragEnd);
@@ -2737,6 +2738,14 @@ function _renderCardList() {
         const panel = document.getElementById('card-list-panel');
         if (panel) panel.style.display = 'none';
     }
+}
+
+/* Cards that support both sizes (RESIZABLE_IDS) list their options next to the
+   name, e.g. "CPU 1x1 · 1x2".  Non-resizable cards have a single fixed size. */
+function _cardSizesHTML(id) {
+    if (!RESIZABLE_IDS.includes(id)) return '';
+    const sizes = [1, 2].map(s => '1x' + s);
+    return '<span class="card-list-sizes">' + sizes.join(' · ') + '</span>';
 }
 
 function _updateCardsBtn() {
