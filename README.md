@@ -63,7 +63,7 @@
 从 [Releases](https://github.com/realCreeper938/MoMoitor/releases) 下载
 `MoMoitor-v{version}-win64.zip`，解压后运行 `MoMoitor.exe`。
 
-**开机自启基于注册表 Run 键实现（HKCU），无需管理员权限即可设置。**
+**建议右键以管理员身份运行，否则可能无法设置开机自启。**
 
 ### 从源码运行
 

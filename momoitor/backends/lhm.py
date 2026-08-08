@@ -106,6 +106,8 @@ class LHMMonitor(BaseMonitor):
             version = None
         return {"name": "LibreHardwareMonitor", "version": version}
 
+    # ── 辅助 ─────────────────────────────────────────────────
+
     def _read_sensors(self, hw):
         sensors = []
         for s in hw.Sensors:
@@ -135,6 +137,8 @@ class LHMMonitor(BaseMonitor):
         if not vals:
             return None
         return max(vals) if fn == "max" else sum(vals) / len(vals)
+
+    # ── GPU 优先级 ───────────────────────────────────────────
 
     _DISCRETE_KEYWORDS = {"rx ", "r9 ", "r7 ", "r5 ", "geforce", "rtx", "gtx", "quadro", "radeon pro"}
     _IGPU_KEYWORDS = {"vega", "graphics", "uhd", "iris"}
@@ -175,6 +179,8 @@ class LHMMonitor(BaseMonitor):
                 continue
         self._disk_cache = result
         return result
+
+    # ── 单遍快照 ─────────────────────────────────────────────
 
     def snapshot(self, gpu_index=None) -> dict:
         self._ensure_init()
@@ -387,6 +393,8 @@ class LHMMonitor(BaseMonitor):
                             status["write"] = float(v)
                 break
         return status
+
+    # ── 硬件名称 ─────────────────────────────────────────────
 
     def get_hw_names(self):
         self._ensure_init()
