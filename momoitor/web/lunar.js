@@ -218,8 +218,6 @@ const Lunar = (() => {
         solar2lunar,
         getFestival,
         getLunarFestival,
-        getSolarTermForDate,
-        dayCN,
-        MonthCN
+        getSolarTermForDate
     };
 })();

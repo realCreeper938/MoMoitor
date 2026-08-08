@@ -38,7 +38,7 @@
                 <div class="layout-drag-handle">⠿</div>
                 <div class="corner-label">CPU</div>
                 <div class="box-header" id="cpu-header">CPU
-                    <div class="hw-detail-popup" id="cpu-detail-popup">
+                    <div class="hw-detail-popup">
                         <div class="hw-detail-row">
                             <div class="hw-detail-info">
                                 <div class="hw-detail-model" id="cpu-detail-model">--</div>
@@ -67,7 +67,7 @@
                 <div class="layout-drag-handle">⠿</div>
                 <div class="corner-label">GPU</div>
                 <div class="box-header" id="gpu-header">GPU
-                    <div class="hw-detail-popup" id="gpu-detail-popup">
+                    <div class="hw-detail-popup">
                         <div class="hw-detail-row">
                             <div class="hw-detail-info">
                                 <div class="hw-detail-model" id="gpu-detail-model">--</div>
@@ -95,7 +95,7 @@
                 <svg class="sparkline-bg" data-spark="mem" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
                 <div class="layout-drag-handle">⠿</div>
                 <div class="box-header" id="mem-header">Memory
-                    <div class="hw-detail-popup" id="mem-detail-popup">
+                    <div class="hw-detail-popup">
                         <div class="hw-detail-row">
                             <div class="hw-detail-info">
                                 <div class="hw-detail-model" id="mem-detail-model">--</div>
@@ -310,7 +310,7 @@
                             <div class="h-music-title" id="h-music-title">--</div>
                             <div class="h-music-artist" id="h-music-artist">--</div>
                         </div>
-                        <div class="music-player-zone" id="h-music-player-zone">
+                        <div class="music-player-zone">
                             <div class="music-controls" id="h-music-controls">
                                 <button type="button" class="music-ctrl" id="h-music-prev" title="Previous" aria-label="Previous">&#9198;</button>
                                 <button type="button" class="music-ctrl music-ctrl-toggle" id="h-music-toggle" title="Play/Pause" aria-label="Play/Pause">&#9199;</button>
@@ -357,7 +357,6 @@
 
 
         </div>
-    </div>
 
     
 
@@ -870,7 +869,7 @@
                         <div class="setting-group">
                             <div class="setting-group-title" data-i18n="settings-features">Feature Toggles</div>
                             <div class="setting-desc" data-i18n="desc-features">Disable features you don't need to reduce API calls and CPU usage. Hardware monitoring (CPU, GPU, Memory, Network, Disk) is always on.</div>
-                            <div class="feature-toggle-list" id="feature-toggle-list">
+                            <div class="feature-toggle-list">
                                 <div class="setting-item">
                                     <span data-i18n="ft-top-control">Top Brightness/Volume</span>
                                     <label class="toggle">

@@ -671,36 +671,6 @@ html, body {
     text-align: center;
 }
 
-.top-left {
-    display: flex;
-    align-items: center;
-    flex: 1 1 0;
-    min-width: 0;
-}
-
-.top-center {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 1 420px;
-    min-width: 0;
-    padding: 0 16px;
-}
-
-.top-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex: 1 1 0;
-    min-width: 0;
-    justify-content: flex-end;
-}
-
-.bottom-text {
-    font-size: calc(11px * var(--font-scale));
-    color: var(--text-dim);
-}
-
 /* Weather compact in top bar */
 .weather-compact {
     display: flex;
@@ -716,23 +686,6 @@ html, body {
 
 .wx-icon {
     font-size: calc(18px * var(--font-scale));
-}
-
-.wx-temp {
-    color: var(--text);
-    font-weight: 500;
-}
-
-.wx-unit {
-    font-size: calc(12px * var(--font-scale));
-}
-
-.wx-text {
-    font-size: calc(12px * var(--font-scale));
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
 }
 
 /* Weather popup */
@@ -1245,17 +1198,6 @@ html, body {
 /* 12 小时制时，时段词与时间之间的间距稍微加大 */
 .h-time-block:not(.is-24h) .h-period {
     margin-bottom: 8px;
-}
-
-/* 点击切换 12/24 小时制时的翻转过渡动画 */
-.h-time-block.clock-switch .h-period,
-.h-time-block.clock-switch .h-time-row {
-    animation: clockFlip 0.4s ease;
-}
-
-@keyframes clockFlip {
-    0% { opacity: 0; transform: translateY(-10px); }
-    100% { opacity: 1; transform: translateY(0); }
 }
 
 .h-weather {
@@ -2179,8 +2121,7 @@ html, body {
 
 #cpu-section .pct,
 #gpu-section .pct,
-#mem-section .pct,
-.hw-live-value-row .pct {
+#mem-section .pct {
     font-size: calc(clamp(13px, 1.4vw, 20px) * var(--font-scale));
     font-weight: 400;
     color: var(--text-dim);
@@ -2208,15 +2149,6 @@ html, body {
     color: var(--text-dim);
     font-size: calc(clamp(11px, 1.05vw, 15px) * var(--font-scale));
     margin-left: 1px;
-}
-
-.process-name {
-    max-width: 160px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: calc(13px * var(--font-scale));
-    color: var(--text-dim);
 }
 
 /* Disk section */
@@ -3323,47 +3255,6 @@ html, body {
     color: var(--text);
     font-family: var(--font-data);
     font-size: calc(11px * var(--font-scale));
-}
-
-/* HW live popup (horizontal mode) — shows live sensor values above the brand watermark logo */
-.hw-live-popup {
-    position: absolute;
-    right: 14px;
-    bottom: 12px;
-    z-index: 40;
-    min-width: 240px;
-    background: color-mix(in srgb, var(--surface) 97%, transparent);
-    border: 1px solid var(--border);
-    padding: 10px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transform: translateY(calc(-100% - 10px));
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    backdrop-filter: blur(8px);
-    border-radius: var(--radius-lg);
-    transition: opacity 0.2s, visibility 0s 0.2s;
-}
-
-.hw-live-value-row {
-    display: flex;
-    align-items: baseline;
-    gap: 2px;
-}
-
-.brand-watermark {
-    pointer-events: auto !important;
-    cursor: default;
-}
-
-.term-box.show-live-popup .hw-live-popup,
-.term-box:has(.brand-watermark:hover) .hw-live-popup {
-    opacity: 1;
-    visibility: visible;
-    transition: opacity 0.2s, visibility 0s;
 }
 
 /* Top-hover Control Popup (brightness & volume) */

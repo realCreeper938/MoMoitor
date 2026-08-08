@@ -95,37 +95,6 @@ async function refreshCalendarWeather() {
     }
 }
 
-/* Refresh "历史上的今天" */
-async function refreshCalendarHistory() {
-    const listEl = document.getElementById('cal-history-list');
-    if (!listEl) return;
-    // Check if calendar feature is enabled
-    if (window._appSettings && window._appSettings.feature_toggles && window._appSettings.feature_toggles.calendar === false) {
-        listEl.textContent = '';
-        return;
-    }
-    try {
-        if (!window.pywebview || !window.pywebview.api) {
-            listEl.textContent = '';
-            return;
-        }
-        const now = new Date();
-        const month = now.getMonth() + 1;
-        const day = now.getDate();
-        const data = await pywebview.api.get_programmer_history(month, day);
-        if (data && data.events && data.events.length > 0) {
-            const events = data.events.slice(0, 5); // Show at most 5
-            listEl.innerHTML = events.map(e =>
-                `<div class="cal-history-item" title="${e.description || ''}">${e.title}</div>`
-            ).join('');
-        } else {
-            listEl.textContent = '';
-        }
-    } catch (e) {
-        listEl.textContent = '';
-    }
-}
-
 /* Today's lunar date shown in the popup header */
 function updateCalPopupLunar() {
     const el = document.getElementById('cal-popup-lunar');

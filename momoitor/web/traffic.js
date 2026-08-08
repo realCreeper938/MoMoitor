@@ -5,7 +5,6 @@
 
 let trafficYear = null;
 let trafficMonth = null;
-let trafficPopupOpen = false;
 
 /* Format bytes to human-readable string */
 function formatTrafficBytes(bytes) {
@@ -171,7 +170,6 @@ async function openTrafficPopup() {
 
     popup.style.display = 'flex';
     overlay.style.display = 'flex';
-    trafficPopupOpen = true;
 
     await renderTrafficCalendar(trafficYear, trafficMonth);
     await refreshTrafficSummary();
@@ -183,7 +181,6 @@ function closeTrafficPopup() {
     const overlay = document.getElementById('traffic-popup-overlay');
     if (popup) popup.style.display = 'none';
     if (overlay) overlay.style.display = 'none';
-    trafficPopupOpen = false;
 }
 
 /* Setup click handlers */

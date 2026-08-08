@@ -36,8 +36,6 @@ let oldWeatherLon = '';
 let oldWeatherKid = '';
 let oldWeatherSub = '';
 let oldWeatherKey = '';
-let cachedAlerts = [];
-
 
 /* Auto throttle on high CPU */
 let userInterval = 1000;
@@ -277,15 +275,6 @@ function fmt(v, d = 0) {
     return Number(v).toFixed(d);
 }
 
-function setText(id, val) {
-    const el = getUiEl(id);
-    if (el && el.textContent !== val) el.textContent = val;
-}
-
-function pad2(n) {
-    return String(n).padStart(2, '0');
-}
-
 function tempColorClass(temp, threshold) {
     if (temp == null || isNaN(temp)) return '';
     if (temp >= threshold) return 'temp-high';
@@ -298,12 +287,6 @@ function fpsColorClass(fps) {
     if (fps >= 55) return 'fps-good';
     if (fps >= 30) return 'fps-ok';
     return 'fps-bad';
-}
-
-function loadAlpha(load) {
-    if (load == null || isNaN(load)) return null;
-    const clamped = Math.min(100, Math.max(0, load));
-    return 0.3 + (clamped / 100) * 0.7;
 }
 
 /* CPU/GPU/MEM usage values are always rendered at full opacity — no load-based
@@ -1087,60 +1070,8 @@ initMemCleanClick();
 
 /* Hardware names — brand detection retained for header text only; logos removed. */
 
-/* Light themes — everything not in this set is dark */
-const LIGHT_THEMES = new Set([
-    'gruvbox-light', 'github-light', 'atom-one-light', 'rose-pine-dawn',
-    'papercolor-light', 'selenized-light', 'everforest-light',
-    'catppuccin-latte', 'brackets-light-pro', 'nord-light',
-]);
-
-function isLightTheme() {
-    return LIGHT_THEMES.has(document.documentElement.getAttribute('data-colorscheme') || 'gruvbox');
-}
-
-function detectMemBrand(name, manufacturer) {
-    const s = ((name || '') + ' ' + (manufacturer || '')).toLowerCase();
-    if (!s.trim()) return null;
-    if (s.includes('crucial') || s.includes('ct16g4') || s.includes('ct32g4')) return 'crucial';
-    if (s.includes('samsung') || s.includes('m471') || s.includes('m378')) return 'samsung';
-    if (s.includes('kingston') || s.includes('kvr') || s.includes('knv')) return 'kingston';
-    if (s.includes('micron') || s.includes('mta') || s.includes('mt4')) return 'micron';
-    if (s.includes('sk hynix') || s.includes('hmt') || s.includes('hmab')) return 'sk_hynix';
-    return null;
-}
-
-function detectDiskBrand(name) {
-    if (!name) return null;
-    const s = name.toLowerCase();
-    if (s.includes('samsung') || s.includes('pm9') || s.includes('pm17') || s.includes('870') || s.includes('980') || s.includes('990')) return 'samsung';
-    if (s.includes('crucial') || s.includes('ct1000') || s.includes('ct500') || s.includes('ct2000') || s.includes('mx500') || s.includes('bx500')) return 'crucial';
-    if (s.includes('kingston') || s.includes('kc3000') || s.includes('sa400') || s.includes('sa1000')) return 'kingston';
-    if (s.includes('wd ') || s.includes('western digital') || s.includes('wds') || s.includes('sn7') || s.includes('sn5') || s.includes('blue') || s.includes('black')) return 'western_digital';
-    if (s.includes('seagate') || s.includes('st1000') || s.includes('st2000') || s.includes('st500') || s.includes('barracuda') || s.includes('firecuda')) return 'seagate';
-    if (s.includes('kioxia') || s.includes('exceria') || s.includes('rc20')) return 'kioxia';
-    if (s.includes('toshiba')) return 'toshiba';
-    if (s.includes('sandisk') || s.includes('sdss') || s.includes('extreme pro')) return 'sandisk';
-    if (s.includes('micron') || s.includes('1300s') || s.includes('2400s')) return 'micron';
-    if (s.includes('sk hynix') || s.includes('bc711') || s.includes('bc501') || s.includes('pc711')) return 'sk_hynix';
-    if (s.includes('ymtc') || s.includes('pc005') || s.includes('ec600')) return 'ymtc';
-    return null;
-}
-
-function detectNetBrand(name) {
-    if (!name) return null;
-    const s = name.toLowerCase();
-    if (s.includes('intel')) return 'intel';
-    if (s.includes('qualcomm') || s.includes('atheros') || s.includes('qca')) return 'qualcomm';
-    if (s.includes('mediatek') || s.includes('mt79')) return 'mediatek';
-    if (s.includes('nvidia') || s.includes('nforce')) return 'nvidia';
-    if (s.includes('amd') || s.includes('radeon')) return 'amd';
-    // Realtek and others not in icons
-    return null;
-}
-
 /* HW Detail cache */
 let hwDetailCache = null;
-let hwDetailLoaded = false;
 
 async function loadHwNames() {
     try { hwNamesCache = await pywebview.api.get_hw_names(); } catch (e) { console.warn('loadHwNames:', e); }
@@ -1230,7 +1161,6 @@ function applyHwNames(show) {
 async function loadHwDetail() {
     try {
         hwDetailCache = await pywebview.api.get_hw_detail();
-        hwDetailLoaded = true;
         applyHwDetail();
     } catch (e) { console.warn('loadHwDetail:', e); }
 }
@@ -1477,30 +1407,9 @@ async function refreshAirQuality() {
 }
 
 /* Weather alerts */
-function alertSeverityColor(alerts) {
-    const validColors = (alerts || [])
-        .map((a) => ({
-            r: Number(a.colorR) || 0,
-            g: Number(a.colorG) || 0,
-            b: Number(a.colorB) || 0,
-        }))
-        .filter((c) => c.r || c.g || c.b);
-    if (validColors.length) {
-        return `rgb(${validColors[0].r}, ${validColors[0].g}, ${validColors[0].b})`;
-    }
-
-    const severityText = (alerts || []).map((a) => String(a.severity || '').toLowerCase()).join(' ');
-    if (severityText.includes('extreme') || severityText.includes('severe') || severityText.includes('red') || severityText.includes('红')) return 'var(--red)';
-    if (severityText.includes('orange') || severityText.includes('橙')) return 'var(--orange)';
-    if (severityText.includes('yellow') || severityText.includes('黄')) return 'var(--yellow)';
-    if (severityText.includes('blue') || severityText.includes('蓝')) return 'var(--blue)';
-    return 'var(--yellow)';
-}
-
 async function refreshAlerts() {
     try {
         const alerts = await pywebview.api.get_alerts();
-        cachedAlerts = alerts || [];
         const row = document.getElementById('wx-alerts-row');
         const list = document.getElementById('wx-alerts-list');
         if (!row || !list) return;
@@ -1833,10 +1742,6 @@ window.addEventListener('resize', () => {
     if (!clockBgState.url) return;
     if (_clockBgResizeTimer) clearTimeout(_clockBgResizeTimer);
     _clockBgResizeTimer = setTimeout(applyClockBackgroundGradient, 200);
-});
-
-window.addEventListener('resize', () => {
-    // process list is fixed to the top 5 — nothing to recompute on resize
 });
 
 /* ── Theme picker cards ── */
@@ -2249,10 +2154,6 @@ function applyFontSize(pct) {
     document.documentElement.style.setProperty('--font-scale', pct / 100);
     // Fit the process list to the new font size (defer one frame so heights settle).
     setTimeout(recalcProcLimit, 0);
-}
-
-function applyPadding(px) {
-    document.getElementById('terminal').style.padding = px + 'px';
 }
 
 let _weatherConfigured = false;   // 天气 API 是否已配置（由启动时的设置决定）
