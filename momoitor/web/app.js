@@ -2302,7 +2302,7 @@ function applyFeatureToggles(toggles) {
 
 /* ===== Layout Adjustment ===== */
 const LAYOUT_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'disk-section', 'proc-section', 'music-section'];
-const RESIZABLE_IDS = ['fps-section'];
+const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'fps-section'];
 
 const DEFAULT_LAYOUT = {
     'cpu-section':    { col: 2, row: 2, span: 2, hidden: false },
@@ -2434,7 +2434,7 @@ function _addLayoutControls() {
             el.appendChild(handle);
         }
     });
-    _updateRestoreBtn();
+    _updateCardsBtn();
 }
 
 function _removeLayoutControls() {
@@ -2442,11 +2442,16 @@ function _removeLayoutControls() {
     document.querySelectorAll('.layout-control-group').forEach(el => el.remove());
     document.querySelectorAll('.layout-resize-handle').forEach(el => el.remove());
     document.body.classList.remove('resizing');
-    document.getElementById('layout-restore')?.classList.add('hidden');
+    const cardsBtn = document.getElementById('layout-cards');
+    if (cardsBtn) cardsBtn.classList.add('hidden');
+    const panel = document.getElementById('card-list-panel');
+    if (panel) panel.style.display = 'none';
 }
 
 function _toggleCardSize(id) {
     const pos = _normLayout(id);
+    const el = document.getElementById(id);
+    const first = el ? el.getBoundingClientRect() : null;
     if (pos.span === 1) {
         const col = pos.col;
         const otherCol = col === 2 ? 3 : 2;
@@ -2461,8 +2466,8 @@ function _toggleCardSize(id) {
     }
     pos.span = pos.span === 2 ? 1 : 2;
     _layout[id] = { col: pos.col, row: pos.row, span: pos.span, hidden: pos.hidden };
-    const el = document.getElementById(id);
     if (el) {
+        el.style.transition = 'none';
         el.style.gridRow = pos.row + ' / span ' + pos.span;
         el.dataset.span = String(pos.span);
         if (id === 'fps-section') {
@@ -2472,6 +2477,31 @@ function _toggleCardSize(id) {
     }
     _repackColumn(pos.col, null, null);
     _rebalanceOverflow();
+    if (el && first) _flipCard(el, first);
+}
+
+/* FLIP morph: smoothly animate a card between its previous and new size/position
+   after the layout change, instead of snapping. Other cards still glide via the
+   existing grid-row transition. */
+function _flipCard(el, first) {
+    const last = el.getBoundingClientRect();
+    const dx = first.left - last.left;
+    const dy = first.top - last.top;
+    const scaleX = first.width / last.width;
+    const scaleY = first.height / last.height;
+    el.style.transition = 'none';
+    el.style.transformOrigin = 'top left';
+    el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + scaleX + ',' + scaleY + ')';
+    void el.offsetWidth;
+    el.style.transition = 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)';
+    el.style.transform = '';
+    const done = () => {
+        el.style.transition = '';
+        el.style.transform = '';
+        el.style.transformOrigin = '';
+    };
+    el.addEventListener('transitionend', done, { once: true });
+    setTimeout(done, 450);
 }
 
 function _deleteCard(id) {
@@ -2482,7 +2512,7 @@ function _deleteCard(id) {
     if (el) el.style.display = 'none';
     _repackColumn(pos.col, null, null);
     _rebalanceOverflow();
-    _updateRestoreBtn();
+    _updateCardsBtn();
 }
 
 /* ---- Resize handle drag (toggle card size) ---- */
@@ -2530,31 +2560,153 @@ function _resizeHandleUp() {
     window.removeEventListener('pointerup', _resizeHandleUp);
 }
 
-function _restoreDeleted() {
-    let changed = false;
-    LAYOUT_IDS.forEach(id => {
-        const pos = _normLayout(id);
-        if (pos.hidden) {
-            pos.hidden = false;
-            _layout[id] = { col: pos.col, row: pos.row, span: pos.span, hidden: false };
-            const el = document.getElementById(id);
-            if (el) el.style.display = _sectionVisible(id) ? '' : 'none';
-            changed = true;
-        }
+/* Card metadata used by the card list: display name, accent color, and a
+   small mock of the card's content so the user can preview its style. */
+const CARD_META = {
+    'cpu-section': {
+        name: 'CPU', color: 'var(--cyan)',
+        value: '88', pct: '%',
+        lines: [['4200', 'MHz', '65', '°C'], ['120', 'W', '1.3', 'V']],
+    },
+    'gpu-section': {
+        name: 'GPU', color: 'var(--accent)',
+        value: '76', pct: '%',
+        lines: [['68', '°C', '180', 'W'], ['11.2', '/12 GB', '64', '°C']],
+    },
+    'mem-section': {
+        name: 'Memory', color: 'var(--magenta)',
+        value: '54', pct: '%',
+        lines: [['3600', 'MHz', '1.1', 'V'], ['8.6', '/16 GB', '45', '°C']],
+    },
+    'net-section': {
+        name: 'Network', color: 'var(--green)', type: 'duo',
+        duo: [['↓', '12.3', 'MB/s'], ['↑', '4.5', 'MB/s']],
+    },
+    'fps-section': {
+        name: 'FPS', color: 'var(--yellow)',
+        value: '144', pct: 'FPS',
+        lines: [['6.9', 'ms', '1% 118', ''], ['AVG 141', '', '99% 137', '']],
+    },
+    'disk-section': {
+        name: 'Disk', color: 'var(--blue)', type: 'duo',
+        duo: [['R', '120', 'MB/s'], ['W', '45', 'MB/s']],
+    },
+    'proc-section': { name: 'Process', color: 'var(--text-dim)', type: 'proc' },
+    'music-section': { name: 'Music', color: 'var(--accent)', type: 'music' },
+};
+
+function _cardPreviewHTML(id) {
+    const m = CARD_META[id];
+    if (!m) return '';
+    if (m.type === 'proc') {
+        return '<div class="clp-proc">'
+            + '<div class="clp-proc-bar"><i style="width:72%"></i></div>'
+            + '<div class="clp-proc-bar"><i style="width:46%"></i></div>'
+            + '<div class="clp-proc-bar"><i style="width:28%"></i></div>'
+            + '</div>';
+    }
+    if (m.type === 'music') {
+        return '<div class="clp-music"><span class="clp-cover"></span>'
+            + '<div class="clp-music-meta"><div class="clp-title">Title</div>'
+            + '<div class="clp-artist">Artist</div></div></div>';
+    }
+    if (m.type === 'duo') {
+        return m.duo.map(r =>
+            '<div class="clp-duo"><span class="clp-arrow">' + r[0] + '</span>'
+            + '<span class="clp-value">' + r[1] + '</span>'
+            + '<span class="clp-unit">' + r[2] + '</span></div>').join('');
+    }
+    return '<div class="clp-value-row"><span class="clp-value">' + m.value
+        + '</span><span class="clp-pct">' + m.pct + '</span></div>'
+        + m.lines.map(l =>
+            '<div class="clp-info"><span class="mono">' + l[0] + '</span>'
+            + (l[1] ? '<span class="clp-unit">' + l[1] + '</span>' : '')
+            + (l[2] ? '<span class="clp-sep"> · </span><span class="mono">' + l[2] + '</span>' : '')
+            + (l[3] ? '<span class="clp-unit">' + l[3] + '</span>' : '')
+            + '</div>').join('');
+}
+
+function _renderCardList() {
+    const body = document.getElementById('card-list-body');
+    if (!body) return;
+    body.textContent = '';
+    const hidden = LAYOUT_IDS.filter(id => _normLayout(id).hidden);
+    hidden.forEach(id => {
+        const meta = CARD_META[id] || { name: id, color: 'var(--text)' };
+        const item = document.createElement('div');
+        item.className = 'card-list-item';
+        item.dataset.card = id;
+        item.setAttribute('draggable', 'true');
+        item.innerHTML = '<div class="card-list-preview" style="--card-accent:' + meta.color + '">'
+            + _cardPreviewHTML(id) + '</div>'
+            + '<div class="card-list-name">' + meta.name + '</div>';
+        item.addEventListener('click', () => _addCard(id));
+        item.addEventListener('dragstart', onLayoutDragStart);
+        item.addEventListener('dragend', onLayoutDragEnd);
+        body.appendChild(item);
     });
-    if (changed) {
-        _packColumn(2);
-        _packColumn(3);
-        _rebalanceOverflow();
-        _updateRestoreBtn();
+    if (!hidden.length) {
+        const panel = document.getElementById('card-list-panel');
+        if (panel) panel.style.display = 'none';
     }
 }
 
-function _updateRestoreBtn() {
-    const restoreBtn = document.getElementById('layout-restore');
-    if (!restoreBtn) return;
+function _updateCardsBtn() {
+    const cardsBtn = document.getElementById('layout-cards');
+    if (!cardsBtn) return;
     const hasHidden = LAYOUT_IDS.some(id => _normLayout(id).hidden);
-    restoreBtn.classList.toggle('hidden', !hasHidden);
+    cardsBtn.classList.toggle('hidden', !hasHidden);
+    const panel = document.getElementById('card-list-panel');
+    if (panel && panel.style.display === 'flex') _renderCardList();
+}
+
+/* Place a previously-hidden card into the grid at the given column/row, then
+   compact the column and rebalance overflow.  If `span` is omitted, the card's
+   layout span is used. */
+function _placeCard(id, col, row, span) {
+    const pos = _normLayout(id);
+    const s = span || pos.span;
+    pos.col = col;
+    pos.row = row;
+    pos.span = s;
+    pos.hidden = false;
+    _layout[id] = { col: col, row: row, span: s, hidden: false };
+    const el = document.getElementById(id);
+    if (el) {
+        el.style.display = _sectionVisible(id) ? '' : 'none';
+        el.style.gridColumn = String(col);
+        el.style.gridRow = row + ' / span ' + s;
+        el.dataset.span = String(s);
+        if (id === 'fps-section') {
+            const pct = el.querySelector('.pct');
+            if (pct) pct.style.display = s === 2 ? 'none' : '';
+        }
+    }
+    _repackColumn(col, id, row);
+    _rebalanceOverflow();
+    _updateCardsBtn();
+}
+
+/* Click a card in the list: add it to whichever column still has room.
+   If the card supports both sizes (RESIZABLE_IDS) and the remaining space only
+   fits the small card, fall back to the small (span 1) form automatically. */
+function _addCard(id) {
+    const span = _normLayout(id).span;
+    const h2 = _columnHeight(2);
+    const h3 = _columnHeight(3);
+    const free2 = 6 - h2;
+    const free3 = 6 - h3;
+    let col = null;
+    if (free2 >= span) col = 2;
+    if (free3 >= span && (col === null || free3 > free2)) col = 3;
+    if (col === null && RESIZABLE_IDS.includes(id) && span > 1) {
+        const small = 1;
+        if (free2 >= small) col = 2;
+        if (free3 >= small && (col === null || free3 > free2)) col = 3;
+        if (col !== null) { _placeCard(id, col, _columnHeight(col) + 1, small); return; }
+    }
+    if (col === null) { showToast('空间不足'); return; }
+    _placeCard(id, col, _columnHeight(col) + 1);
 }
 
 let _toastEl = null;
@@ -2582,9 +2734,11 @@ function showToast(msg, duration) {
 }
 
 let _dragId = null;
+let _dragFromList = false;
 
 function onLayoutDragStart(e) {
-    _dragId = e.currentTarget.id;
+    _dragId = e.currentTarget.dataset.card || e.currentTarget.id;
+    _dragFromList = !!e.currentTarget.dataset.card;
     e.currentTarget.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', _dragId);
@@ -2607,6 +2761,7 @@ function onLayoutDragEnd(e) {
         if (el) el.classList.remove('drag-over');
     });
     _dragId = null;
+    _dragFromList = false;
 }
 
 function onLayoutDrop(e) {
@@ -2616,6 +2771,29 @@ function onLayoutDrop(e) {
     const fromId = _dragId;
     const toId = target.id;
     if (!fromId || fromId === toId) return;
+    if (_dragFromList) {
+        // Adding a removed card from the card list: insert at the drop slot.
+        const toCol = parseInt(target.style.gridColumn);
+        const toRow = parseInt(target.style.gridRow);
+        let span = getLayoutSpan(fromId);
+        const colHeight = _columnHeight(toCol);
+        const otherHeight = _columnHeight(toCol === 2 ? 3 : 2);
+        if (colHeight + span > 6 && otherHeight + span > 6) {
+            if (RESIZABLE_IDS.includes(fromId) && span > 1) {
+                const small = 1;
+                if (colHeight + small > 6 && otherHeight + small > 6) {
+                    showToast('空间不足');
+                    return;
+                }
+                span = small;
+            } else {
+                showToast('空间不足');
+                return;
+            }
+        }
+        _placeCard(fromId, toCol, toRow, span);
+        return;
+    }
     const fromEl = document.getElementById(fromId);
     const toEl = target;
     const fromCol = fromEl.style.gridColumn;
@@ -2715,11 +2893,32 @@ function initLayoutControls() {
     const resetBtn = document.getElementById('btn-layout-reset');
     const saveBtn = document.getElementById('layout-save');
     const cancelBtn = document.getElementById('layout-cancel');
-    const restoreBtn = document.getElementById('layout-restore');
+    const cardsBtn = document.getElementById('layout-cards');
+    const cardsClose = document.getElementById('card-list-close');
+    const cardPanel = document.getElementById('card-list-panel');
     if (modeBtn) modeBtn.addEventListener('click', () => {
         const overlay = document.getElementById('settings-overlay');
         if (overlay) overlay.style.display = 'none';
         enterLayoutMode();
+    });
+    if (cardsBtn) cardsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!cardPanel) return;
+        if (cardPanel.style.display === 'flex') {
+            cardPanel.style.display = 'none';
+        } else {
+            _renderCardList();
+            cardPanel.style.display = 'flex';
+        }
+    });
+    if (cardsClose) cardsClose.addEventListener('click', () => {
+        if (cardPanel) cardPanel.style.display = 'none';
+    });
+    document.addEventListener('click', (e) => {
+        if (!cardPanel || cardPanel.style.display !== 'flex') return;
+        if (!cardPanel.contains(e.target) && e.target !== cardsBtn) {
+            cardPanel.style.display = 'none';
+        }
     });
     if (resetBtn) resetBtn.addEventListener('click', async () => {
         resetLayout();
@@ -2741,10 +2940,10 @@ function initLayoutControls() {
         exitLayoutMode();
     });
     if (cancelBtn) cancelBtn.addEventListener('click', () => {
+        if (cardPanel) cardPanel.style.display = 'none';
         applyLayout(_layoutSaved);
         exitLayoutMode();
     });
-    if (restoreBtn) restoreBtn.addEventListener('click', _restoreDeleted);
 }
 
 function initSettings() {

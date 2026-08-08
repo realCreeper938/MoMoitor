@@ -752,7 +752,7 @@ html, body {
     transform: translateY(6px);
     transition: opacity 0.2s, transform 0.2s, visibility 0s 0.2s;
     z-index: 100;
-    max-width: min(400px, 90vw);
+    max-width: min(560px, 92vw);
 }
 
 .weather-compact:hover .wx-popup {
@@ -930,6 +930,8 @@ html, body {
     white-space: pre;
     letter-spacing: 2px;
     text-align: center;
+    overflow-x: auto;
+    scrollbar-width: thin;
 }
 
 /* Weather alerts */
@@ -1836,9 +1838,15 @@ html, body {
 }
 
 /* Reduce big value font size */
-#cpu-section .metric-value.big,
-#gpu-section .metric-value.big {
+#cpu-section[data-span="2"] .metric-value.big,
+#gpu-section[data-span="2"] .metric-value.big {
     font-size: calc(clamp(64px, 8vw, 120px) * var(--font-scale));
+}
+
+/* CPU/GPU small card (span 1): match the memory card size */
+#cpu-section:not([data-span="2"]) .metric-value.big,
+#gpu-section:not([data-span="2"]) .metric-value.big {
+    font-size: calc(clamp(56px, 6.5vw, 96px) * var(--font-scale));
 }
 
 #mem-section .metric-value.big {
@@ -1874,8 +1882,8 @@ html, body {
     font-size: calc(clamp(16px, 1.6vw, 24px) * var(--font-scale));
 }
 
-#cpu-section .info-line,
-#gpu-section .info-line {
+#cpu-section[data-span="2"] .info-line,
+#gpu-section[data-span="2"] .info-line {
     font-size: calc(clamp(19px, 1.9vw, 26px) * var(--font-scale));
 }
 
@@ -1944,6 +1952,12 @@ html, body {
     transition: opacity 0.2s ease;
 }
 
+/* CPU/GPU small card (span 1): no room for the hw-name badge — like memory */
+#cpu-section:not([data-span="2"]) .hw-name,
+#gpu-section:not([data-span="2"]) .hw-name {
+    display: none;
+}
+
 .term-box:hover .hw-name {
     opacity: 0.85;
 }
@@ -1981,8 +1995,8 @@ html, body {
 /* CPU/GPU: usage on TOP, info-lines BELOW — a left-aligned vertical stack
    anchored to the bottom of the tall card. box-content / split-row are
    row-direction flex, so the vertical pin lives on `align-items`. */
-#cpu-section > .box-content,
-#gpu-section > .box-content,
+#cpu-section[data-span="2"] > .box-content,
+#gpu-section[data-span="2"] > .box-content,
 #fps-section[data-span="2"] > .box-content {
     align-items: flex-end;
     padding-bottom: 30px;
@@ -2008,15 +2022,21 @@ html, body {
     transition: opacity 0.15s ease;
 }
 
-#cpu-section:hover .corner-label,
-#gpu-section:hover .corner-label,
+#cpu-section[data-span="2"]:hover .corner-label,
+#gpu-section[data-span="2"]:hover .corner-label,
 #fps-section[data-span="2"]:hover .corner-label {
     opacity: 0;
 }
 
+/* CPU/GPU small card (span 1): hide the corner label — it only fits the tall form */
+#cpu-section:not([data-span="2"]) .corner-label,
+#gpu-section:not([data-span="2"]) .corner-label {
+    display: none;
+}
+
 /* CPU/GPU (and FPS large) data-col: flex column, value on top, info-lines below */
-#cpu-section .data-col,
-#gpu-section .data-col,
+#cpu-section[data-span="2"] .data-col,
+#gpu-section[data-span="2"] .data-col,
 #fps-section[data-span="2"] .data-col {
     display: flex;
     flex-direction: column;
@@ -2028,8 +2048,8 @@ html, body {
 }
 
 /* CPU/GPU (and FPS large) value: flush left, suffix immediately adjacent */
-#cpu-section .metric-value.big,
-#gpu-section .metric-value.big,
+#cpu-section[data-span="2"] .metric-value.big,
+#gpu-section[data-span="2"] .metric-value.big,
 #fps-section[data-span="2"] .metric-value.big {
     text-align: left;
     min-width: 0;
@@ -2038,14 +2058,14 @@ html, body {
 /* CPU/GPU (and FPS large) info-lines: all left-aligned. In the old 2-col
    grid these used align-self: end/start to meet in the middle — in the flex
    column that now pushes them right, so force them back to the left. */
-#cpu-section .info-line,
-#gpu-section .info-line,
+#cpu-section[data-span="2"] .info-line,
+#gpu-section[data-span="2"] .info-line,
 #fps-section[data-span="2"] .info-line,
-#cpu-section .info-line:nth-of-type(2),
-#gpu-section .info-line:nth-of-type(2),
+#cpu-section[data-span="2"] .info-line:nth-of-type(2),
+#gpu-section[data-span="2"] .info-line:nth-of-type(2),
 #fps-section[data-span="2"] .info-line:nth-of-type(2),
-#cpu-section .info-line:nth-of-type(3),
-#gpu-section .info-line:nth-of-type(3),
+#cpu-section[data-span="2"] .info-line:nth-of-type(3),
+#gpu-section[data-span="2"] .info-line:nth-of-type(3),
 #fps-section[data-span="2"] .info-line:nth-of-type(3) {
     align-self: flex-start;
 }
@@ -4263,12 +4283,193 @@ body.layout-mode .layout-control-group .layout-del-btn {
     margin-right: 4px;
 }
 
-#layout-restore {
+#layout-cards {
     margin-right: auto;
 }
 
-#layout-restore.hidden {
+#layout-cards.hidden {
     display: none;
+}
+
+/* Card list panel — pick a removed/hidden card to add back to the layout */
+.card-list-panel {
+    display: none;
+    position: fixed;
+    left: 50%;
+    bottom: 78px;
+    transform: translateX(-50%);
+    z-index: 1001;
+    width: min(560px, 92vw);
+    max-height: 52vh;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+}
+.card-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-data);
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text);
+    flex-shrink: 0;
+}
+.card-list-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: calc(16px * var(--font-scale));
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 4px;
+    transition: color 0.15s;
+}
+.card-list-close:hover {
+    color: var(--text);
+}
+.card-list-body {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    padding: 12px;
+    overflow-y: auto;
+    max-height: 44vh;
+}
+.card-list-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--nord0);
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.card-list-item:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.card-list-item:active {
+    cursor: grabbing;
+}
+.card-list-item.dragging {
+    opacity: 0.4;
+}
+.card-list-item .card-list-name {
+    font-family: var(--font-data);
+    font-size: calc(11px * var(--font-scale));
+    font-weight: 600;
+    color: var(--text);
+}
+/* Mini card preview — echoes the real card's small (memory-style) look */
+.card-list-preview {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 62px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--nord0) 55%, var(--card-accent, var(--text)) 6%);
+    border-top: 2px solid var(--card-accent, var(--text));
+}
+.card-list-preview .clp-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+}
+.card-list-preview .clp-value {
+    font-family: var(--font-data);
+    font-size: calc(22px * var(--font-scale));
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+}
+.card-list-preview .clp-pct {
+    font-family: var(--font-data);
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+}
+.card-list-preview .clp-info {
+    font-family: var(--font-ui);
+    font-size: calc(9px * var(--font-scale));
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+.card-list-preview .clp-unit,
+.card-list-preview .clp-sep {
+    font-family: var(--font-ui);
+    font-size: calc(8px * var(--font-scale));
+    color: var(--text-dim);
+}
+.card-list-preview .clp-duo {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+}
+.card-list-preview .clp-arrow {
+    font-family: var(--font-data);
+    font-size: calc(11px * var(--font-scale));
+    color: var(--card-accent, var(--text));
+}
+.card-list-preview .clp-proc {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 5px;
+}
+.card-list-preview .clp-proc-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--nord0) 55%, var(--card-accent, var(--text)) 10%);
+    overflow: hidden;
+}
+.card-list-preview .clp-proc-bar i {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--card-accent, var(--text));
+    opacity: 0.7;
+}
+.card-list-preview .clp-music {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.card-list-preview .clp-cover {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--card-accent, var(--text)), transparent);
+    opacity: 0.8;
+}
+.card-list-preview .clp-music-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.card-list-preview .clp-title {
+    font-family: var(--font-data);
+    font-size: calc(10px * var(--font-scale));
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.card-list-preview .clp-artist {
+    font-family: var(--font-ui);
+    font-size: calc(8px * var(--font-scale));
+    color: var(--text-dim);
 }
 
 /* FPS large card: show corner-label, hide box-header (matches CPU/GPU large form) */

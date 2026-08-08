@@ -452,9 +452,18 @@
     <!-- Layout mode toolbar -->
     <div class="layout-toolbar" id="layout-toolbar">
         <span class="layout-toolbar-label" data-i18n="layout-mode-active">Layout Mode Active</span>
-        <button type="button" class="text-btn hidden" id="layout-restore" data-i18n="layout-restore">Restore Deleted</button>
+        <button type="button" class="text-btn hidden" id="layout-cards" data-i18n="layout-cards">Add Card</button>
         <button type="button" class="text-btn" id="layout-cancel" data-i18n="btn-close">Close</button>
         <button type="button" class="text-btn" id="layout-save" data-i18n="layout-mode-done">Save Layout</button>
+    </div>
+
+    <!-- Card list panel -->
+    <div class="card-list-panel" id="card-list-panel" style="display:none">
+        <div class="card-list-header">
+            <span data-i18n="layout-cards-title">Add Cards</span>
+            <button type="button" class="card-list-close" id="card-list-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="card-list-body" id="card-list-body"></div>
     </div>
 
     <!-- Settings -->
