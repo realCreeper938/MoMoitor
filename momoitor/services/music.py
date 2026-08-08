@@ -19,6 +19,7 @@
 """
 
 import base64
+import datetime
 import os
 import subprocess
 import threading
@@ -107,6 +108,18 @@ def prev_track():
             return True
         except Exception as e:
             logger.error("prev_track failed: {}", e)
+    return False
+
+
+def seek_track(position: float):
+    """跳转到指定时间点（秒）。"""
+    session = _get_session()
+    if session:
+        try:
+            session.try_change_playback_position_async(datetime.timedelta(seconds=float(position))).get()
+            return True
+        except Exception as e:
+            logger.error("seek_track failed: {}", e)
     return False
 
 

@@ -312,11 +312,19 @@
                         </div>
                         <div class="music-player-zone">
                             <div class="music-controls" id="h-music-controls">
-                                <button type="button" class="music-ctrl" id="h-music-prev" title="Previous" aria-label="Previous">&#9198;</button>
-                                <button type="button" class="music-ctrl music-ctrl-toggle" id="h-music-toggle" title="Play/Pause" aria-label="Play/Pause">&#9199;</button>
-                                <button type="button" class="music-ctrl" id="h-music-next" title="Next" aria-label="Next">&#9197;</button>
+                                <div class="music-ctrl-row">
+                                    <button type="button" class="music-ctrl" id="h-music-prev" title="Previous" aria-label="Previous">&#9198;</button>
+                                    <button type="button" class="music-ctrl music-ctrl-toggle" id="h-music-toggle" title="Play/Pause" aria-label="Play/Pause">&#9199;</button>
+                                    <button type="button" class="music-ctrl" id="h-music-next" title="Next" aria-label="Next">&#9197;</button>
+                                </div>
+                            </div>
+                            <div class="music-progress" id="h-music-progress">
+                                <span class="music-seek-tip" id="h-music-seek-tip"></span>
+                                <input type="range" class="music-seek" id="h-music-seek" min="0" max="1000" step="1" value="0">
+                                <span class="music-time-left" id="h-music-time-left">-0:00</span>
                             </div>
                             <div class="music-lyrics" id="h-music-lyrics" style="display:none">
+                                <div class="h-lyric-prev" id="h-lyric-prev"></div>
                                 <div class="h-lyric-current" id="h-lyric-current">--</div>
                                 <div class="h-lyric-next" id="h-lyric-next"></div>
                             </div>
@@ -711,6 +719,13 @@
                                     <span data-i18n="label-hover-highlight">Highlight on hover</span>
                                     <label class="toggle">
                                         <input type="checkbox" id="opt-hover-highlight" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-lyric-anim">Lyric animation</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-lyric-anim" checked>
                                         <span class="toggle-slider"></span>
                                     </label>
                                 </div>

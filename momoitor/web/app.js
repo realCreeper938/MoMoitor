@@ -123,6 +123,19 @@ function applyHoverHighlight(enabled) {
     }
 }
 
+/* Enable/disable lyric animations (line-switch + horizontal scroll) */
+let _lyricAnimEnabled = true; // settings-driven: lyric switch/horizontal scroll animation
+
+function applyLyricAnim(enabled) {
+    _lyricAnimEnabled = !!enabled;
+    if (!_lyricAnimEnabled) {
+        document.querySelectorAll('.h-lyric-current, .h-lyric-next').forEach(el => el.scrollLeft = 0);
+        const wrap = document.querySelector('#music-section .music-lyrics');
+        if (wrap) { wrap.style.transition = ''; wrap.style.transform = ''; }
+        if (_lyricRollTimer) { clearTimeout(_lyricRollTimer); _lyricRollTimer = null; }
+    }
+}
+
 function updateChart(key, dynamicMax) {
     const svg = document.querySelector('.sparkline-bg[data-spark="' + key + '"]');
     if (!svg) return;
@@ -777,29 +790,80 @@ let _lyricActive = false;  // 是否处于歌词显示模式
 let _lyricHover = false;   // 鼠标是否悬停在歌词上（悬停时显示播放控件）
 let _lyricCurIdx = -1;     // 当前渲染句子的下标，用于切换句子时重置水平滚动
 
-/* Render the current + next lyric lines based on interpolated position. */
-function renderLyrics() {
-    if (!_lyricActive) return;
-    const curEl = document.getElementById('h-lyric-current');
-    const nextEl = document.getElementById('h-lyric-next');
-    if (!curEl || !nextEl) return;
-    const pos = _lyricBase.pos + (Date.now() - _lyricBase.t) / 1000;
+/* Large-card progress bar */
+let _musicBase = { pos: 0, t: 0 };    // 轮询间隙内插值估算当前进度的基准
+let _musicDur = 0;                    // 当前曲目总时长（秒）
+let _musicPlaying = true;             // 是否正在播放（暂停时不推进进度）
+let _progressTimer = null;            // 进度条平滑推进定时器
+let _seeking = false;                 // 用户正在拖动进度条（拖动时暂停自动刷新）
+
+/* 格式化为 m:ss */
+function fmtMusicTime(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m + ':' + String(s).padStart(2, '0');
+}
+
+/* Show/hide the seek bar + remaining time. Shown only when playback progress
+   (duration) is actually available. */
+function _setMusicProgressVisible(show) {
+    const section = document.getElementById('music-section');
+    if (section) section.classList.toggle('progress-active', !!show);
+}
+
+/* Update the seek bar + remaining time + hover tooltip from interpolated
+   position. */
+function updateMusicProgress() {
+    const seek = document.getElementById('h-music-seek');
+    const tip = document.getElementById('h-music-seek-tip');
+    const left = document.getElementById('h-music-time-left');
+    if (!seek) return;
+    if (_seeking) return;
+    const pos = _musicPlaying ? _musicBase.pos + (Date.now() - _musicBase.t) / 1000 : _musicBase.pos;
+    seek.value = _musicDur > 0 ? Math.min(1000, Math.round(pos / _musicDur * 1000)) : 0;
+    seek.style.setProperty('--seek-fill', (seek.value / 10) + '%');
+    if (left) left.textContent = '-' + fmtMusicTime(_musicDur - pos);
+    if (tip) {
+        tip.textContent = fmtMusicTime(pos);
+        tip.style.left = (seek.value / 10) + '%';
+    }
+}
+
+/* 根据播放进度找到当前行 cur、下一行 next 与行下标 curIdx */
+function _findLyricAt(pos) {
     let cur = null, next = null, curIdx = -1;
     for (let i = 0; i < _lyricLines.length; i++) {
         if (_lyricLines[i].time <= pos) { cur = _lyricLines[i]; curIdx = i; }
         else { next = _lyricLines[i]; break; }
     }
-    if (curIdx !== _lyricCurIdx) {
-        _lyricCurIdx = curIdx;
-        curEl.scrollLeft = 0;   // 句子切换时水平滚动归零
-    }
+    return { cur, next, curIdx };
+}
+
+/* 更新三段歌词文本（上一句 / 当前句 / 下一句） */
+function _setLyricTexts(prevEl, curEl, nextEl, prev, cur, next) {
+    if (prevEl) prevEl.textContent = (prev && prev.text) ? prev.text : '';
     curEl.textContent = (cur && cur.text) ? cur.text : '♪';
     nextEl.textContent = (next && next.text) ? next.text : '';
-    _scrollCurrentLine(curEl, cur, next, pos);
+}
+
+/* Render the prev + current + next lyric lines based on interpolated position.
+   仅刷新文本（歌词刚抓取完成等场景需要立即补一次）；滚动由 rAF 循环负责。 */
+function renderLyrics() {
+    if (!_lyricActive) return;
+    const prevEl = document.getElementById('h-lyric-prev');
+    const curEl = document.getElementById('h-lyric-current');
+    const nextEl = document.getElementById('h-lyric-next');
+    if (!curEl || !nextEl) return;
+    const pos = _lyricBase.pos + (Date.now() - _lyricBase.t) / 1000;
+    const { cur, next, curIdx } = _findLyricAt(pos);
+    const prev = curIdx > 0 ? _lyricLines[curIdx - 1] : null;
+    _setLyricTexts(prevEl, curEl, nextEl, prev, cur, next);
+    if (!_lyricAnimEnabled) curEl.scrollLeft = 0;   // 关闭动画：不滚动
 }
 
 /* 单行长歌词水平滚动：超出容器的部分按「当前句时长」（到下一句的时间）均匀
-   滚完整行，由播放进度驱动 scrollLeft，不用 CSS 动画，滚动速度随句长自适应。 */
+   滚完整行，由播放进度驱动 scrollLeft，滚动速度随句长自适应。 */
 function _scrollCurrentLine(curEl, cur, next, pos) {
     if (!cur || !cur.text) { curEl.scrollLeft = 0; return; }
     const over = curEl.scrollWidth - curEl.clientWidth;
@@ -810,8 +874,56 @@ function _scrollCurrentLine(curEl, cur, next, pos) {
     curEl.scrollLeft = p * over;
 }
 
+/* 歌词动画循环（每帧 rAF）：
+   - 文本：切句瞬间立即刷新（_lyricCurIdx 变化即更新），不再依赖 500ms 定时器，
+     因此歌词切换及时。
+   - 滚动：切句时立即把当前行 scrollLeft 归零（从行首开始），随后每帧由
+     _scrollCurrentLine 向右平滑推进，实现单行长歌词的水平滚动。 */
+let _lyricRaf = null;      // requestAnimationFrame 句柄
+let _lyricRollTimer = null; // 切句滚动后清理内联样式的定时器
+
+function _lyricAnimLoop() {
+    _lyricRaf = requestAnimationFrame(_lyricAnimLoop);
+    if (!_lyricActive) return;
+    const prevEl = document.getElementById('h-lyric-prev');
+    const curEl = document.getElementById('h-lyric-current');
+    const nextEl = document.getElementById('h-lyric-next');
+    if (!curEl || !nextEl) return;
+    const pos = _lyricBase.pos + (Date.now() - _lyricBase.t) / 1000;
+    const { cur, next, curIdx } = _findLyricAt(pos);
+    if (curIdx !== _lyricCurIdx) {
+        _lyricCurIdx = curIdx;
+        const prev = curIdx > 0 ? _lyricLines[curIdx - 1] : null;
+        const wrap = curEl.parentElement;              // .music-lyrics
+        const rollStep = curEl.offsetHeight + 2;       // 一行高度 + 行距
+        if (_lyricAnimEnabled && wrap && rollStep > 0) {
+            /* 下一句从下方一行开始，向上滚动替代当前句：
+               先把容器平移下一行（无过渡），再平滑回到原位 */
+            wrap.style.transition = 'none';
+            wrap.style.transform = 'translateY(' + rollStep + 'px)';
+            _setLyricTexts(prevEl, curEl, nextEl, prev, cur, next);
+            curEl.scrollLeft = 0;
+            void wrap.offsetWidth;                     // 强制 reflow
+            wrap.style.transition = 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)';
+            wrap.style.transform = 'translateY(0)';
+            if (_lyricRollTimer) clearTimeout(_lyricRollTimer);
+            _lyricRollTimer = setTimeout(() => {
+                wrap.style.transition = '';
+                wrap.style.transform = '';
+                _lyricRollTimer = null;
+            }, 400);
+        } else {
+            _setLyricTexts(prevEl, curEl, nextEl, prev, cur, next);
+            curEl.scrollLeft = 0;
+        }
+    }
+    if (!_lyricAnimEnabled) { if (curEl.scrollLeft) curEl.scrollLeft = 0; return; }
+    _scrollCurrentLine(curEl, cur, next, pos);
+}
+
 /* Apply current view: controls shown either when not in lyric mode, or when
-   the mouse is hovering over the lyrics (so users can control playback). */
+   the mouse is hovering over the card (so users can control playback).
+   When hovering, lyrics are hidden; otherwise lyrics are shown. */
 function applyLyricView() {
     const controls = document.getElementById('h-music-controls');
     const lyrics = document.getElementById('h-music-lyrics');
@@ -825,8 +937,8 @@ function applyLyricView() {
     }
 }
 
-/* Enter lyrics mode: show lyric lines, start the lyric timer. Controls are
-   hidden until the mouse hovers over the lyrics. */
+/* Enter lyrics mode: show lyric lines, start the lyric timer + smooth scroll
+   loop. Controls are hidden until the mouse hovers over the lyrics. */
 function showLyrics(m) {
     _lyricActive = true;
     _lyricBase = { pos: m.position || 0, t: Date.now() };
@@ -835,16 +947,23 @@ function showLyrics(m) {
     if (!_lyricTimer) {
         _lyricTimer = setInterval(renderLyrics, 500);
     }
+    if (!_lyricRaf) {
+        _lyricRaf = requestAnimationFrame(_lyricAnimLoop);
+    }
     renderLyrics();
 }
 
-/* Exit lyrics mode: restore controls, stop the lyric timer. */
+/* Exit lyrics mode: restore controls, stop the lyric timer and scroll loop. */
 function hideLyrics() {
     _lyricActive = false;
     _lyricHover = false;
     _lyricCurIdx = -1;
     applyLyricView();
     if (_lyricTimer) { clearInterval(_lyricTimer); _lyricTimer = null; }
+    if (_lyricRaf) { cancelAnimationFrame(_lyricRaf); _lyricRaf = null; }
+    if (_lyricRollTimer) { clearTimeout(_lyricRollTimer); _lyricRollTimer = null; }
+    const wrap = document.querySelector('#music-section .music-lyrics');
+    if (wrap) { wrap.style.transition = ''; wrap.style.transform = ''; }
 }
 
 /* Toggle whether the mouse is over the lyrics — revealing/hiding controls. */
@@ -869,11 +988,19 @@ async function refreshMusic() {
         const toggleBtn = document.getElementById('h-music-toggle');
 
         if (m.available && (m.playing || m.title)) {
+            _musicPlaying = !!m.playing;
             setText('h-music-title', m.title || '--');
             setText('h-music-artist', m.artist || '--');
             const procEl = document.getElementById('h-music-process');
             if (procEl) procEl.textContent = m.process_name || '';
-            // Only update cover src when cover data actually changes (i.e. song switched)
+            // Feed the progress bar: interpolate from position between polls.
+            if (m.duration > 0) {
+                _musicBase = { pos: m.position || 0, t: Date.now() };
+                _musicDur = m.duration;
+                if (!_progressTimer) _progressTimer = setInterval(updateMusicProgress, 500);
+                updateMusicProgress();
+            }
+            _setMusicProgressVisible(m.duration > 0);
             if (m.cover) {
                 if (_lastCover !== m.cover) {
                     _lastCover = m.cover;
@@ -897,6 +1024,12 @@ async function refreshMusic() {
             const procEl = document.getElementById('h-music-process');
             if (procEl) procEl.textContent = '';
             if (section) section.classList.add('paused');
+            if (_progressTimer) { clearInterval(_progressTimer); _progressTimer = null; }
+            _musicDur = 0;
+            _musicPlaying = false;
+            _musicBase = { pos: 0, t: Date.now() };
+            _setMusicProgressVisible(false);
+            updateMusicProgress();
         }
         if (toggleBtn) {
             // Pause (⏸) while playing, Play (⏵) while paused
@@ -2203,7 +2336,7 @@ function applyFeatureToggles(toggles) {
 
 /* ===== Layout Adjustment ===== */
 const LAYOUT_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'disk-section', 'proc-section', 'music-section'];
-const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'fps-section'];
+const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'fps-section', 'music-section'];
 
 const DEFAULT_LAYOUT = {
     'cpu-section':    { col: 2, row: 2, span: 2, hidden: false },
@@ -2248,15 +2381,17 @@ function applyLayout(layout) {
             if (pct) pct.style.display = pos.span === 2 ? 'none' : '';
         }
     });
+    applyLyricView();
 }
 
 function readLayout() {
     const layout = {};
     LAYOUT_IDS.forEach(id => {
+        const el = document.getElementById(id);
         const pos = _normLayout(id);
         layout[id] = {
-            col: pos.col,
-            row: pos.row,
+            col: el && el.style.gridColumn ? parseInt(el.style.gridColumn) || pos.col : pos.col,
+            row: el && el.style.gridRow ? parseInt(el.style.gridRow) || pos.row : pos.row,
             span: pos.span,
             hidden: pos.hidden,
         };
@@ -2353,6 +2488,7 @@ function _toggleCardSize(id) {
     const pos = _normLayout(id);
     const el = document.getElementById(id);
     const first = el ? el.getBoundingClientRect() : null;
+    const curRow = el && el.style.gridRow ? (parseInt(el.style.gridRow) || pos.row) : pos.row;
     if (pos.span === 1) {
         const col = pos.col;
         const otherCol = col === 2 ? 3 : 2;
@@ -2366,18 +2502,19 @@ function _toggleCardSize(id) {
         }
     }
     pos.span = pos.span === 2 ? 1 : 2;
-    _layout[id] = { col: pos.col, row: pos.row, span: pos.span, hidden: pos.hidden };
+    _layout[id] = { col: pos.col, row: curRow, span: pos.span, hidden: pos.hidden };
     if (el) {
         el.style.transition = 'none';
-        el.style.gridRow = pos.row + ' / span ' + pos.span;
+        el.style.gridRow = curRow + ' / span ' + pos.span;
         el.dataset.span = String(pos.span);
         if (id === 'fps-section') {
             const pct = el.querySelector('.pct');
             if (pct) pct.style.display = pos.span === 2 ? 'none' : '';
         }
     }
-    _repackColumn(pos.col, null, null);
+    _repackColumn(pos.col, id, curRow);
     _rebalanceOverflow();
+    if (id === 'music-section') applyLyricView();
     if (el && first) _flipCard(el, first);
 }
 
@@ -2700,13 +2837,26 @@ function onLayoutDrop(e) {
     const fromCol = fromEl.style.gridColumn;
     const fromRow = parseInt(fromEl.style.gridRow);
     const toRow = parseInt(toEl.style.gridRow);
-    fromEl.style.gridColumn = toEl.style.gridColumn;
+    const toCol = toEl.style.gridColumn;
+    const fromOrigRow = fromEl.style.gridRow;
+    const toOrigRow = toEl.style.gridRow;
+    fromEl.style.gridColumn = toCol;
     fromEl.style.gridRow = toRow + ' / span ' + getLayoutSpan(fromId);
     toEl.style.gridColumn = fromCol;
     toEl.style.gridRow = fromRow + ' / span ' + getLayoutSpan(toId);
     _repackColumn(parseInt(fromEl.style.gridColumn), fromId, toRow);
     _repackColumn(parseInt(toEl.style.gridColumn), null, null);
-    _rebalanceOverflow();
+    // If the swap would overflow either column, revert it instead of shuffling
+    // cards across columns (which displaces the other column's cards).
+    if (_columnHeight(2) > 6 || _columnHeight(3) > 6) {
+        fromEl.style.gridColumn = fromCol;
+        fromEl.style.gridRow = fromOrigRow;
+        toEl.style.gridColumn = toCol;
+        toEl.style.gridRow = toOrigRow;
+        _repackColumn(parseInt(fromCol), null, null);
+        _repackColumn(parseInt(toCol), null, null);
+        showToast('空间不足');
+    }
 }
 
 function _repackColumn(col, fixedId, fixedRow) {
@@ -2776,8 +2926,8 @@ function _rebalanceOverflow() {
     while (guard++ < 10) {
         const h2 = _columnHeight(2);
         const h3 = _columnHeight(3);
-        if (h2 <= 5 && h3 <= 5) break;
-        if (h2 > 5) _moveBottomCard(2, 3);
+        if (h2 <= 6 && h3 <= 6) break;
+        if (h2 > 6) _moveBottomCard(2, 3);
         else _moveBottomCard(3, 2);
         _packColumn(2);
         _packColumn(3);
@@ -2863,6 +3013,7 @@ function initSettings() {
     const fullscreenChk = document.getElementById('opt-fullscreen');
     const autostartChk = document.getElementById('opt-autostart');
     const hoverHighlightChk = document.getElementById('opt-hover-highlight');
+    const lyricAnimChk = document.getElementById('opt-lyric-anim');
     const updateNotifyChk = document.getElementById('opt-update-notify');
 
     // Server mode
@@ -3057,6 +3208,8 @@ function initSettings() {
         fullscreenChk.checked = s.fullscreen !== false;
         hoverHighlightChk.checked = s.hover_highlight !== false;
         applyHoverHighlight(s.hover_highlight !== false);
+        lyricAnimChk.checked = s.lyric_animation !== false;
+        applyLyricAnim(s.lyric_animation !== false);
         autostartChk.checked = await pywebview.api.get_autostart();
         updateNotifyChk.checked = s.update_check_enabled !== false;
 
@@ -3213,6 +3366,7 @@ function initSettings() {
             font_size: parseInt(fontsizeRange.value),
             fullscreen: fullscreenChk.checked,
             hover_highlight: hoverHighlightChk.checked,
+            lyric_animation: lyricAnimChk.checked,
             update_check_enabled: updateNotifyChk.checked,
             refresh_interval: parseInt(intervalSel.value),
             data_source: datasourceSel.value,
@@ -3655,6 +3809,32 @@ window.addEventListener('pywebviewready', async () => {
     await pywebview.api.music_play_pause();
 });
     bindMusicCtrl('h-music-next', () => pywebview.api.music_next());
+
+    // Seek bar: preview time in tooltip while dragging, seek on release
+    const seekEl = document.getElementById('h-music-seek');
+    if (seekEl) {
+        const seekTip = document.getElementById('h-music-seek-tip');
+        const seekLeft = document.getElementById('h-music-time-left');
+        seekEl.addEventListener('input', () => {
+            _seeking = true;
+            seekEl.classList.add('dragging');
+            seekEl.style.setProperty('--seek-fill', (seekEl.value / 10) + '%');
+            const dragPos = _musicDur > 0 ? seekEl.value / 1000 * _musicDur : 0;
+            if (seekLeft) seekLeft.textContent = '-' + fmtMusicTime(_musicDur - dragPos);
+            if (seekTip) {
+                seekTip.textContent = fmtMusicTime(dragPos);
+                seekTip.style.left = (seekEl.value / 10) + '%';
+            }
+        });
+        seekEl.addEventListener('change', async () => {
+            const pos = _musicDur > 0 ? seekEl.value / 1000 * _musicDur : 0;
+            _seeking = false;
+            seekEl.classList.remove('dragging');
+            try { await pywebview.api.music_seek(pos); } catch (e) { console.warn('music seek:', e); }
+            _musicBase = { pos, t: Date.now() };
+            refreshMusic();
+        });
+    }
     bindLyricHover();
 
     // Top process interactions

@@ -1253,6 +1253,7 @@ html, body {
 
 #music-section .h-music-meta {
     width: 100%;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -1263,6 +1264,7 @@ html, body {
 
 #music-section .h-music-title {
     margin: 0;
+    max-width: 100%;
     font-size: calc(17px * var(--font-scale));
     font-weight: 700;
     color: var(--text);
@@ -1274,6 +1276,7 @@ html, body {
 
 #music-section .h-music-artist {
     margin: 0;
+    max-width: 100%;
     font-size: calc(13px * var(--font-scale));
     font-weight: 400;
     color: var(--text-dim);
@@ -1287,6 +1290,100 @@ html, body {
     display: flex;
     align-items: center;
     gap: 16px;
+}
+
+#music-section .music-ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* 进度条与剩余时间：默认隐藏，鼠标悬停大卡片时才显示 */
+#music-section .music-progress {
+    display: none;
+    position: relative;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+}
+
+#music-section[data-span="2"]:hover .music-progress {
+    display: flex;
+}
+
+/* 进度条：随主题自动切换的一条黑/白细线（深色主题为白线，浅色主题为黑线） */
+#music-section .music-seek {
+    flex: 1 1 auto;
+    min-width: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 3px;
+    border-radius: 2px;
+    background:
+        linear-gradient(to right,
+            var(--text) 0%,
+            var(--text) var(--seek-fill, 0%),
+            color-mix(in srgb, var(--text) 25%, transparent) var(--seek-fill, 0%),
+            color-mix(in srgb, var(--text) 25%, transparent) 100%);
+    cursor: pointer;
+    outline: none;
+}
+
+#music-section .music-seek::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--text);
+    border: none;
+    cursor: pointer;
+    opacity: 0;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+/* 悬浮在进度条上时显示的播放时间气泡（跟随拖动位置） */
+#music-section .music-seek-tip {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--nord1);
+    color: var(--text);
+    font-family: var(--font-data);
+    font-size: calc(11px * var(--font-scale));
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    z-index: 5;
+}
+
+/* 进度条右侧的剩余时间 */
+#music-section .music-time-left {
+    font-family: var(--font-data);
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text-dim);
+    white-space: nowrap;
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
+}
+
+#music-section .music-progress:hover .music-seek-tip {
+    display: block;
+}
+
+/* 鼠标悬停在进度条上时显示可拖曳的圆点 */
+#music-section .music-progress:hover .music-seek::-webkit-slider-thumb {
+    opacity: 1;
+}
+
+#music-section .music-seek.dragging::-webkit-slider-thumb {
+    transform: scale(1.4);
+    opacity: 1;
 }
 
 .music-ctrl {
@@ -1358,6 +1455,144 @@ html, body {
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.2;
+}
+
+#music-section .h-lyric-prev {
+    display: none;
+    font-size: calc(13px * var(--font-scale));
+    font-weight: 400;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+/* ── 音乐大卡片（span 2）：封面在左上角，歌词在封面下方左对齐（2行），控件居中，
+      进度条固定在卡片最底部、与边界几乎重叠（不占文档流，不影响其他内容大小） ── */
+#music-section[data-span="2"] .music-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 20px 24px;
+}
+
+#music-section[data-span="2"] .h-music-cover {
+    width: calc(84px * var(--font-scale));
+    height: calc(84px * var(--font-scale));
+    border-radius: var(--radius-md);
+}
+
+#music-section[data-span="2"] .music-main {
+    gap: 8px;
+    width: 100%;
+}
+
+#music-section[data-span="2"] .h-music-title {
+    font-size: calc(22px * var(--font-scale));
+}
+
+#music-section[data-span="2"] .h-music-artist {
+    font-size: calc(15px * var(--font-scale));
+}
+
+#music-section[data-span="2"] .music-player-zone {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+}
+
+#music-section[data-span="2"] .music-controls {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+#music-section[data-span="2"] .music-lyrics {
+    gap: 2px;
+    order: -1;                 /* 歌词放在控件上方、紧贴封面下方 */
+}
+
+#music-section[data-span="2"] .h-lyric-prev {
+    display: none;             /* 大卡片只显示两行歌词 */
+}
+
+#music-section[data-span="2"] .h-lyric-current {
+    font-size: calc(22px * var(--font-scale));
+    font-weight: 700;
+}
+
+#music-section[data-span="2"] .h-lyric-next {
+    font-size: calc(14px * var(--font-scale));
+}
+
+#music-section[data-span="2"] .music-ctrl {
+    width: 40px;
+    height: 40px;
+    font-size: calc(20px * var(--font-scale));
+}
+
+#music-section[data-span="2"] .music-ctrl-toggle {
+    font-size: calc(25px * var(--font-scale));
+    width: 46px;
+    height: 46px;
+}
+
+/* 进度条固定在卡片底部略抬一点，不占文档流高度，因此不影响封面/歌词/控件的大小 */
+#music-section[data-span="2"] .music-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 10px;
+    z-index: 3;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0 16px;
+}
+
+#music-section[data-span="2"] .music-seek {
+    height: 3px;
+}
+
+/* 鼠标悬停大卡片时缩小封面与信息的字号，给底部进度条让出空间 */
+#music-section[data-span="2"] .h-music-cover,
+#music-section[data-span="2"] .h-music-title,
+#music-section[data-span="2"] .h-music-artist,
+#music-section[data-span="2"] .h-lyric-current,
+#music-section[data-span="2"] .h-lyric-next,
+#music-section[data-span="2"] .music-content {
+    transition: width 0.2s ease, height 0.2s ease, font-size 0.2s ease, gap 0.2s ease, padding 0.2s ease;
+}
+
+#music-section[data-span="2"]:hover .h-music-cover {
+    width: calc(68px * var(--font-scale));
+    height: calc(68px * var(--font-scale));
+}
+
+#music-section[data-span="2"]:hover .h-music-title {
+    font-size: calc(19px * var(--font-scale));
+}
+
+#music-section[data-span="2"]:hover .h-music-artist {
+    font-size: calc(13px * var(--font-scale));
+}
+
+#music-section[data-span="2"]:hover .h-lyric-current {
+    font-size: calc(19px * var(--font-scale));
+}
+
+#music-section[data-span="2"]:hover .h-lyric-next {
+    font-size: calc(13px * var(--font-scale));
+}
+
+#music-section[data-span="2"]:hover .music-content {
+    gap: 10px;
+    padding: 10px 18px 22px;
 }
 
 /* Click ripple spawned from the pointer position */

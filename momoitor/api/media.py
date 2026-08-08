@@ -17,6 +17,7 @@ from momoitor.services.music import (
     play_pause as music_play_pause,
     prev_track as music_prev,
     refresh_cover as music_refresh_cover,
+    seek_track as music_seek,
 )
 from momoitor.services.volume import adjust_volume
 
@@ -74,6 +75,11 @@ class MediaMixin:
         if not self._feature_on("music"):
             return {"error": "disabled"}
         return music_prev()
+
+    def music_seek(self, position):
+        if not self._feature_on("music"):
+            return {"error": "disabled"}
+        return music_seek(position)
 
     def adjust_volume(self, action, level=None):
         return adjust_volume(action, level)

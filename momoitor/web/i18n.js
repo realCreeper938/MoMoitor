@@ -44,6 +44,7 @@ const LANGS = {
         // Theme
         "settings-appearance": "Appearance",
         "label-hover-highlight": "Highlight on hover",
+        "label-lyric-anim": "Lyric animation",
         "theme-group-dark": "Dark",
         "theme-group-light": "Light",
         "label-bgimg": "Background Image",
@@ -234,6 +235,7 @@ const LANGS = {
         "desc-hidemissing": "选中的显示器断开时自动隐藏窗口",
         "settings-appearance": "外观",
         "label-hover-highlight": "悬停高亮监控项",
+        "label-lyric-anim": "歌词动画",
         "theme-group-dark": "暗色",
         "theme-group-light": "亮色",
         "label-bgimg": "背景图片",
