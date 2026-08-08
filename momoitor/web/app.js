@@ -3215,8 +3215,28 @@ function initLayoutControls() {
     });
     if (cancelBtn) cancelBtn.addEventListener('click', () => {
         if (cardPanel) cardPanel.style.display = 'none';
+        if (_layoutChanged()) {
+            showAppConfirm(t('confirm-layout-unsaved'), () => {
+                applyLayout(_layoutSaved);
+                exitLayoutMode();
+            });
+            return;
+        }
         applyLayout(_layoutSaved);
         exitLayoutMode();
+    });
+}
+
+/* Whether the current on-grid layout differs from what was saved when layout
+   mode was entered (used to warn before discarding unsaved changes). */
+function _layoutChanged() {
+    if (!_layoutSaved) return false;
+    const cur = readLayout();
+    return LAYOUT_IDS.some(id => {
+        const a = cur[id], b = _layoutSaved[id];
+        return !a || !b
+            || a.col !== b.col || a.row !== b.row
+            || a.span !== b.span || a.hidden !== b.hidden;
     });
 }
 
