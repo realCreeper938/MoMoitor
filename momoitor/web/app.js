@@ -901,7 +901,7 @@ async function refreshMusic() {
                 _updateCovers('');
             }
             if (section) {
-                section.style.display = 'flex';
+                section.style.display = _sectionVisible('music-section') ? 'flex' : 'none';
                 section.classList.toggle('paused', !m.playing);
             }
         } else {
@@ -2257,17 +2257,29 @@ function applyPadding(px) {
 
 let _weatherConfigured = false;   // 天气 API 是否已配置（由启动时的设置决定）
 
+let _featureToggles = {};
+
+/** Whether a layout-controlled section may be shown, honoring BOTH the feature
+ * toggle and the layout's per-card hidden flag. Sections removed in the layout
+ * must stay hidden even when their feature toggle is later re-applied. */
+function _sectionVisible(id) {
+    if (_normLayout(id).hidden) return false;
+    const key = { 'fps-section': 'fps', 'music-section': 'music', 'proc-section': 'top_process' }[id];
+    return key ? _featureToggles[key] !== false : true;
+}
+
 function applyFeatureToggles(toggles) {
-    const ft = toggles || {};
-    // Hide UI elements for disabled features
+    _featureToggles = toggles || {};
+    const ft = _featureToggles;
+    // Hide sections for disabled features or deleted-in-layout cards
     const fpsSection = document.getElementById('fps-section');
-    if (fpsSection) fpsSection.style.display = ft.fps !== false ? '' : 'none';
+    if (fpsSection) fpsSection.style.display = _sectionVisible('fps-section') ? '' : 'none';
     const musicSection = document.getElementById('music-section');
-    if (musicSection) musicSection.style.display = ft.music !== false ? '' : 'none';
+    if (musicSection) musicSection.style.display = _sectionVisible('music-section') ? '' : 'none';
     const calPopup = document.getElementById('clock-cal-popup');
     if (calPopup) calPopup.style.display = ft.calendar !== false ? '' : 'none';
     const procSection = document.getElementById('proc-section');
-    if (procSection) procSection.style.display = ft.top_process !== false ? '' : 'none';
+    if (procSection) procSection.style.display = _sectionVisible('proc-section') ? '' : 'none';
     document.querySelectorAll('.net-host-row').forEach(el => {
         el.style.display = ft.sysinfo !== false ? '' : 'none';
     });
@@ -2328,7 +2340,7 @@ function applyLayout(layout) {
         const pos = _normLayout(id);
         el.style.gridColumn = String(pos.col);
         el.style.gridRow = pos.row + ' / span ' + pos.span;
-        el.style.display = pos.hidden ? 'none' : '';
+        el.style.display = _sectionVisible(id) ? '' : 'none';
         el.dataset.span = String(pos.span);
         if (id === 'fps-section') {
             const pct = el.querySelector('.pct');
@@ -2526,7 +2538,7 @@ function _restoreDeleted() {
             pos.hidden = false;
             _layout[id] = { col: pos.col, row: pos.row, span: pos.span, hidden: false };
             const el = document.getElementById(id);
-            if (el) el.style.display = '';
+            if (el) el.style.display = _sectionVisible(id) ? '' : 'none';
             changed = true;
         }
     });
@@ -2715,6 +2727,7 @@ function initLayoutControls() {
             const s = await pywebview.api.get_settings();
             s.layout = DEFAULT_LAYOUT;
             await pywebview.api.save_settings(s);
+            window._appSettings = { ...(window._appSettings || {}), layout: DEFAULT_LAYOUT };
         } catch (e) { console.warn('reset layout:', e); }
     });
     if (saveBtn) saveBtn.addEventListener('click', async () => {
@@ -2723,6 +2736,7 @@ function initLayoutControls() {
             const s = await pywebview.api.get_settings();
             s.layout = layout;
             await pywebview.api.save_settings(s);
+            window._appSettings = { ...(window._appSettings || {}), layout: layout };
         } catch (e) { console.warn('save layout:', e); }
         exitLayoutMode();
     });
