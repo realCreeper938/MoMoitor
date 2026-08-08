@@ -102,6 +102,7 @@
             <div class="term-box" id="mem-section">
                 <svg class="sparkline-bg" data-spark="mem" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
                 <div class="layout-drag-handle">⠿</div>
+                <div class="corner-label">MEM</div>
                 <div class="box-header" id="mem-header">Memory
                     <div class="hw-detail-popup">
                         <div class="hw-detail-row">
@@ -123,6 +124,7 @@
                         </div>
                     </div>
                 </div>
+                <div class="hw-name" id="mem-hw-name"></div>
             </div>
 
             <!-- Network & Sysinfo -->
@@ -620,6 +622,14 @@
                                     <input type="text" id="opt-lyrics-whitelist" placeholder="cloudmusic,foobar2000,potplayer,QQMusic">
                                 </div>
                                 <div class="setting-desc" data-i18n="desc-lyrics-whitelist">Only fetch lyrics when media is played by these processes (comma-separated). Leave empty to allow all.</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-lyrics-translate">Auto-detect translation</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-lyrics-translate">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-lyrics-translate">When a lyric line ends with a translation in parentheses, show the translation above the original.</div>
                             </div>
                         </div>
                     </div>
@@ -681,6 +691,7 @@
                             <button type="button" class="subtab-btn" data-subtab="fonts" data-i18n="subtab-fonts">Fonts</button>
                             <button type="button" class="subtab-btn" data-subtab="time" data-i18n="subtab-time">Time</button>
                             <button type="button" class="subtab-btn" data-subtab="layout" data-i18n="subtab-layout">Layout</button>
+                            <button type="button" class="subtab-btn" data-subtab="misc" data-i18n="subtab-misc">Misc</button>
                         </div>
                         <div class="subtab-content active" id="subtab-appearance">
                             <div class="setting-group">
@@ -723,20 +734,6 @@
                                         <option value="nord-light">Nord Light</option>
                                     </optgroup>
                                 </select>
-                                <div class="setting-item">
-                                    <span data-i18n="label-hover-highlight">Highlight on hover</span>
-                                    <label class="toggle">
-                                        <input type="checkbox" id="opt-hover-highlight" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="setting-item">
-                                    <span data-i18n="label-lyric-anim">Lyric animation</span>
-                                    <label class="toggle">
-                                        <input type="checkbox" id="opt-lyric-anim" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
                             </div>
                         </div>
                         <div class="subtab-content" id="subtab-background">
@@ -828,6 +825,26 @@
                                 <div class="setting-item">
                                     <button type="button" class="text-btn" id="btn-layout-reset" data-i18n="btn-layout-reset">Reset to Default</button>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="subtab-content" id="subtab-misc">
+                            <div class="setting-group">
+                                <div class="setting-group-title" data-i18n="settings-misc">Miscellaneous</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-hover-highlight">Highlight on hover</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-hover-highlight" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-lyric-anim">Lyric animation</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-lyric-anim">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-lyric-anim">Scroll animation for over-long lyrics. Disabled by default for performance.</div>
                             </div>
                         </div>
                     </div>

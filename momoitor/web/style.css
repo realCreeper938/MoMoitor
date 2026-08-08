@@ -1006,6 +1006,7 @@ html, body {
 
 /* Grid */
 .term-grid {
+    position: relative;
     flex: 1;
     display: grid;
     grid-template-columns: 150px minmax(0, 1fr) minmax(0, 1fr);
@@ -1014,6 +1015,20 @@ html, body {
     padding: 8px;
     background: var(--bg);
     min-height: 0;
+}
+
+/* Drop-slot preview shown while dragging a card over the grid */
+body.layout-mode .drop-slot {
+    position: absolute;
+    z-index: 5;
+    border: 2px dashed var(--accent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    pointer-events: none;
+    transition: left 0.12s ease, top 0.12s ease, width 0.12s ease, height 0.12s ease;
+}
+body.layout-mode .drop-slot.hide {
+    display: none;
 }
 
 /* Box — subtle vertical gradient border: base color on top, accent-tinted at bottom */
@@ -2065,7 +2080,8 @@ html, body {
 
 /* Reduce big value font size */
 #cpu-section[data-span="2"] .metric-value.big,
-#gpu-section[data-span="2"] .metric-value.big {
+#gpu-section[data-span="2"] .metric-value.big,
+#mem-section[data-span="2"] .metric-value.big {
     font-size: calc(clamp(64px, 8vw, 120px) * var(--font-scale));
 }
 
@@ -2075,6 +2091,7 @@ html, body {
     font-size: calc(clamp(56px, 6.5vw, 96px) * var(--font-scale));
 }
 
+/* MEM small card (span 1): default mem size; large card handled above */
 #mem-section .metric-value.big {
     font-size: calc(clamp(56px, 6.5vw, 96px) * var(--font-scale));
 }
@@ -2109,7 +2126,8 @@ html, body {
 }
 
 #cpu-section[data-span="2"] .info-line,
-#gpu-section[data-span="2"] .info-line {
+#gpu-section[data-span="2"] .info-line,
+#mem-section[data-span="2"] .info-line {
     font-size: calc(clamp(19px, 1.9vw, 26px) * var(--font-scale));
 }
 
@@ -2178,9 +2196,10 @@ html, body {
     transition: opacity 0.2s ease;
 }
 
-/* CPU/GPU small card (span 1): no room for the hw-name badge — like memory */
+/* CPU/GPU/MEM small card (span 1): no room for the hw-name badge */
 #cpu-section:not([data-span="2"]) .hw-name,
-#gpu-section:not([data-span="2"]) .hw-name {
+#gpu-section:not([data-span="2"]) .hw-name,
+#mem-section:not([data-span="2"]) .hw-name {
     display: none;
 }
 
@@ -2223,6 +2242,7 @@ html, body {
    row-direction flex, so the vertical pin lives on `align-items`. */
 #cpu-section[data-span="2"] > .box-content,
 #gpu-section[data-span="2"] > .box-content,
+#mem-section[data-span="2"] > .box-content,
 #fps-section[data-span="2"] > .box-content {
     align-items: flex-end;
     padding-bottom: 30px;
@@ -2250,19 +2270,22 @@ html, body {
 
 #cpu-section[data-span="2"]:hover .corner-label,
 #gpu-section[data-span="2"]:hover .corner-label,
+#mem-section[data-span="2"]:hover .corner-label,
 #fps-section[data-span="2"]:hover .corner-label {
     opacity: 0;
 }
 
-/* CPU/GPU small card (span 1): hide the corner label — it only fits the tall form */
+/* CPU/GPU/MEM small card (span 1): hide the corner label — it only fits the tall form */
 #cpu-section:not([data-span="2"]) .corner-label,
-#gpu-section:not([data-span="2"]) .corner-label {
+#gpu-section:not([data-span="2"]) .corner-label,
+#mem-section:not([data-span="2"]) .corner-label {
     display: none;
 }
 
-/* CPU/GPU (and FPS large) data-col: flex column, value on top, info-lines below */
+/* CPU/GPU/MEM (and FPS large) data-col: flex column, value on top, info-lines below */
 #cpu-section[data-span="2"] .data-col,
 #gpu-section[data-span="2"] .data-col,
+#mem-section[data-span="2"] .data-col,
 #fps-section[data-span="2"] .data-col {
     display: flex;
     flex-direction: column;
@@ -2273,25 +2296,29 @@ html, body {
     min-width: 0;
 }
 
-/* CPU/GPU (and FPS large) value: flush left, suffix immediately adjacent */
+/* CPU/GPU/MEM (and FPS large) value: flush left, suffix immediately adjacent */
 #cpu-section[data-span="2"] .metric-value.big,
 #gpu-section[data-span="2"] .metric-value.big,
+#mem-section[data-span="2"] .metric-value.big,
 #fps-section[data-span="2"] .metric-value.big {
     text-align: left;
     min-width: 0;
 }
 
-/* CPU/GPU (and FPS large) info-lines: all left-aligned. In the old 2-col
+/* CPU/GPU/MEM (and FPS large) info-lines: all left-aligned. In the old 2-col
    grid these used align-self: end/start to meet in the middle — in the flex
    column that now pushes them right, so force them back to the left. */
 #cpu-section[data-span="2"] .info-line,
 #gpu-section[data-span="2"] .info-line,
+#mem-section[data-span="2"] .info-line,
 #fps-section[data-span="2"] .info-line,
 #cpu-section[data-span="2"] .info-line:nth-of-type(2),
 #gpu-section[data-span="2"] .info-line:nth-of-type(2),
+#mem-section[data-span="2"] .info-line:nth-of-type(2),
 #fps-section[data-span="2"] .info-line:nth-of-type(2),
 #cpu-section[data-span="2"] .info-line:nth-of-type(3),
 #gpu-section[data-span="2"] .info-line:nth-of-type(3),
+#mem-section[data-span="2"] .info-line:nth-of-type(3),
 #fps-section[data-span="2"] .info-line:nth-of-type(3) {
     align-self: flex-start;
 }

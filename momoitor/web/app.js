@@ -123,17 +123,46 @@ function applyHoverHighlight(enabled) {
     }
 }
 
-/* Enable/disable lyric animations (line-switch + horizontal scroll) */
-let _lyricAnimEnabled = true; // settings-driven: lyric switch/horizontal scroll animation
+/* Enable/disable lyric horizontal scroll animation (歌词过长时的滚动动画).
+   Only gates the single-line horizontal scroll; line switching is always instant. */
+let _lyricAnimEnabled = false; // settings-driven: horizontal scroll only
 
 function applyLyricAnim(enabled) {
     _lyricAnimEnabled = !!enabled;
     if (!_lyricAnimEnabled) {
         document.querySelectorAll('.h-lyric-current, .h-lyric-next').forEach(el => el.scrollLeft = 0);
-        const wrap = document.querySelector('#music-section .music-lyrics');
-        if (wrap) { wrap.style.transition = ''; wrap.style.transform = ''; }
-        if (_lyricRollTimer) { clearTimeout(_lyricRollTimer); _lyricRollTimer = null; }
     }
+}
+
+/* Enable/disable auto-detection of translations in lyric lines.
+   A line like "Original text (翻译)" is split into two normal lyric lines:
+   translation first, original second. */
+let _lyricAutoTranslate = false;
+
+/* 根据 _lyricAutoTranslate 从原始行生成实际显示的歌词行。
+   开启时把 "原文 (翻译)" 拆成两行（翻译在前、原文在后，同一时间戳）。 */
+function _applyLyricTransform() {
+    if (!_lyricAutoTranslate) {
+        _lyricLines = _lyricRawLines;
+        return;
+    }
+    _lyricLines = [];
+    for (const l of _lyricRawLines) {
+        const split = _splitLyricTranslation(l.text);
+        if (split) {
+            _lyricLines.push({ time: l.time, text: split.translation, trans: true });
+            _lyricLines.push({ time: l.time, text: split.original });
+        } else {
+            _lyricLines.push(l);
+        }
+    }
+}
+
+function applyLyricAutoTranslate(enabled) {
+    _lyricAutoTranslate = !!enabled;
+    _applyLyricTransform();
+    _lyricCurIdx = -1;
+    if (_lyricActive) renderLyrics();
 }
 
 function updateChart(key, dynamicMax) {
@@ -782,7 +811,8 @@ function _startInterval(enabled, fn, ms) {
 /* Music */
 let _lastCover = '';
 /* Lyrics */
-let _lyricLines = [];      // 当前曲目的歌词行 [{time, text}, ...]
+let _lyricLines = [];      // 当前曲目的歌词行 [{time, text}, ...]（可能已展开翻译）
+let _lyricRawLines = [];   // 未展开的原始歌词行（翻译模式开启时由它生成 _lyricLines）
 let _lyricKey = '';        // 当前已加载歌词的曲目标识 "title|artist"
 let _lyricBase = { pos: 0, t: 0 };  // 轮询间隙内插值估算当前时间的基准
 let _lyricTimer = null;    // 歌词平滑推进定时器
@@ -830,21 +860,34 @@ function updateMusicProgress() {
     }
 }
 
-/* 根据播放进度找到当前行 cur、下一行 next 与行下标 curIdx */
+/* 根据播放进度找到当前行 cur、下一行 next 与行下标 curIdx。
+   翻译模式下，同一时间戳的「翻译 + 原文」成对处理：翻译是当前行、原文是下一行。 */
 function _findLyricAt(pos) {
     let cur = null, next = null, curIdx = -1;
     for (let i = 0; i < _lyricLines.length; i++) {
         if (_lyricLines[i].time <= pos) { cur = _lyricLines[i]; curIdx = i; }
         else { next = _lyricLines[i]; break; }
     }
+    if (_lyricAutoTranslate && cur && curIdx > 0 && _lyricLines[curIdx - 1].trans === true && _lyricLines[curIdx - 1].time === cur.time) {
+        return { cur: _lyricLines[curIdx - 1], next: cur, curIdx: curIdx - 1 };
+    }
     return { cur, next, curIdx };
 }
-
 /* 更新三段歌词文本（上一句 / 当前句 / 下一句） */
 function _setLyricTexts(prevEl, curEl, nextEl, prev, cur, next) {
     if (prevEl) prevEl.textContent = (prev && prev.text) ? prev.text : '';
     curEl.textContent = (cur && cur.text) ? cur.text : '♪';
     nextEl.textContent = (next && next.text) ? next.text : '';
+}
+
+/* 把形如 "原文 (翻译)" 的歌词行拆成 {original, translation}；不匹配返回 null */
+function _splitLyricTranslation(text) {
+    if (!text) return null;
+    const m = text.match(/^(.*?)\s*[（(]([^（）()]*)[)）]\s*$/);
+    if (m && m[1].trim() && m[2].trim()) {
+        return { original: m[1].trim(), translation: m[2].trim() };
+    }
+    return null;
 }
 
 /* Render the prev + current + next lyric lines based on interpolated position.
@@ -859,7 +902,6 @@ function renderLyrics() {
     const { cur, next, curIdx } = _findLyricAt(pos);
     const prev = curIdx > 0 ? _lyricLines[curIdx - 1] : null;
     _setLyricTexts(prevEl, curEl, nextEl, prev, cur, next);
-    if (!_lyricAnimEnabled) curEl.scrollLeft = 0;   // 关闭动画：不滚动
 }
 
 /* 单行长歌词水平滚动：超出容器的部分按「当前句时长」（到下一句的时间）均匀
@@ -878,9 +920,9 @@ function _scrollCurrentLine(curEl, cur, next, pos) {
    - 文本：切句瞬间立即刷新（_lyricCurIdx 变化即更新），不再依赖 500ms 定时器，
      因此歌词切换及时。
    - 滚动：切句时立即把当前行 scrollLeft 归零（从行首开始），随后每帧由
-     _scrollCurrentLine 向右平滑推进，实现单行长歌词的水平滚动。 */
+     _scrollCurrentLine 向右平滑推进，实现单行长歌词的水平滚动。
+   - 切句动画：不做向上/向下滚动过渡，直接替换文本（简单、省性能）。 */
 let _lyricRaf = null;      // requestAnimationFrame 句柄
-let _lyricRollTimer = null; // 切句滚动后清理内联样式的定时器
 
 function _lyricAnimLoop() {
     _lyricRaf = requestAnimationFrame(_lyricAnimLoop);
@@ -894,28 +936,8 @@ function _lyricAnimLoop() {
     if (curIdx !== _lyricCurIdx) {
         _lyricCurIdx = curIdx;
         const prev = curIdx > 0 ? _lyricLines[curIdx - 1] : null;
-        const wrap = curEl.parentElement;              // .music-lyrics
-        const rollStep = curEl.offsetHeight + 2;       // 一行高度 + 行距
-        if (_lyricAnimEnabled && wrap && rollStep > 0) {
-            /* 下一句从下方一行开始，向上滚动替代当前句：
-               先把容器平移下一行（无过渡），再平滑回到原位 */
-            wrap.style.transition = 'none';
-            wrap.style.transform = 'translateY(' + rollStep + 'px)';
-            _setLyricTexts(prevEl, curEl, nextEl, prev, cur, next);
-            curEl.scrollLeft = 0;
-            void wrap.offsetWidth;                     // 强制 reflow
-            wrap.style.transition = 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)';
-            wrap.style.transform = 'translateY(0)';
-            if (_lyricRollTimer) clearTimeout(_lyricRollTimer);
-            _lyricRollTimer = setTimeout(() => {
-                wrap.style.transition = '';
-                wrap.style.transform = '';
-                _lyricRollTimer = null;
-            }, 400);
-        } else {
-            _setLyricTexts(prevEl, curEl, nextEl, prev, cur, next);
-            curEl.scrollLeft = 0;
-        }
+        _setLyricTexts(prevEl, curEl, nextEl, prev, cur, next);
+        curEl.scrollLeft = 0;
     }
     if (!_lyricAnimEnabled) { if (curEl.scrollLeft) curEl.scrollLeft = 0; return; }
     _scrollCurrentLine(curEl, cur, next, pos);
@@ -961,9 +983,13 @@ function hideLyrics() {
     applyLyricView();
     if (_lyricTimer) { clearInterval(_lyricTimer); _lyricTimer = null; }
     if (_lyricRaf) { cancelAnimationFrame(_lyricRaf); _lyricRaf = null; }
-    if (_lyricRollTimer) { clearTimeout(_lyricRollTimer); _lyricRollTimer = null; }
-    const wrap = document.querySelector('#music-section .music-lyrics');
-    if (wrap) { wrap.style.transition = ''; wrap.style.transform = ''; }
+    const curEl = document.getElementById('h-lyric-current');
+    if (curEl) {
+        curEl.scrollLeft = 0;
+        curEl.style.transition = '';
+        curEl.style.opacity = '';
+        curEl.style.transform = '';
+    }
 }
 
 /* Toggle whether the mouse is over the lyrics — revealing/hiding controls. */
@@ -1064,12 +1090,15 @@ function handleLyrics(m) {
     }
     // New track — show placeholder immediately, then fetch once
     _lyricKey = key;
+    _lyricRawLines = [];
     _lyricLines = [];
     showLyrics(m);
     pywebview.api.get_lyrics(m.title, m.artist).then((res) => {
-        _lyricLines = (res && res.lines) || [];
+        _lyricRawLines = (res && res.lines) || [];
+        _applyLyricTransform();
         if (_lyricActive) renderLyrics();
     }).catch(() => {
+        _lyricRawLines = [];
         _lyricLines = [];
         if (_lyricActive) renderLyrics();
     });
@@ -1327,6 +1356,7 @@ function applyHwDetail() {
     // Memory detail
     const mem = hwDetailCache.mem || {};
     setDetailModel('mem-detail-model', mem.name || mem.part_number || 'Memory');
+    setText('mem-hw-name', mem.name || mem.part_number || '');
     const memSpecs = [];
     if (mem.type) memSpecs.push(['Type', mem.type]);
     if (mem.speed) memSpecs.push(['Speed', mem.speed]);
@@ -2336,7 +2366,7 @@ function applyFeatureToggles(toggles) {
 
 /* ===== Layout Adjustment ===== */
 const LAYOUT_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'disk-section', 'proc-section', 'music-section'];
-const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'fps-section', 'music-section'];
+const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'fps-section', 'music-section'];
 
 const DEFAULT_LAYOUT = {
     'cpu-section':    { col: 2, row: 2, span: 2, hidden: false },
@@ -2426,6 +2456,12 @@ function enterLayoutMode() {
         el.addEventListener('dragend', onLayoutDragEnd);
         el.addEventListener('drop', onLayoutDrop);
     });
+    const grid = document.querySelector('.term-grid');
+    if (grid) {
+        grid.addEventListener('dragover', onGridDragOver);
+        grid.addEventListener('dragleave', onGridDragLeave);
+        grid.addEventListener('drop', onGridDrop);
+    }
 }
 
 function exitLayoutMode() {
@@ -2444,6 +2480,14 @@ function exitLayoutMode() {
         el.removeEventListener('dragend', onLayoutDragEnd);
         el.removeEventListener('drop', onLayoutDrop);
     });
+    const grid = document.querySelector('.term-grid');
+    if (grid) {
+        grid.removeEventListener('dragover', onGridDragOver);
+        grid.removeEventListener('dragleave', onGridDragLeave);
+        grid.removeEventListener('drop', onGridDrop);
+    }
+    const slot = document.getElementById('layout-drop-slot');
+    if (slot) slot.remove();
 }
 
 function _addLayoutControls() {
@@ -2489,10 +2533,10 @@ function _toggleCardSize(id) {
     const el = document.getElementById(id);
     const first = el ? el.getBoundingClientRect() : null;
     const curRow = el && el.style.gridRow ? (parseInt(el.style.gridRow) || pos.row) : pos.row;
+    const curCol = el && el.style.gridColumn ? (parseInt(el.style.gridColumn) || pos.col) : pos.col;
     if (pos.span === 1) {
-        const col = pos.col;
-        const otherCol = col === 2 ? 3 : 2;
-        const colHeight = _columnHeight(col);
+        const colHeight = _columnHeight(curCol);
+        const otherCol = curCol === 2 ? 3 : 2;
         const otherHeight = _columnHeight(otherCol);
         const selfHeight = 1;
         const newColHeight = colHeight - selfHeight + 2;
@@ -2501,8 +2545,9 @@ function _toggleCardSize(id) {
             return;
         }
     }
+    const snap = _snapshotLayout();
     pos.span = pos.span === 2 ? 1 : 2;
-    _layout[id] = { col: pos.col, row: curRow, span: pos.span, hidden: pos.hidden };
+    _layout[id] = { col: curCol, row: curRow, span: pos.span, hidden: pos.hidden };
     if (el) {
         el.style.transition = 'none';
         el.style.gridRow = curRow + ' / span ' + pos.span;
@@ -2512,8 +2557,12 @@ function _toggleCardSize(id) {
             if (pct) pct.style.display = pos.span === 2 ? 'none' : '';
         }
     }
-    _repackColumn(pos.col, id, curRow);
-    _rebalanceOverflow();
+    _repackColumn(curCol, id, curRow);
+    if (!_rebalanceOverflow()) {
+        _restoreLayout(snap);
+        showToast('空间不足');
+        return;
+    }
     if (id === 'music-section') applyLyricView();
     if (el && first) _flipCard(el, first);
 }
@@ -2544,11 +2593,12 @@ function _flipCard(el, first) {
 
 function _deleteCard(id) {
     const pos = _normLayout(id);
-    pos.hidden = true;
-    _layout[id] = { col: pos.col, row: pos.row, span: pos.span, hidden: true };
     const el = document.getElementById(id);
+    const col = el && el.style.gridColumn ? (parseInt(el.style.gridColumn) || pos.col) : pos.col;
+    pos.hidden = true;
+    _layout[id] = { col: col, row: pos.row, span: pos.span, hidden: true };
     if (el) el.style.display = 'none';
-    _repackColumn(pos.col, null, null);
+    _repackColumn(col, null, null);
     _rebalanceOverflow();
     _updateCardsBtn();
 }
@@ -2829,7 +2879,12 @@ function onLayoutDrop(e) {
                 return;
             }
         }
+        const snap = _snapshotLayout();
         _placeCard(fromId, toCol, toRow, span);
+        if (_columnHeight(2) > 6 || _columnHeight(3) > 6) {
+            _restoreLayout(snap);
+            showToast('空间不足');
+        }
         return;
     }
     const fromEl = document.getElementById(fromId);
@@ -2855,6 +2910,114 @@ function onLayoutDrop(e) {
         toEl.style.gridRow = toOrigRow;
         _repackColumn(parseInt(fromCol), null, null);
         _repackColumn(parseInt(toCol), null, null);
+        showToast('空间不足');
+    }
+}
+
+/* ---- Dropping onto empty grid space (not over another card) ---- */
+
+let _dropSlotEl = null;
+
+/* Resolve a pointer position to a {col,row} slot inside the two card columns,
+   so cards can be dropped anywhere in the grid, not just onto another card. */
+function _gridSlotFromEvent(e) {
+    const grid = document.querySelector('.term-grid');
+    if (!grid) return null;
+    const rect = grid.getBoundingClientRect();
+    const pad = 8, gap = 8, clockW = 150;
+    const innerW = rect.width - pad * 2;
+    const innerH = rect.height - pad * 2;
+    const colW = (innerW - clockW - gap * 2) / 2;
+    if (colW <= 0) return null;
+    // Column 2 left edge; column 3 right after it (plus one gap).
+    const c2Left = rect.left + pad + clockW + gap;
+    const c2Right = c2Left + colW;
+    const c3Right = rect.right - pad;
+    let col = null;
+    if (e.clientX >= c2Left && e.clientX < c2Right) col = 2;
+    else if (e.clientX >= c2Right + gap && e.clientX <= c3Right) col = 3;
+    if (!col) return null;
+    // 5 equal rows with 4 gaps inside the padded area.
+    const rowH = (innerH - gap * 4) / 5;
+    const relY = e.clientY - (rect.top + pad);
+    let row = Math.floor(relY / (rowH + gap)) + 1;
+    if (row < 1) row = 1;
+    if (row > 5) row = 5;
+    return { col: col, row: row, rect: rect, c2Left: c2Left, colW: colW, rowH: rowH, pad: pad, gap: gap };
+}
+
+function _ensureDropSlot() {
+    if (!_dropSlotEl || !_dropSlotEl.isConnected) {
+        _dropSlotEl = document.createElement('div');
+        _dropSlotEl.className = 'drop-slot hide';
+        _dropSlotEl.id = 'layout-drop-slot';
+        const grid = document.querySelector('.term-grid');
+        if (grid) grid.appendChild(_dropSlotEl);
+    }
+    return _dropSlotEl;
+}
+
+function _showDropSlot(slot, span) {
+    const el = _ensureDropSlot();
+    if (!slot) { el.classList.add('hide'); return; }
+    const top = slot.pad + (slot.row - 1) * (slot.rowH + slot.gap);
+    const left = slot.col === 2 ? slot.pad + 150 + slot.gap : slot.pad + 150 + slot.gap + slot.colW + slot.gap;
+    const height = slot.rowH * span + slot.gap * (span - 1);
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    el.style.width = slot.colW + 'px';
+    el.style.height = height + 'px';
+    el.classList.remove('hide');
+}
+
+function _hideDropSlot() {
+    if (_dropSlotEl) _dropSlotEl.classList.add('hide');
+}
+
+function onGridDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!_dragId) return;
+    const slot = _gridSlotFromEvent(e);
+    _showDropSlot(slot, getLayoutSpan(_dragId));
+}
+
+function onGridDragLeave(e) {
+    // dragleave also fires when entering/leaving child cards; only hide when the
+    // pointer actually leaves the grid element entirely.
+    if (e.relatedTarget && e.currentTarget.contains(e.relatedTarget)) return;
+    _hideDropSlot();
+}
+
+function onGridDrop(e) {
+    e.preventDefault();
+    _hideDropSlot();
+    const fromId = _dragId;
+    if (!fromId) return;
+    const slot = _gridSlotFromEvent(e);
+    if (!slot) return;
+    const fromEl = document.getElementById(fromId);
+    const fromCol = fromEl && fromEl.style.gridColumn ? parseInt(fromEl.style.gridColumn) : null;
+    // Try to place at the slot with the card's preferred span; fall back to a
+    // smaller span for resizable cards when the space won't fit, else abort.
+    let span = getLayoutSpan(fromId);
+    const colHeight = _columnHeight(slot.col);
+    const otherHeight = _columnHeight(slot.col === 2 ? 3 : 2);
+    if (colHeight + span > 6 && otherHeight + span > 6) {
+        if (RESIZABLE_IDS.includes(fromId) && span > 1) {
+            if (colHeight + 1 > 6 && otherHeight + 1 > 6) { showToast('空间不足'); return; }
+            span = 1;
+        } else {
+            showToast('空间不足');
+            return;
+        }
+    }
+    // Insert the card at the slot; shift lower cards down to make room.
+    const snap = _snapshotLayout();
+    _placeCard(fromId, slot.col, slot.row, span);
+    if (fromCol && fromCol !== slot.col) _repackColumn(fromCol, null, null);
+    if (_columnHeight(2) > 6 || _columnHeight(3) > 6) {
+        _restoreLayout(snap);
         showToast('空间不足');
     }
 }
@@ -2901,12 +3064,13 @@ function _columnHeight(col) {
     return maxEnd;
 }
 
-function _moveBottomCard(fromCol, toCol) {
+/* The bottom-most (largest row) visible card in a column, if any. */
+function _bottomCardId(col) {
     let bottomId = null;
     let bottomRow = -1;
     LAYOUT_IDS.forEach(function(id) {
         const el = document.getElementById(id);
-        if (el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === fromCol) {
+        if (el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === col) {
             const row = parseInt(el.style.gridRow);
             if (row > bottomRow) {
                 bottomRow = row;
@@ -2914,11 +3078,57 @@ function _moveBottomCard(fromCol, toCol) {
             }
         }
     });
-    if (bottomId) {
-        const el = document.getElementById(bottomId);
-        el.style.gridColumn = String(toCol);
-        el.style.gridRow = '1 / span ' + getLayoutSpan(bottomId);
-    }
+    return bottomId;
+}
+
+/* Snapshot every card's grid placement so an operation can be reverted
+   cleanly (restored exactly) if it would overflow the grid. */
+function _snapshotLayout() {
+    const snap = [];
+    LAYOUT_IDS.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        snap.push({
+            id: id,
+            col: el.style.gridColumn || '',
+            row: el.style.gridRow || '',
+            display: el.style.display || '',
+            span: el.dataset.span || '',
+            layout: Object.assign({}, _layout[id] || {}),
+        });
+    });
+    return snap;
+}
+
+function _restoreLayout(snap) {
+    snap.forEach(function(s) {
+        const el = document.getElementById(s.id);
+        if (!el) return;
+        el.style.gridColumn = s.col;
+        el.style.gridRow = s.row;
+        el.style.display = s.display;
+        el.dataset.span = s.span;
+        if (s.layout && Object.keys(s.layout).length) _layout[s.id] = s.layout;
+        else delete _layout[s.id];
+    });
+}
+
+/* Move a card to another column, landing it at the BOTTOM of that column
+   (i.e. after its current cards) rather than the top, so the existing order
+   is preserved and nothing unexpected jumps to the top. */
+function _moveCardToBottom(fromCol, toCol) {
+    const bottomId = _bottomCardId(fromCol);
+    if (!bottomId) return false;
+    const el = document.getElementById(bottomId);
+    const span = getLayoutSpan(bottomId);
+    const toHeight = _columnHeight(toCol);
+    // Only move if the target column can actually fit it; otherwise leave it
+    // in place so the caller can decide (usually: revert + "空间不足").
+    if (toHeight + span > 6) return false;
+    el.style.gridColumn = String(toCol);
+    el.style.gridRow = '99 / span ' + span;  // sentinel; _packColumn sorts last → bottom
+    _packColumn(toCol);
+    return true;
 }
 
 function _rebalanceOverflow() {
@@ -2926,12 +3136,16 @@ function _rebalanceOverflow() {
     while (guard++ < 10) {
         const h2 = _columnHeight(2);
         const h3 = _columnHeight(3);
-        if (h2 <= 6 && h3 <= 6) break;
-        if (h2 > 6) _moveBottomCard(2, 3);
-        else _moveBottomCard(3, 2);
-        _packColumn(2);
-        _packColumn(3);
+        if (h2 <= 6 && h3 <= 6) return true;
+        // Move the overflowing column's bottom card to the other column's
+        // bottom — but only when it can fit there.
+        if (h2 > 6) {
+            if (!_moveCardToBottom(2, 3)) return false;
+        } else if (h3 > 6) {
+            if (!_moveCardToBottom(3, 2)) return false;
+        }
     }
+    return _columnHeight(2) <= 6 && _columnHeight(3) <= 6;
 }
 
 function resetLayout() {
@@ -3033,6 +3247,7 @@ function initSettings() {
     const gpuSel = document.getElementById('opt-gpu');
     const metingUrlInput = document.getElementById('opt-meting-url');
     const lyricsWhitelistInput = document.getElementById('opt-lyrics-whitelist');
+    const lyricsTranslateChk = document.getElementById('opt-lyrics-translate');
 
     // Weather
     const wxLat = document.getElementById('opt-wx-lat');
@@ -3208,8 +3423,8 @@ function initSettings() {
         fullscreenChk.checked = s.fullscreen !== false;
         hoverHighlightChk.checked = s.hover_highlight !== false;
         applyHoverHighlight(s.hover_highlight !== false);
-        lyricAnimChk.checked = s.lyric_animation !== false;
-        applyLyricAnim(s.lyric_animation !== false);
+        lyricAnimChk.checked = s.lyric_animation === true;
+        applyLyricAnim(s.lyric_animation === true);
         autostartChk.checked = await pywebview.api.get_autostart();
         updateNotifyChk.checked = s.update_check_enabled !== false;
 
@@ -3218,6 +3433,8 @@ function initSettings() {
         datasourceSel.value = s.data_source || 'lhm';
         metingUrlInput.value = s.meting_api_base || '';
         lyricsWhitelistInput.value = s.lyrics_process_whitelist || '';
+        lyricsTranslateChk.checked = s.lyrics_auto_translate === true;
+        applyLyricAutoTranslate(s.lyrics_auto_translate === true);
 
         // GPU list
         try {
@@ -3373,6 +3590,7 @@ function initSettings() {
             gpu_index: parseInt(gpuSel.value) || 0,
             meting_api_base: metingUrlInput.value.trim(),
             lyrics_process_whitelist: lyricsWhitelistInput.value.trim(),
+            lyrics_auto_translate: lyricsTranslateChk.checked,
             weather_lat: wxLat.value.trim(),
             weather_lon: wxLon.value.trim(),
             weather_key_id: wxKid.value.trim(),
@@ -3433,6 +3651,7 @@ function initSettings() {
         applyFontSize(s.font_size);
         applyColorscheme(s.colorscheme || 'gruvbox');
         applyHoverHighlight(s.hover_highlight !== false);
+        applyLyricAutoTranslate(s.lyrics_auto_translate === true);
         applyFonts(s.font_ui, s.font_data, s.font_clock);
         await applyClockBackgroundSetting(s.clock_bg_image, s.clock_bg_opacity, s.clock_bg_blur, s.clock_bg_gradient !== false, s.clock_bg_fit || 'fit', s.clock_bg_offset_x ?? 50, s.clock_bg_offset_y ?? 50);
         applyHwNames(true);
@@ -3709,6 +3928,7 @@ window.addEventListener('pywebviewready', async () => {
     applyFonts(s.font_ui, s.font_data, s.font_clock);
     await applyClockBackgroundSetting(s.clock_bg_image, s.clock_bg_opacity, s.clock_bg_blur, s.clock_bg_gradient !== false, s.clock_bg_fit || 'fit', s.clock_bg_offset_x ?? 50, s.clock_bg_offset_y ?? 50);
     applyFontSize(s.font_size || 100);
+    applyLyricAutoTranslate(s.lyrics_auto_translate === true);
 
     // Move to target monitor + fullscreen, then show
     if (s.monitor) {
