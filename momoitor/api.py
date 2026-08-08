@@ -25,11 +25,21 @@ from loguru import logger
 
 from momoitor.config import (load_settings, save_settings, SETTINGS_FILE, APP_VERSION, WEB_DIR,
                              APP_AUTHOR, APP_HOMEPAGE, APP_GITHUB_REPO)
-from momoitor.services import autostart, background as bg_svc, window as win_svc
-from momoitor.services.window import adjust_brightness, adjust_volume
+from momoitor.services import autostart, background as bg_svc, display as disp_svc, window as win_svc
+from momoitor.services.brightness import adjust_brightness
+from momoitor.services.volume import adjust_volume
 from momoitor.services.hardware import HardwareService
-from momoitor.services.system import get_time, get_sysinfo, get_idle_time, get_top_processes, kill_process, scan_listening_ports, clean_memory
-from momoitor.services.media import get_music, get_fps, music_play_pause, music_next, music_prev, music_refresh_cover, get_last_player, launch_last_player
+from momoitor.services.system import get_time, get_sysinfo, get_top_processes, kill_process, scan_listening_ports, clean_memory
+from momoitor.fps import get_current as get_fps
+from momoitor.music import (
+    get_current as get_music,
+    get_last_player,
+    launch_last_player,
+    play_pause as music_play_pause,
+    refresh_cover as music_refresh_cover,
+    next_track as music_next,
+    prev_track as music_prev,
+)
 from momoitor.services.calendar import show_calendar, hide_calendar, get_huangli
 from momoitor.services.weather import WeatherService
 from momoitor.services.holiday import HolidayService
@@ -101,21 +111,25 @@ class Api:
             self._traffic.stop()
         self._hw.close()
 
+    def _feature_on(self, name):
+        """对应功能开关是否开启（feature_toggles 中未配置时默认开启）。"""
+        return self._settings.get("feature_toggles", {}).get(name, True)
+
     # ── 系统信息（委托给服务）────────────────────────────────
 
     def get_time(self):
         return get_time()
 
     def get_sysinfo(self):
-        if not self._settings.get("feature_toggles", {}).get("sysinfo", True):
+        if not self._feature_on("sysinfo"):
             return {}
         return get_sysinfo()
 
     def get_idle_time(self):
-        return get_idle_time()
+        return win_svc.get_idle_time()
 
     def get_top_processes(self, sort_by="cpu", limit=1):
-        if not self._settings.get("feature_toggles", {}).get("top_process", True):
+        if not self._feature_on("top_process"):
             return []
         return get_top_processes(sort_by, limit)
 
@@ -142,7 +156,7 @@ class Api:
             return False
 
     def kill_process(self, pid):
-        if not self._settings.get("feature_toggles", {}).get("top_process", True):
+        if not self._feature_on("top_process"):
             return {"error": "disabled"}
         return kill_process(int(pid))
 
@@ -154,22 +168,22 @@ class Api:
     # ── 天气（委托给服务）────────────────────────────────────
 
     def get_weather(self):
-        if not self._settings.get("feature_toggles", {}).get("weather", True):
+        if not self._feature_on("weather"):
             return {"error": "disabled"}
         return self._weather.get_now()
 
     def get_weather_detail(self):
-        if not self._settings.get("feature_toggles", {}).get("weather", True):
+        if not self._feature_on("weather"):
             return {"error": "disabled"}
         return self._weather.get_detail()
 
     def get_airquality(self):
-        if not self._settings.get("feature_toggles", {}).get("weather", True):
+        if not self._feature_on("weather"):
             return {"error": "disabled"}
         return self._weather.get_airquality()
 
     def get_weather_info(self):
-        if not self._settings.get("feature_toggles", {}).get("weather", True):
+        if not self._feature_on("weather"):
             return {"weather": {"error": "disabled"}, "air_quality": {"error": "disabled"}}
         weather = self._weather.get_now()
         air = self._weather.get_airquality()
@@ -214,22 +228,22 @@ class Api:
         return {"success": True, "info": "\n".join(lines)}
 
     def get_alerts(self):
-        if not self._settings.get("feature_toggles", {}).get("weather", True):
+        if not self._feature_on("weather"):
             return []
         return self._weather.get_alerts()
 
     def get_lunar_time(self, timezone="Asia/Shanghai"):
-        if not self._settings.get("feature_toggles", {}).get("weather", True):
+        if not self._feature_on("weather"):
             return {"error": "disabled"}
         return self._weather.get_lunar_time(timezone)
 
     def get_huangli(self, year=None, month=None, day=None):
-        if not self._settings.get("feature_toggles", {}).get("calendar", True):
+        if not self._feature_on("calendar"):
             return {"error": "disabled"}
         return get_huangli(year, month, day)
 
     def get_holiday(self, year):
-        if not self._settings.get("feature_toggles", {}).get("calendar", True):
+        if not self._feature_on("calendar"):
             return {}
         return self._holiday.get_year(year)
 
@@ -239,24 +253,24 @@ class Api:
     # ── 流量（委托给服务）────────────────────────────────────
 
     def get_traffic_today(self):
-        if not self._settings.get("feature_toggles", {}).get("traffic", True):
+        if not self._feature_on("traffic"):
             return {"error": "disabled"}
         return self._traffic.get_today()
 
     def get_traffic_month(self, year, month):
-        if not self._settings.get("feature_toggles", {}).get("traffic", True):
+        if not self._feature_on("traffic"):
             return {"error": "disabled"}
         return self._traffic.get_month(int(year), int(month))
 
     def get_traffic_top_processes(self, limit=5):
-        if not self._settings.get("feature_toggles", {}).get("traffic", True):
+        if not self._feature_on("traffic"):
             return {"error": "disabled"}
         return self._traffic.get_top_processes(int(limit))
 
     # ── 音乐 / FPS（委托给服务）──────────────────────────────
 
     def get_music(self):
-        if not self._settings.get("feature_toggles", {}).get("music", True):
+        if not self._feature_on("music"):
             return {"available": False}
         try:
             return get_music()
@@ -274,7 +288,7 @@ class Api:
             return {"lines": []}
 
     def get_fps(self):
-        if not self._settings.get("feature_toggles", {}).get("fps", True):
+        if not self._feature_on("fps"):
             return {"fps": 0, "frametime": 0, "low1pct": 0, "avg_fps": 0, "p99_fps": 0}
         return get_fps()
 
@@ -285,22 +299,22 @@ class Api:
         return launch_last_player()
 
     def music_play_pause(self):
-        if not self._settings.get("feature_toggles", {}).get("music", True):
+        if not self._feature_on("music"):
             return {"error": "disabled"}
         return music_play_pause()
 
     def music_refresh_cover(self):
-        if not self._settings.get("feature_toggles", {}).get("music", True):
+        if not self._feature_on("music"):
             return {"error": "disabled"}
         return music_refresh_cover()
 
     def music_next(self):
-        if not self._settings.get("feature_toggles", {}).get("music", True):
+        if not self._feature_on("music"):
             return {"error": "disabled"}
         return music_next()
 
     def music_prev(self):
-        if not self._settings.get("feature_toggles", {}).get("music", True):
+        if not self._feature_on("music"):
             return {"error": "disabled"}
         return music_prev()
 
@@ -314,17 +328,17 @@ class Api:
     # ── 壁纸 / Material You（委托给服务）─────────────────────
 
     def get_bg_list(self):
-        if not self._settings.get("feature_toggles", {}).get("clock_bg", True):
+        if not self._feature_on("clock_bg"):
             return []
         return bg_svc.get_bg_list()
 
     def resolve_background_image(self, image=""):
-        if not self._settings.get("feature_toggles", {}).get("clock_bg", True):
+        if not self._feature_on("clock_bg"):
             return ""
         return bg_svc.resolve_background(image, self._random_bg)
 
     def get_clock_bg_top_color(self, image=""):
-        if not self._settings.get("feature_toggles", {}).get("clock_bg", True):
+        if not self._feature_on("clock_bg"):
             return ""
         return bg_svc.get_image_top_color(image, self._random_bg)
 
@@ -333,13 +347,13 @@ class Api:
 
     def save_wallpaper(self, filename="", data_url=""):
         """前端导入壁纸：接收 base64 data URL，保存到用户壁纸目录，返回 wp/ 路径。"""
-        if not self._settings.get("feature_toggles", {}).get("clock_bg", True):
+        if not self._feature_on("clock_bg"):
             return ""
         return bg_svc.save_wallpaper(filename, data_url)
 
     def delete_wallpaper(self, path=""):
         """删除用户壁纸（仅 wp/ 下用户导入的壁纸）。"""
-        if not self._settings.get("feature_toggles", {}).get("clock_bg", True):
+        if not self._feature_on("clock_bg"):
             return False
         return bg_svc.delete_wallpaper(path)
 
@@ -442,7 +456,7 @@ class Api:
     # ── 显示器 / 窗口 ────────────────────────────────────────
 
     def get_monitors(self):
-        return win_svc.get_monitors()
+        return disp_svc.get_monitors()
 
     def move_to_monitor(self, index):
         if self._window:
@@ -450,7 +464,7 @@ class Api:
         return False
 
     def check_monitor(self):
-        monitors = win_svc.get_monitors()
+        monitors = disp_svc.get_monitors()
         idx = self._settings.get("monitor", 0)
         return {"available": 0 <= idx < len(monitors), "count": len(monitors)}
 
@@ -522,7 +536,7 @@ def create_window(monitor):
     index = os.path.join(WEB_DIR, "index.html")
 
     mon_idx = api._settings.get("monitor", 0)
-    monitors = win_svc.get_monitors()
+    monitors = disp_svc.get_monitors()
     wx = wy = None
     ww, wh = 800, 600
     if 0 <= mon_idx < len(monitors):

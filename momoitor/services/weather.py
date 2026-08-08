@@ -11,20 +11,16 @@
 
 主要变量:
 - WeatherService._get_settings: 获取设置的函数
-- WeatherService._lock: 线程锁
-- WeatherService._cache: 天气数据缓存
-- WeatherService._ts: 缓存时间戳
-- WeatherService._alerts_cache: 预警缓存
-- WeatherService._lunar_cache: 农历缓存
+- WeatherService._cache: 天气数据缓存（TTLCache）
 """
 
-import threading
 import time
 
 import requests
 from loguru import logger
 
 from momoitor.config import has_weather_creds
+from momoitor.services.cache import TTLCache
 from momoitor.weather import get_now, get_alerts, get_minutely, get_airquality
 
 
@@ -33,19 +29,11 @@ class WeatherService:
 
     def __init__(self, get_settings_fn):
         self._get_settings = get_settings_fn
-        self._lock = threading.Lock()
-        self._cache = {}
-        self._ts = {}
-        self._lunar_cache = {}
-        self._lunar_ts = 0
-        self._lunar_tz = ""
+        self._cache = TTLCache()
 
     def invalidate(self):
         """清除所有缓存（设置变更后调用）。"""
-        with self._lock:
-            self._cache.clear()
-            self._ts.clear()
-            self._lunar_ts = 0
+        self._cache.clear()
 
     def _creds(self):
         s = self._get_settings()
@@ -63,8 +51,7 @@ class WeatherService:
         s = self._creds()
         if not s:
             return {"error": "not_configured"}
-        with self._lock:
-            return self._cached_call("now", 600, get_now, s)
+        return self._cached_call("now", 600, get_now, s)
 
     # ── 详情（当前 + 分钟级降水）─────────────────────────────
 
@@ -107,22 +94,20 @@ class WeatherService:
     # ── 农历时间 ─────────────────────────────────────────────
 
     def get_lunar_time(self, timezone="Asia/Shanghai"):
-        s = self._get_settings()
-        now = time.time()
         tz = timezone or "Asia/Shanghai"
-        if now - self._lunar_ts < 3600 and self._lunar_cache and self._lunar_tz == tz:
-            return self._lunar_cache
+        key = ("lunar", tz)
+        cached, hit = self._cache.get(key, 3600)
+        if hit:
+            return cached
         try:
             resp = requests.get(
                 "https://uapis.cn/api/v1/misc/lunartime",
-                params={"ts": str(int(now)), "timezone": tz},
+                params={"ts": str(int(time.time())), "timezone": tz},
                 timeout=5,
             )
             resp.raise_for_status()
             data = resp.json()
-            self._lunar_cache = data
-            self._lunar_ts = now
-            self._lunar_tz = tz
+            self._cache.set(key, data)
             return data
         except Exception as e:
             logger.warning("Lunar time fetch failed: {}", e)
@@ -131,13 +116,12 @@ class WeatherService:
     # ── 内部 ─────────────────────────────────────────────────
 
     def _cached_call(self, key, ttl, fn, s):
-        now = time.time()
-        if now - self._ts.get(key, 0) < ttl and key in self._cache:
-            return self._cache[key]
+        value, hit = self._cache.get(key, ttl)
+        if hit:
+            return value
         try:
             result = fn(*self._wx_args(s))
-            self._cache[key] = result
-            self._ts[key] = now
+            self._cache.set(key, result)
             logger.info("Weather {} updated", key)
             return result
         except Exception as e:

@@ -13,20 +13,34 @@
 """
 
 import os
-import sqlite3
 import time
 import threading
 from collections import defaultdict
-from contextlib import contextmanager
 
 import psutil
 from loguru import logger
 
 from momoitor.config import DATA_DIR
+from momoitor.services.db import get_conn, init_db
 
 DB_PATH = os.path.join(DATA_DIR, "traffic.db")
 POLL_INTERVAL = 30  # 每30秒记录一次
 SAVE_INTERVAL = 60  # 每60秒持久化一次
+
+_SCHEMA = """
+    CREATE TABLE IF NOT EXISTS daily_traffic (
+        date TEXT PRIMARY KEY,
+        up INTEGER NOT NULL DEFAULT 0,
+        down INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS proc_cache (
+        pid INTEGER PRIMARY KEY,
+        name TEXT NOT NULL DEFAULT '',
+        up INTEGER NOT NULL DEFAULT 0,
+        down INTEGER NOT NULL DEFAULT 0,
+        updated_at REAL NOT NULL
+    );
+"""
 
 
 class TrafficService:
@@ -51,47 +65,15 @@ class TrafficService:
         self._init_db()
         self._load_today()
 
-    @contextmanager
-    def _connect(self):
-        """SQLite 连接的上下文管理器。"""
-        conn = sqlite3.connect(DB_PATH, timeout=5)
-        try:
-            yield conn
-        finally:
-            conn.close()
-
     def _init_db(self):
         """初始化 SQLite 数据库和表结构。"""
-        try:
-            os.makedirs(DATA_DIR, exist_ok=True)
-            with self._connect() as conn:
-                conn.execute("PRAGMA journal_mode=WAL")
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS daily_traffic (
-                        date TEXT PRIMARY KEY,
-                        up INTEGER NOT NULL DEFAULT 0,
-                        down INTEGER NOT NULL DEFAULT 0
-                    )
-                """)
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS proc_cache (
-                        pid INTEGER PRIMARY KEY,
-                        name TEXT NOT NULL DEFAULT '',
-                        up INTEGER NOT NULL DEFAULT 0,
-                        down INTEGER NOT NULL DEFAULT 0,
-                        updated_at REAL NOT NULL
-                    )
-                """)
-                conn.commit()
-                logger.info("SQLite traffic DB initialized")
-        except Exception as e:
-            logger.warning("Failed to init traffic DB: {}", e)
+        init_db(DB_PATH, _SCHEMA)
 
     def _load_today(self):
         """从DB加载今日流量到内存缓存。"""
         self._current_date = self._today_str()
         try:
-            with self._connect() as conn:
+            with get_conn(DB_PATH) as conn:
                 cur = conn.execute(
                     "SELECT up, down FROM daily_traffic WHERE date = ?",
                     (self._current_date,)
@@ -122,7 +104,7 @@ class TrafficService:
     def _save_daily(self):
         """将今日流量写入 SQLite。"""
         try:
-            with self._connect() as conn:
+            with get_conn(DB_PATH) as conn:
                 conn.execute(
                     "INSERT OR REPLACE INTO daily_traffic (date, up, down) VALUES (?, ?, ?)",
                     (self._current_date, self._today_up, self._today_down)
@@ -134,7 +116,7 @@ class TrafficService:
     def _save_proc_cache(self):
         """将进程缓存写入 SQLite。"""
         try:
-            with self._connect() as conn:
+            with get_conn(DB_PATH) as conn:
                 now = time.time()
                 for pid, data in self._proc_samples.items():
                     conn.execute(
@@ -298,7 +280,7 @@ class TrafficService:
         prefix = f"{year}-{month:02d}"
         result = {}
         try:
-            with self._connect() as conn:
+            with get_conn(DB_PATH) as conn:
                 cur = conn.execute(
                     "SELECT date, up, down FROM daily_traffic WHERE date LIKE ? || '%'",
                     (prefix,)
@@ -317,7 +299,7 @@ class TrafficService:
         """
         processes = []
         try:
-            with self._connect() as conn:
+            with get_conn(DB_PATH) as conn:
                 cur = conn.execute(
                     "SELECT name, up, down FROM proc_cache ORDER BY (up + down) DESC LIMIT ?",
                     (limit,)
