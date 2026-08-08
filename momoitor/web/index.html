@@ -7,6 +7,14 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- 启动加载动画：程序未完全加载完成时显示 -->
+    <div id="boot-loading" class="boot-loading">
+        <div class="boot-loading-inner">
+            <div class="boot-spinner"></div>
+            <div class="boot-loading-title">MoMoitor</div>
+        </div>
+    </div>
+
     <!-- 首次启动提示：右上角，15 秒后或按 S 键消失 -->
     <div id="first-launch-hint" class="first-launch-hint" style="display:none">
         <span class="first-launch-hint-key">S</span>

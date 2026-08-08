@@ -3628,6 +3628,11 @@ function setupTopControl() {
 let _bodyShown = false;
 function showBody() {
     if (!_bodyShown) { document.body.style.visibility = 'visible'; _bodyShown = true; }
+    const loader = document.getElementById('boot-loading');
+    if (loader) {
+        loader.classList.add('hide');
+        setTimeout(() => { loader.style.display = 'none'; }, 350);
+    }
 }
 setTimeout(showBody, 5000);
 
@@ -3715,7 +3720,6 @@ window.addEventListener('pywebviewready', async () => {
         // 非全屏时恢复原生标题栏（右上角最小化/最大化/关闭三键）
         pywebview.api.set_caption(true);
     }
-    showBody();
     maybeShowFirstLaunchHint(s);
 
     // 时钟区域悬停：背景图片透明度 +10%（无图时透明度为 0，悬停不生效）
@@ -3958,5 +3962,8 @@ window.addEventListener('pywebviewready', async () => {
 
     checkMonitor();
     setInterval(checkMonitor, 5000);
+
+    // 全部初始化完成后，再显示界面并收起加载动画
+    showBody();
 
 });
