@@ -632,3 +632,21 @@ html, body {
     user-select: none;
     visibility: hidden;
 }
+
+/* 主题切换平滑过渡：applyColorscheme 期间临时启用，避免常驻 transition 干扰拖拽等交互 */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease,
+        fill 0.4s ease, stroke 0.4s ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-transition,
+    .theme-transition *,
+    .theme-transition *::before,
+    .theme-transition *::after {
+        transition: none !important;
+    }
+}

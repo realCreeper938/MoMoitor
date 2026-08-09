@@ -1,6 +1,12 @@
 /* Settings */
+let _themeTransitionTimer = null;
+
 function applyColorscheme(scheme) {
+    document.documentElement.classList.add('theme-transition');
     document.documentElement.setAttribute('data-colorscheme', scheme);
+    clearTimeout(_themeTransitionTimer);
+    _themeTransitionTimer = setTimeout(
+        () => document.documentElement.classList.remove('theme-transition'), 400);
 }
 
 // Follow system light/dark mode
