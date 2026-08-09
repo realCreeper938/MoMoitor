@@ -5205,6 +5205,25 @@ body.layout-mode .layout-control-group .layout-del-btn {
     margin-right: 4px;
 }
 
+/* Rows/Cols selects in the layout toolbar */
+.layout-dim-sel {
+    background: var(--nord0);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: calc(12px * var(--font-scale));
+    padding: 4px 6px;
+    min-width: 52px;
+    flex-shrink: 0;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.layout-dim-sel:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
 #layout-cards {
     margin-right: auto;
 }
@@ -5603,6 +5622,86 @@ body.layout-mode .layout-control-group .layout-del-btn {
 /* Hidden cards */
 .term-box[style*="display: none"] {
     display: none !important;
+}
+
+/* ── 插件系统 ── */
+#plugin-body-root {
+    display: contents;
+}
+
+.plugin-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+.plugin-row.plugin-invalid {
+    opacity: 0.55;
+}
+.plugin-toggle {
+    flex: 0 0 auto;
+}
+.plugin-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.plugin-name {
+    font-weight: 600;
+    color: var(--text);
+    font-size: calc(13px * var(--font-scale));
+}
+.plugin-ver {
+    color: var(--text-dim);
+    font-weight: normal;
+    font-size: calc(11px * var(--font-scale));
+    margin-left: 4px;
+}
+.plugin-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+.plugin-tag {
+    font-size: calc(10px * var(--font-scale));
+    padding: 1px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    background: var(--surface);
+}
+.plugin-tag-plugin {
+    color: var(--cyan);
+    border-color: var(--cyan);
+}
+.plugin-author {
+    color: var(--text-dim);
+    font-size: calc(11px * var(--font-scale));
+}
+.plugin-desc {
+    color: var(--text-dim);
+    font-size: calc(12px * var(--font-scale));
+    margin-top: 4px;
+    overflow-wrap: anywhere;
+}
+.plugin-homepage {
+    color: var(--accent);
+    font-size: calc(11px * var(--font-scale));
+    margin-top: 4px;
+    overflow-wrap: anywhere;
+}
+.plugin-error {
+    color: var(--red);
+    font-size: calc(11px * var(--font-scale));
+    margin-top: 4px;
+    overflow-wrap: anywhere;
+}
+.plugin-empty {
+    color: var(--text-dim);
+    font-size: calc(13px * var(--font-scale));
+    padding: 16px 0;
 }
 
 

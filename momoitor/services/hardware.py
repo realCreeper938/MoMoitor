@@ -30,12 +30,14 @@ from momoitor.config import save_settings
 class HardwareService:
     """围绕硬件监视后端的线程安全包装类。"""
 
-    def __init__(self, monitor, settings: dict):
+    def __init__(self, monitor, settings: dict, plugin_monitor_factory=None):
         self._monitor = monitor
         self._lock = threading.RLock()
         self._settings = settings
         self._backend_source = settings.get("general", {}).get("data_source", "lhm")
         self._closed = False
+        # 插件数据源工厂：给定 source 返回插件 Monitor（无匹配则返回 None）
+        self._plugin_monitor_factory = plugin_monitor_factory
 
     def snapshot(self) -> dict:
         try:
@@ -118,6 +120,26 @@ class HardwareService:
             return {"name": self._backend_source.upper(), "version": None}
 
     def change_backend(self, source: str) -> bool:
+        # 插件提供的数据源：优先尝试，命中则直接切换
+        if self._plugin_monitor_factory is not None and source not in ("lhm", "hwinfo"):
+            if source == self._backend_source:
+                return True
+            new_monitor = self._plugin_monitor_factory(source)
+            if new_monitor is not None:
+                with self._lock:
+                    old_monitor = self._monitor
+                    self._monitor = new_monitor
+                    self._backend_source = source
+                    self._closed = False
+                    try:
+                        old_monitor.close()
+                    except Exception as e:
+                        logger.warning("Failed to close previous backend: {}", e)
+                self._settings.setdefault("general", {})["data_source"] = source
+                save_settings(self._settings)
+                logger.info("Switched to plugin backend {}", source)
+                return True
+            logger.warning("Plugin backend {} not available, falling back", source)
         source = "hwinfo" if source == "hwinfo" else "lhm"
         if source == self._backend_source:
             return True

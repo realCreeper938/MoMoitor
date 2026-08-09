@@ -6,13 +6,13 @@ const DRAG_IDS = LAYOUT_IDS.concat(['clock-section']);
 
 const DEFAULT_LAYOUT = {
     'clock-section':  { side: 'left' },
-    'cpu-section':    { col: 2, row: 2, span: 2, hidden: false },
-    'gpu-section':    { col: 3, row: 2, span: 2, hidden: false },
+    'cpu-section':    { col: 2, row: 1, span: 2, hidden: false },
+    'gpu-section':    { col: 3, row: 1, span: 2, hidden: false },
     'mem-section':    { col: 2, row: 4, span: 1, hidden: false },
-    'disk-section':   { col: 3, row: 1, span: 1, hidden: false },
-    'net-section':    { col: 2, row: 1, span: 1, hidden: false },
-    'fps-section':    { col: 3, row: 4, span: 1, hidden: false },
-    'proc-section':   { col: 3, row: 5, span: 1, hidden: false },
+    'disk-section':   { col: 3, row: 3, span: 1, hidden: false },
+    'net-section':    { col: 2, row: 3, span: 1, hidden: false },
+    'fps-section':    { col: 3, row: 4, span: 2, hidden: false },
+    'proc-section':   { col: 3, row: 5, span: 1, hidden: true },
     'music-section':  { col: 2, row: 5, span: 1, hidden: false },
     'weather-section': { col: 2, row: 1, span: 1, hidden: true },
     'text-section':   { col: 3, row: 1, span: 1, hidden: true },
@@ -20,14 +20,43 @@ const DEFAULT_LAYOUT = {
 
 let _layout = {};
 
+/* Default card-area grid dimensions (rows × card columns).  The clock always
+   occupies its own full-height column, so the visible grid has cols+1 columns. */
+const DEFAULT_GRID = { rows: 5, cols: 2 };
+const GRID_ROWS_MIN = 2;
+const GRID_ROWS_MAX = 10;
+const GRID_COLS_MIN = 1;
+const GRID_COLS_MAX = 4;
+const CLOCK_WIDTH = 150;
+
+/* Effective grid dimensions read from the current layout (fall back to the
+   defaults when the saved layout omits them or stores an out-of-range value). */
+function _gridRows() {
+    const r = parseInt(_layout.rows, 10);
+    return r >= GRID_ROWS_MIN && r <= GRID_ROWS_MAX ? r : DEFAULT_GRID.rows;
+}
+
+function _gridCols() {
+    const c = parseInt(_layout.cols, 10);
+    return c >= GRID_COLS_MIN && c <= GRID_COLS_MAX ? c : DEFAULT_GRID.cols;
+}
+
 function _normLayout(id) {
     const saved = _layout[id] || {};
     const def = DEFAULT_LAYOUT[id];
+    const cols = _gridCols();
+    const rows = _gridRows();
+    /* Clamp to the current grid so changing rows/cols never leaves a card
+       (or its span) hanging outside the grid.  Abstract card cols are 2..cols+1
+       (1 is always the clock column). */
+    const col = saved.col || def.col;
+    const row = saved.row || def.row;
+    const span = saved.span != null ? saved.span : def.span;
     return {
-        col: saved.col || def.col,
-        row: saved.row || def.row,
-        span: saved.span != null ? saved.span : def.span,
-        hidden: saved.hidden === true,
+        col: Math.max(2, Math.min(col, cols + 1)),
+        row: Math.max(1, Math.min(row, rows)),
+        span: Math.max(1, Math.min(span, rows)),
+        hidden: saved.hidden !== undefined ? saved.hidden === true : def.hidden === true,
     };
 }
 
@@ -42,26 +71,23 @@ function _clockSide() {
     return c && c.side === 'right' ? 'right' : 'left';
 }
 
-/* Abstract layout col (1=clock, 2=left cards, 3=right cards) → actual grid col. */
+/* Abstract layout col (1=clock, 2..cols+1=cards) → actual grid col. */
 function _gridColFor(col) {
-    if (_clockSide() === 'right') {
-        if (col === 2) return 1;
-        if (col === 3) return 2;
-    }
+    if (col === 1) return _clockSide() === 'right' ? _gridCols() + 1 : 1;
+    if (_clockSide() === 'right') return col - 1;
     return col;
 }
 
 /* Actual grid col → abstract layout col. */
 function _layoutColFor(col) {
-    if (_clockSide() === 'right') {
-        if (col === 1) return 2;
-        if (col === 2) return 3;
-    }
+    if (_clockSide() === 'right') return col + 1;
     return col;
 }
 
 function applyLayout(layout) {
-    _layout = Object.assign({}, layout && typeof layout === 'object' ? layout : {});
+    _layout = Object.assign({}, DEFAULT_GRID, layout && typeof layout === 'object' ? layout : {});
+    const rows = _gridRows();
+    const cols = _gridCols();
     LAYOUT_IDS.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -73,9 +99,15 @@ function applyLayout(layout) {
         if (id === 'fps-section') _applyFpsSpan(el, pos.span);
     });
     const grid = document.querySelector('.term-grid');
-    if (grid) grid.classList.toggle('clock-right', _clockSide() === 'right');
+    if (grid) {
+        grid.classList.toggle('clock-right', _clockSide() === 'right');
+        grid.style.gridTemplateColumns = _clockSide() === 'right'
+            ? 'repeat(' + cols + ', minmax(0, 1fr)) ' + CLOCK_WIDTH + 'px'
+            : CLOCK_WIDTH + 'px repeat(' + cols + ', minmax(0, 1fr))';
+        grid.style.gridTemplateRows = 'repeat(' + rows + ', minmax(0, 1fr))';
+    }
     const clockEl = document.getElementById('clock-section');
-    if (clockEl) clockEl.style.gridColumn = _clockSide() === 'right' ? '3' : '1';
+    if (clockEl) clockEl.style.gridColumn = _clockSide() === 'right' ? String(cols + 1) : '1';
     if (_layoutMode) _positionClockHint();
     applyLyricView();
 }
@@ -93,6 +125,8 @@ function readLayout() {
         };
     });
     layout['clock-section'] = { side: _clockSide() };
+    layout.rows = _gridRows();
+    layout.cols = _gridCols();
     return layout;
 }
 
@@ -111,6 +145,10 @@ function enterLayoutMode() {
     if (_layoutMode) return;
     _layoutMode = true;
     _layoutSaved = readLayout();
+    const rowsSel = document.getElementById('layout-rows-sel');
+    const colsSel = document.getElementById('layout-cols-sel');
+    if (rowsSel) rowsSel.value = String(_gridRows());
+    if (colsSel) colsSel.value = String(_gridCols());
     document.body.classList.add('layout-mode');
     _addLayoutControls();
     DRAG_IDS.forEach(id => {
@@ -213,11 +251,8 @@ function _toggleCardSize(id) {
     const curCol = el && el.style.gridColumn ? _layoutColFor(parseInt(el.style.gridColumn) || pos.col) : pos.col;
     if (pos.span === 1) {
         const colHeight = _columnHeight(curCol);
-        const otherCol = curCol === 2 ? 3 : 2;
-        const otherHeight = _columnHeight(otherCol);
-        const selfHeight = 1;
-        const newColHeight = colHeight - selfHeight + 2;
-        if (newColHeight > 6 && otherHeight + 1 > 6) {
+        const rows = _gridRows();
+        if (colHeight + 1 > rows + 1 && !_columnHasRoomFor(1, curCol)) {
             showToast('空间不足');
             return;
         }
@@ -472,26 +507,90 @@ function _placeCard(id, col, row, span) {
     _updateCardsBtn();
 }
 
+/* First row in a column that is not covered by any visible card, i.e. the next
+   row a card can be appended to without creating a gap-free overflow. Returns
+   rows+1 when the whole column is occupied. */
+function _firstFreeRow(col) {
+    const rows = _gridRows();
+    for (let row = 1; row <= rows; row++) {
+        let covered = false;
+        LAYOUT_IDS.forEach(function(id) {
+            if (covered) return;
+            const el = document.getElementById(id);
+            if (!el || el.style.display === 'none') return;
+            if (parseInt(el.style.gridColumn) !== _gridColFor(col)) return;
+            const r = parseInt(el.style.gridRow);
+            const s = getLayoutSpan(id);
+            if (row >= r && row < r + s) covered = true;
+        });
+        if (!covered) return row;
+    }
+    return rows + 1;
+}
+
+/* Compact every card column from the top.  Used when the grid dimensions change
+   so out-of-range cards are packed back into the new grid without overlaps. */
+function _repackAll() {
+    const cols = _gridCols();
+    for (let c = 2; c <= cols + 1; c++) _packColumn(c);
+}
+
+/* True when ANY card column exceeds the grid height. */
+function _anyOverflow() {
+    const cols = _gridCols();
+    const rows = _gridRows();
+    for (let c = 2; c <= cols + 1; c++) {
+        if (_columnHeight(c) > rows + 1) return true;
+    }
+    return false;
+}
+
+/* Whether some column other than `exceptCol` can fit one more `span`-sized card. */
+function _columnHasRoomFor(span, exceptCol) {
+    const cols = _gridCols();
+    const rows = _gridRows();
+    for (let c = 2; c <= cols + 1; c++) {
+        if (c === exceptCol) continue;
+        if (_columnHeight(c) + span <= rows + 1) return true;
+    }
+    return false;
+}
+
+/* Pick a column other than `exceptCol` that can fit a card of `span` rows, or
+   null if none can. */
+function _findColumnWithRoom(span, exceptCol) {
+    const cols = _gridCols();
+    const rows = _gridRows();
+    for (let c = 2; c <= cols + 1; c++) {
+        if (c === exceptCol) continue;
+        if (_columnHeight(c) + span <= rows + 1) return c;
+    }
+    return null;
+}
+
 /* Click a card in the list: add it to whichever column still has room.
-   If the card supports both sizes (RESIZABLE_IDS) and the remaining space only
-   fits the small card, fall back to the small (span 1) form automatically. */
+   If the card supports both sizes (RESIZABLE_IDS) and no column fits the full
+   span, fall back to the small (span 1) form automatically. */
 function _addCard(id) {
     const span = _normLayout(id).span;
-    const h2 = _columnHeight(2);
-    const h3 = _columnHeight(3);
-    const free2 = 6 - h2;
-    const free3 = 6 - h3;
+    const cols = _gridCols();
+    const rows = _gridRows();
     let col = null;
-    if (free2 >= span) col = 2;
-    if (free3 >= span && (col === null || free3 > free2)) col = 3;
+    let bestFree = -1;
+    for (let c = 2; c <= cols + 1; c++) {
+        const free = rows + 1 - _columnHeight(c);
+        if (free >= span && (col === null || free > bestFree)) { col = c; bestFree = free; }
+    }
     if (col === null && RESIZABLE_IDS.includes(id) && span > 1) {
-        const small = 1;
-        if (free2 >= small) col = 2;
-        if (free3 >= small && (col === null || free3 > free2)) col = 3;
-        if (col !== null) { _placeCard(id, col, _columnHeight(col) + 1, small); return; }
+        bestFree = -1;
+        for (let c = 2; c <= cols + 1; c++) {
+            const free = rows + 1 - _columnHeight(c);
+            if (free >= 1 && (col === null || free > bestFree)) { col = c; bestFree = free; }
+        }
+        if (col !== null) { _placeCard(id, col, _firstFreeRow(col), 1); return; }
     }
     if (col === null) { showToast('空间不足'); return; }
-    _placeCard(id, col, _columnHeight(col) + 1);
+    _placeCard(id, col, _firstFreeRow(col));
 }
 
 /* ===== Custom text card ===== */
@@ -691,11 +790,11 @@ function onLayoutDrop(e) {
         const toRow = parseInt(target.style.gridRow);
         let span = getLayoutSpan(fromId);
         const colHeight = _columnHeight(toCol);
-        const otherHeight = _columnHeight(toCol === 2 ? 3 : 2);
-        if (colHeight + span > 6 && otherHeight + span > 6) {
+        const rows = _gridRows();
+        if (colHeight + span > rows + 1 && !_columnHasRoomFor(span, toCol)) {
             if (RESIZABLE_IDS.includes(fromId) && span > 1) {
                 const small = 1;
-                if (colHeight + small > 6 && otherHeight + small > 6) {
+                if (colHeight + small > rows + 1) {
                     showToast('空间不足');
                     return;
                 }
@@ -707,7 +806,7 @@ function onLayoutDrop(e) {
         }
         const snap = _snapshotLayout();
         _placeCard(fromId, toCol, toRow, span);
-        if (_columnHeight(2) > 6 || _columnHeight(3) > 6) {
+        if (_anyOverflow()) {
             _restoreLayout(snap);
             showToast('空间不足');
         }
@@ -728,9 +827,9 @@ function onLayoutDrop(e) {
     toEl.style.gridRow = fromRow + ' / span ' + getLayoutSpan(toId);
     _repackColumn(_layoutColFor(parseInt(fromEl.style.gridColumn)), fromId, toRow);
     _repackColumn(_layoutColFor(parseInt(toEl.style.gridColumn)), null, null);
-    // If the swap would overflow either column, revert it instead of shuffling
+    // If the swap would overflow any column, revert it instead of shuffling
     // cards across columns (which displaces the other column's cards).
-    if (_columnHeight(2) > 6 || _columnHeight(3) > 6) {
+    if (_anyOverflow()) {
         fromEl.style.gridColumn = fromCol;
         fromEl.style.gridRow = fromOrigRow;
         toEl.style.gridColumn = toCol;
@@ -746,35 +845,37 @@ function onLayoutDrop(e) {
 
 let _dropSlotEl = null;
 
-/* Resolve a pointer position to a {col,row} slot inside the two card columns,
-   so cards can be dropped anywhere in the grid, not just onto another card. */
+/* Resolve a pointer position to a {col,row} slot inside the card columns, so
+   cards can be dropped anywhere in the grid, not just onto another card. */
 function _gridSlotFromEvent(e) {
     const grid = document.querySelector('.term-grid');
     if (!grid) return null;
     const rect = grid.getBoundingClientRect();
-    const pad = 8, gap = 8, clockW = 150;
+    const pad = 8, gap = 8;
+    const cols = _gridCols();
+    const rows = _gridRows();
     const innerW = rect.width - pad * 2;
     const innerH = rect.height - pad * 2;
-    const colW = (innerW - clockW - gap * 2) / 2;
+    const cardAreaW = innerW - CLOCK_WIDTH - gap;
+    const colW = (cardAreaW - gap * (cols - 1)) / cols;
     if (colW <= 0) return null;
-    // The two card columns sit on the opposite side of the clock. When the
-    // clock is on the right, the card area starts at the grid's left edge.
+    // The card columns sit on the opposite side of the clock. When the clock is
+    // on the right, the card area starts at the grid's left edge.
     const right = _clockSide() === 'right';
-    const cardLeft = right ? rect.left + pad : rect.left + pad + clockW + gap;
-    const cardRight = right ? rect.right - pad - clockW - gap : rect.right - pad;
-    const c2Left = cardLeft;
-    const c2Right = c2Left + colW;
+    const cardLeft = right ? rect.left + pad : rect.left + pad + CLOCK_WIDTH + gap;
     let col = null;
-    if (e.clientX >= c2Left && e.clientX < c2Right) col = 2;
-    else if (e.clientX >= c2Right + gap && e.clientX <= cardRight) col = 3;
+    for (let i = 0; i < cols; i++) {
+        const l = cardLeft + i * (colW + gap);
+        if (e.clientX >= l && e.clientX < l + colW) { col = 2 + i; break; }
+    }
     if (!col) return null;
-    // 5 equal rows with 4 gaps inside the padded area.
-    const rowH = (innerH - gap * 4) / 5;
+    // `rows` equal rows with `rows - 1` gaps inside the padded area.
+    const rowH = (innerH - gap * (rows - 1)) / rows;
     const relY = e.clientY - (rect.top + pad);
     let row = Math.floor(relY / (rowH + gap)) + 1;
     if (row < 1) row = 1;
-    if (row > 5) row = 5;
-    return { col: col, row: row, rect: rect, c2Left: c2Left, colW: colW, rowH: rowH, pad: pad, gap: gap };
+    if (row > rows) row = rows;
+    return { col: col, row: row, rect: rect, cardLeft: cardLeft, colW: colW, rowH: rowH, pad: pad, gap: gap };
 }
 
 function _ensureGridChild(prev, className, id) {
@@ -796,9 +897,8 @@ function _showDropSlot(slot, span) {
     const el = _ensureDropSlot();
     if (!slot) { el.classList.add('hide'); return; }
     const top = slot.pad + (slot.row - 1) * (slot.rowH + slot.gap);
-    const left = _clockSide() === 'right'
-        ? (slot.col === 2 ? slot.pad : slot.pad + slot.colW + slot.gap)
-        : (slot.col === 2 ? slot.pad + 150 + slot.gap : slot.pad + 150 + slot.gap + slot.colW + slot.gap);
+    const index = slot.col - 2;
+    const left = slot.cardLeft + index * (slot.colW + slot.gap);
     const height = slot.rowH * span + slot.gap * (span - 1);
     el.style.left = left + 'px';
     el.style.top = top + 'px';
@@ -877,10 +977,11 @@ function onGridDrop(e) {
     // Column height the target column will reach after the move: moving a card
     // within the same column never grows it (removing it frees its span first),
     // and the source column can only shrink, so only the target column matters.
+    const rows = _gridRows();
     const targetH = (fromCol === slot.col ? _columnHeight(slot.col) - span : _columnHeight(slot.col));
-    if (targetH + span > 6) {
+    if (targetH + span > rows + 1) {
         if (RESIZABLE_IDS.includes(fromId) && span > 1) {
-            if (targetH + 1 > 6) { showToast('空间不足'); return; }
+            if (targetH + 1 > rows + 1) { showToast('空间不足'); return; }
             span = 1;
         } else {
             showToast('空间不足');
@@ -891,7 +992,7 @@ function onGridDrop(e) {
     const snap = _snapshotLayout();
     _placeCard(fromId, slot.col, slot.row, span);
     if (fromCol && fromCol !== slot.col) _repackColumn(fromCol, null, null);
-    if (_columnHeight(2) > 6 || _columnHeight(3) > 6) {
+    if (_anyOverflow()) {
         _restoreLayout(snap);
         showToast('空间不足');
     }
@@ -1046,7 +1147,7 @@ function _moveCardToBottom(fromCol, toCol) {
     const toHeight = _columnHeight(toCol);
     // Only move if the target column can actually fit it; otherwise leave it
     // in place so the caller can decide (usually: revert + "空间不足").
-    if (toHeight + span > 6) return false;
+    if (toHeight + span > _gridRows() + 1) return false;
     el.style.gridColumn = String(_gridColFor(toCol));
     el.style.gridRow = '99 / span ' + span;  // sentinel; _packColumn sorts last → bottom
     _packColumn(toCol);
@@ -1060,18 +1161,22 @@ function _moveCardToBottom(fromCol, toCol) {
 function _rebalanceOverflow() {
     let guard = 0;
     while (guard++ < 10) {
-        const h2 = _columnHeight(2);
-        const h3 = _columnHeight(3);
-        if (h2 <= 6 && h3 <= 6) return true;
-        // Move the overflowing column's bottom card to the other column's
-        // bottom — but only when it can fit there.
-        if (h2 > 6) {
-            if (!_moveCardToBottom(2, 3)) return false;
-        } else if (h3 > 6) {
-            if (!_moveCardToBottom(3, 2)) return false;
+        if (!_anyOverflow()) return true;
+        const cols = _gridCols();
+        let moved = false;
+        for (let c = 2; c <= cols + 1; c++) {
+            if (_columnHeight(c) > _gridRows() + 1) {
+                // Move the overflowing column's bottom card into any column
+                // that can still fit it; if none can, the layout can't be fixed.
+                const target = _findColumnWithRoom(getLayoutSpan(_bottomCardId(c)), c);
+                if (target === null || !_moveCardToBottom(c, target)) return false;
+                moved = true;
+                break;
+            }
         }
+        if (!moved) return false;
     }
-    return _columnHeight(2) <= 6 && _columnHeight(3) <= 6;
+    return !_anyOverflow();
 }
 
 function resetLayout() {
@@ -1087,6 +1192,35 @@ function initLayoutControls() {
     const cardsBtn = document.getElementById('layout-cards');
     const cardsClose = document.getElementById('card-list-close');
     const cardPanel = document.getElementById('card-list-panel');
+    const rowsSel = document.getElementById('layout-rows-sel');
+    const colsSel = document.getElementById('layout-cols-sel');
+    if (rowsSel) {
+        for (let r = GRID_ROWS_MIN; r <= GRID_ROWS_MAX; r++) {
+            const o = document.createElement('option');
+            o.value = String(r);
+            o.textContent = String(r);
+            rowsSel.appendChild(o);
+        }
+    }
+    if (colsSel) {
+        for (let c = GRID_COLS_MIN; c <= GRID_COLS_MAX; c++) {
+            const o = document.createElement('option');
+            o.value = String(c);
+            o.textContent = String(c);
+            colsSel.appendChild(o);
+        }
+    }
+    const applyDims = () => {
+        if (!rowsSel || !colsSel) return;
+        _layout.rows = parseInt(rowsSel.value, 10) || DEFAULT_GRID.rows;
+        _layout.cols = parseInt(colsSel.value, 10) || DEFAULT_GRID.cols;
+        applyLayout(_layout);
+        _repackAll();
+        _syncLayoutFromDom();
+        _updateCardsBtn();
+    };
+    if (rowsSel) rowsSel.addEventListener('change', applyDims);
+    if (colsSel) colsSel.addEventListener('change', applyDims);
     if (modeBtn) modeBtn.addEventListener('click', () => {
         const overlay = document.getElementById('settings-overlay');
         if (overlay) overlay.style.display = 'none';
@@ -1113,11 +1247,12 @@ function initLayoutControls() {
     });
     if (resetBtn) resetBtn.addEventListener('click', async () => {
         resetLayout();
+        const layout = readLayout();
         try {
             const s = await pywebview.api.get_settings();
-            s.layout = DEFAULT_LAYOUT;
+            s.layout = layout;
             await pywebview.api.save_settings(s);
-            window._appSettings = { ...(window._appSettings || {}), layout: DEFAULT_LAYOUT };
+            window._appSettings = { ...(window._appSettings || {}), layout: layout };
         } catch (e) { console.warn('reset layout:', e); }
     });
     if (saveBtn) saveBtn.addEventListener('click', async () => {
@@ -1149,6 +1284,7 @@ function initLayoutControls() {
 function _layoutChanged() {
     if (!_layoutSaved) return false;
     const cur = readLayout();
+    if (cur.rows !== _layoutSaved.rows || cur.cols !== _layoutSaved.cols) return true;
     if (LAYOUT_IDS.some(id => {
         const a = cur[id], b = _layoutSaved[id];
         return !a || !b

@@ -52,6 +52,9 @@ LIB_DIR = os.path.join(BASE_DIR, "libs")
 WALLPAPERS_DIR = os.path.join(DATA_DIR, "wallpapers")
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 
+# 插件根目录：每个子目录是一个插件，用 config.py 描述元信息
+PLUGINS_DIR = os.path.join(PROJECT_ROOT, "plugins")
+
 
 def _migrate_legacy_data():
     """打包版首次运行时，将旧版 %LOCALAPPDATA%\\MoMoitor 中的数据迁移到新数据目录。
@@ -257,13 +260,17 @@ DEFAULT_SETTINGS = {
     # 布局：各监控卡片在网格中的位置（col 列 / row 行 / span 行跨度 / hidden 是否隐藏）。
     # span=2 为大卡片（CPU/GPU 风格），span=1 为小卡片（内存风格）。CPU/GPU 固定大卡片。
     "layout": {
-        "cpu-section": {"col": 2, "row": 2, "span": 2, "hidden": False},
-        "gpu-section": {"col": 3, "row": 2, "span": 2, "hidden": False},
+        # 网格行列数：rows/cols 为卡片区域的网格尺寸（时钟始终占一列），
+        # 布局编辑器里可以随时调整；缺失时前端回退到 5 行 2 列。
+        "rows": 5,
+        "cols": 2,
+        "cpu-section": {"col": 2, "row": 1, "span": 2, "hidden": False},
+        "gpu-section": {"col": 3, "row": 1, "span": 2, "hidden": False},
         "mem-section": {"col": 2, "row": 4, "span": 1, "hidden": False},
-        "disk-section": {"col": 3, "row": 1, "span": 1, "hidden": False},
-        "net-section": {"col": 2, "row": 1, "span": 1, "hidden": False},
-        "fps-section": {"col": 3, "row": 4, "span": 1, "hidden": False},
-        "proc-section": {"col": 3, "row": 5, "span": 1, "hidden": False},
+        "disk-section": {"col": 3, "row": 3, "span": 1, "hidden": False},
+        "net-section": {"col": 2, "row": 3, "span": 1, "hidden": False},
+        "fps-section": {"col": 3, "row": 4, "span": 2, "hidden": False},
+        "proc-section": {"col": 3, "row": 5, "span": 1, "hidden": True},
         "music-section": {"col": 2, "row": 5, "span": 1, "hidden": False},
     },
     # 自定义文本卡片：key 为卡片 id，包含内容与样式（字体名/加粗/斜体/字号/对齐/颜色）
@@ -286,6 +293,10 @@ DEFAULT_SETTINGS = {
         "traffic": True,
         "clock_bg": True,
         "top_control": True,  # 鼠标移到界面顶端时的亮度/音量调节条
+    },
+    # 插件：已启用的插件 id 列表（在设置 → 插件中开关，下次启动生效）
+    "plugins": {
+        "enabled": [],
     },
 }
 

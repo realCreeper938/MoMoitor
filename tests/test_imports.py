@@ -7,6 +7,10 @@ import re
 def test_package_imports():
     for name in [
         "momoitor.config",
+        "momoitor.plugins",
+        "momoitor.plugins.base",
+        "momoitor.plugins.manager",
+        "momoitor.plugins.monitor",
         "momoitor.api",
         "momoitor.server",
         "momoitor.main",
@@ -36,3 +40,10 @@ def test_data_dir_resolved():
     from momoitor.config import DATA_DIR
 
     assert DATA_DIR
+
+
+def test_layout_grid_defaults():
+    from momoitor.config import DEFAULT_SETTINGS
+
+    assert DEFAULT_SETTINGS["layout"]["rows"] == 5
+    assert DEFAULT_SETTINGS["layout"]["cols"] == 2

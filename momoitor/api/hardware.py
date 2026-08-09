@@ -21,7 +21,9 @@ class HardwareMixin:
     # ── 硬件数据（委托给服务）────────────────────────────────
 
     def get_data(self):
-        return self._hw.snapshot()
+        data = self._hw.snapshot()
+        # 插件快照钩子：可在数据返回前端前修改/扩展
+        return self._plugin_manager.apply_snapshot_hooks(data)
 
     def get_hw_names(self):
         return self._hw.get_hw_names()

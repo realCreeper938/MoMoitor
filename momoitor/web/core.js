@@ -464,6 +464,7 @@ function updateUI(d) {
     updateLivePopups(d);
     updateTempWarnings(d);
     updateDataError(d);
+    if (window.PluginApi && PluginApi.dispatchPoll) PluginApi.dispatchPoll(d);
 }
 
 /* HW live popups (horizontal mode) — live sensor values near the brand logo */

@@ -3,10 +3,6 @@ function initSettings() {
     const saveBtn = document.getElementById('settings-save');
     const closeBtn = document.getElementById('settings-close');
 
-    // Tab elements
-    const tabBtns = document.querySelectorAll('.nav-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
-
     // General
     const languageSel = document.getElementById('opt-language');
     const fontsizeRange = document.getElementById('opt-fontsize');
@@ -33,6 +29,15 @@ function initSettings() {
     const intervalSel = document.getElementById('opt-interval');
     const datasourceSel = document.getElementById('opt-datasource');
     const gpuSel = document.getElementById('opt-gpu');
+    // 插件数据源（由 initPlugins 填充）
+    if (window._pluginDataSources) {
+        window._pluginDataSources.forEach(ds => {
+            const opt = document.createElement('option');
+            opt.value = ds.value;
+            opt.textContent = ds.label;
+            datasourceSel.appendChild(opt);
+        });
+    }
     const metingUrlInput = document.getElementById('opt-meting-url');
     const lyricsWhitelistInput = document.getElementById('opt-lyrics-whitelist');
     const lyricsTranslateChk = document.getElementById('opt-lyrics-translate');
@@ -101,14 +106,20 @@ function initSettings() {
     }
 
     // Tab switching
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            tabBtns.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(c => c.classList.remove('active'));
+    // 使用事件委托，动态注册的插件标签页也能正常工作
+    const sidebar = document.querySelector('.settings-sidebar');
+    if (sidebar) {
+        sidebar.addEventListener('click', (e) => {
+            const btn = e.target.closest('.nav-btn');
+            if (!btn) return;
+            const target = document.getElementById('tab-' + btn.dataset.tab);
+            if (!target) return;
+            sidebar.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.settings-body > .tab-content').forEach(c => c.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            target.classList.add('active');
         });
-    });
+    }
 
     // Sub-tab switching (Appearance / Fonts inside Theme tab)
     subtabBtns.forEach(btn => {
@@ -367,10 +378,11 @@ function initSettings() {
         loadAboutInfo();
 
         // Show overlay
-        tabBtns.forEach(b => b.classList.remove('active'));
-        tabContents.forEach(c => c.classList.remove('active'));
-        tabBtns[0].classList.add('active');
-        tabContents[0].classList.add('active');
+        if (window.PluginApi) PluginApi._notifySettingsOpen();
+        sidebar.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.settings-body > .tab-content').forEach(c => c.classList.remove('active'));
+        sidebar.querySelector('.nav-btn').classList.add('active');
+        document.querySelector('.settings-body > .tab-content').classList.add('active');
         overlay.style.display = 'flex';
     }
 
@@ -459,12 +471,16 @@ function initSettings() {
             s.feature_toggles[key] = cb ? cb.checked : true;
         });
 
+        if (window.PluginApi) PluginApi._notifySettingsSave(s);
+
         await pywebview.api.save_settings(s);
         await pywebview.api.set_autostart(autostartChk.checked);
         await pywebview.api.change_backend((s.general || {}).data_source);
 
         // Update global settings cache
         window._appSettings = { ...window._appSettings, ...s };
+
+        if (window.PluginApi) PluginApi._notifySettingsSaved(s);
 
         applyHoverAnim((s.general || {}).hover_animation !== false);
         applyHoverHighlight((s.general || {}).hover_highlight !== false);

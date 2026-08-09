@@ -517,6 +517,10 @@
     <!-- Layout mode toolbar -->
     <div class="layout-toolbar">
         <span class="layout-toolbar-label" data-i18n="layout-mode-active">Layout Mode Active</span>
+        <span class="layout-toolbar-label" data-i18n="layout-rows">Rows</span>
+        <select class="layout-dim-sel" id="layout-rows-sel"></select>
+        <span class="layout-toolbar-label" data-i18n="layout-cols">Cols</span>
+        <select class="layout-dim-sel" id="layout-cols-sel"></select>
         <button type="button" class="text-btn hidden" id="layout-cards" data-i18n="layout-cards">Add Card</button>
         <button type="button" class="text-btn" id="layout-cancel" data-i18n="btn-close">Close</button>
         <button type="button" class="text-btn" id="layout-save" data-i18n="layout-mode-done">Save Layout</button>
@@ -606,6 +610,9 @@
                     </button>
                     <button class="nav-btn" data-tab="features">
                         <span data-i18n="nav-features">Features</span>
+                    </button>
+                    <button class="nav-btn" data-tab="plugins">
+                        <span data-i18n="nav-plugins">Plugins</span>
                     </button>
                     <button class="nav-btn" data-tab="behavior">
                         <span data-i18n="nav-behavior">Behavior</span>
@@ -1060,6 +1067,13 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Plugins Tab -->
+                    <div class="tab-content" id="tab-plugins">
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-plugins">Plugins</div>
+                            <div id="plugin-list"></div>
+                        </div>
+                    </div>
                     <!-- Behavior Tab -->
                     <div class="tab-content" id="tab-behavior">
                         <div class="setting-group">
@@ -1107,6 +1121,8 @@
         </div>
     </div>
 
+    <div id="plugin-body-root"></div>
+
     <link rel="stylesheet" href="calendar.css">
     <script src="i18n.js"></script>
     <script src="lunar.js"></script>
@@ -1118,6 +1134,7 @@
     <script src="appearance.js"></script>
     <script src="layout.js"></script>
     <script src="settings.js"></script>
+    <script src="plugins.js"></script>
     <script src="boot.js"></script>
     <script src="calendar.js"></script>
     <script src="traffic.js"></script>
