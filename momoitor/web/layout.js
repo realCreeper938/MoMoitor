@@ -497,9 +497,19 @@ function _addCard(id) {
 /* ===== Custom text card ===== */
 
 function _customTextCfg(id) {
-    const defaults = { text: '', font: '', bold: false, italic: false, size: 18, align: 'left', color: '' };
+    const defaults = { text: '', font: '', bold: false, italic: false, size: 18, align: 'left', color: '',
+        bg_grad: false, bg_grad_c1: '', bg_grad_c2: '', bg_grad_angle: 135, bg_grad_size: 100 };
     const stored = ((window._appSettings || {}).custom_text || {})[id] || {};
     return Object.assign({}, defaults, stored);
+}
+
+function _textGradientCss(cfg) {
+    if (!cfg.bg_grad) return '';
+    const c1 = cfg.bg_grad_c1 || '#2e3440';
+    const c2 = cfg.bg_grad_c2 || '#3b4252';
+    const angle = parseInt(cfg.bg_grad_angle, 10) || 135;
+    const size = Math.max(20, Math.min(300, parseInt(cfg.bg_grad_size, 10) || 100));
+    return `linear-gradient(${angle}deg, ${c1} 0%, ${c2} 100%) center / ${size}% ${size}% no-repeat`;
 }
 
 function applyCustomText(id, cfgOverride) {
@@ -515,18 +525,33 @@ function applyCustomText(id, cfgOverride) {
     el.style.fontSize = (cfg.size || 18) + 'px';
     el.style.textAlign = cfg.align || 'left';
     el.style.color = (!empty && cfg.color) ? cfg.color : '';
+    const section = document.getElementById('text-section');
+    if (section) {
+        const bc = section.querySelector('.box-content');
+        if (bc) bc.style.background = _textGradientCss(cfg);
+    }
 }
 
 /* ---- Editor panel ---- */
 let _ceEditId = 'text-section';
 let _ceAlign = 'left';
 let _ceColor = '';
+let _ceBgGrad = false;
+let _ceBgGradC1 = '';
+let _ceBgGradC2 = '';
+let _ceBgGradAngle = 135;
+let _ceBgGradSize = 100;
 
 function openTextEditor(id) {
     _ceEditId = id;
     const cfg = _customTextCfg(id);
     _ceAlign = cfg.align || 'left';
     _ceColor = cfg.color || '';
+    _ceBgGrad = !!cfg.bg_grad;
+    _ceBgGradC1 = cfg.bg_grad_c1 || '';
+    _ceBgGradC2 = cfg.bg_grad_c2 || '';
+    _ceBgGradAngle = parseInt(cfg.bg_grad_angle, 10) || 135;
+    _ceBgGradSize = parseInt(cfg.bg_grad_size, 10) || 100;
     const panel = document.getElementById('card-edit-panel');
     if (!panel) return;
     const textEl = document.getElementById('ce-text');
@@ -535,12 +560,24 @@ function openTextEditor(id) {
     const italicEl = document.getElementById('ce-italic');
     const sizeEl = document.getElementById('ce-size');
     const colorEl = document.getElementById('ce-color');
+    const bgGradEl = document.getElementById('ce-bg-grad');
+    const bgGradC1El = document.getElementById('ce-bg-grad-c1');
+    const bgGradC2El = document.getElementById('ce-bg-grad-c2');
+    const bgGradAngleEl = document.getElementById('ce-bg-grad-angle');
+    const bgGradSizeEl = document.getElementById('ce-bg-grad-size');
     if (textEl) textEl.value = cfg.text;
     if (fontEl) fontEl.value = cfg.font;
     if (boldEl) boldEl.checked = !!cfg.bold;
     if (italicEl) italicEl.checked = !!cfg.italic;
     if (sizeEl) sizeEl.value = cfg.size;
     if (colorEl) colorEl.value = cfg.color || '#e8e8e8';
+    if (bgGradEl) bgGradEl.checked = _ceBgGrad;
+    if (bgGradC1El) bgGradC1El.value = _ceBgGradC1 || '#2e3440';
+    if (bgGradC2El) bgGradC2El.value = _ceBgGradC2 || '#3b4252';
+    if (bgGradAngleEl) bgGradAngleEl.value = _ceBgGradAngle;
+    if (bgGradSizeEl) bgGradSizeEl.value = _ceBgGradSize;
+    const bgGradOpts = document.getElementById('ce-bg-grad-opts');
+    if (bgGradOpts) bgGradOpts.style.display = _ceBgGrad ? '' : 'none';
     const btns = document.querySelectorAll('#ce-align button');
     btns.forEach(b => b.classList.toggle('active', b.dataset.align === _ceAlign));
     panel.style.display = 'flex';
@@ -565,6 +602,11 @@ function readTextEditorForm() {
         size: parseInt(sizeEl ? sizeEl.value : '18', 10) || 18,
         align: _ceAlign,
         color: _ceColor,
+        bg_grad: _ceBgGrad,
+        bg_grad_c1: _ceBgGradC1,
+        bg_grad_c2: _ceBgGradC2,
+        bg_grad_angle: _ceBgGradAngle,
+        bg_grad_size: _ceBgGradSize,
     };
 }
 
@@ -615,6 +657,60 @@ function initTextCardEditor() {
         colorResetBtn.addEventListener('click', () => {
             _ceColor = '';
             if (colorEl) colorEl.value = '#e8e8e8';
+            previewTextCard();
+        });
+    }
+    const bgGradEl = document.getElementById('ce-bg-grad');
+    const bgGradOpts = document.getElementById('ce-bg-grad-opts');
+    if (bgGradEl) {
+        bgGradEl.addEventListener('change', () => {
+            _ceBgGrad = bgGradEl.checked;
+            if (bgGradOpts) bgGradOpts.style.display = _ceBgGrad ? '' : 'none';
+            previewTextCard();
+        });
+    }
+    const bgGradC1El = document.getElementById('ce-bg-grad-c1');
+    if (bgGradC1El) {
+        bgGradC1El.addEventListener('input', () => {
+            _ceBgGradC1 = bgGradC1El.value;
+            previewTextCard();
+        });
+    }
+    const bgGradC2El = document.getElementById('ce-bg-grad-c2');
+    if (bgGradC2El) {
+        bgGradC2El.addEventListener('input', () => {
+            _ceBgGradC2 = bgGradC2El.value;
+            previewTextCard();
+        });
+    }
+    const bgGradAngleEl = document.getElementById('ce-bg-grad-angle');
+    if (bgGradAngleEl) {
+        bgGradAngleEl.addEventListener('input', () => {
+            _ceBgGradAngle = parseInt(bgGradAngleEl.value, 10) || 135;
+            previewTextCard();
+        });
+    }
+    const bgGradSizeEl = document.getElementById('ce-bg-grad-size');
+    if (bgGradSizeEl) {
+        bgGradSizeEl.addEventListener('input', () => {
+            _ceBgGradSize = parseInt(bgGradSizeEl.value, 10) || 100;
+            previewTextCard();
+        });
+    }
+    const bgGradResetBtn = document.getElementById('ce-bg-grad-reset');
+    if (bgGradResetBtn) {
+        bgGradResetBtn.addEventListener('click', () => {
+            _ceBgGrad = false;
+            _ceBgGradC1 = '';
+            _ceBgGradC2 = '';
+            _ceBgGradAngle = 135;
+            _ceBgGradSize = 100;
+            if (bgGradEl) bgGradEl.checked = false;
+            if (bgGradC1El) bgGradC1El.value = '#2e3440';
+            if (bgGradC2El) bgGradC2El.value = '#3b4252';
+            if (bgGradAngleEl) bgGradAngleEl.value = 135;
+            if (bgGradSizeEl) bgGradSizeEl.value = 100;
+            if (bgGradOpts) bgGradOpts.style.display = 'none';
             previewTextCard();
         });
     }

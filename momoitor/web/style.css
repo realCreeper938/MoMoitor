@@ -5371,6 +5371,19 @@ body.layout-mode .layout-control-group .layout-del-btn {
     font-size: calc(11px * var(--font-scale));
     padding: 4px 10px;
 }
+.card-edit-body #ce-bg-grad-opts {
+    margin-left: 14px;
+    padding-left: 10px;
+    border-left: 2px solid var(--border);
+    gap: 8px;
+}
+.card-edit-body #ce-bg-grad-opts .ce-field {
+    gap: 4px;
+}
+.card-edit-body .ce-field-inline #ce-bg-grad-reset {
+    font-size: calc(11px * var(--font-scale));
+    padding: 4px 10px;
+}
 .card-edit-body .ce-row {
     display: flex;
     align-items: center;

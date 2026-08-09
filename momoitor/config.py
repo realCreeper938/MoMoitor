@@ -161,7 +161,7 @@ DEFAULT_SETTINGS = {
         "proc-section": {"col": 3, "row": 5, "span": 1, "hidden": False},
         "music-section": {"col": 2, "row": 5, "span": 1, "hidden": False},
     },
-    # 自定义文本卡片：key 为卡片 id，包含内容与样式（字体名/加粗/斜体/字号/对齐/颜色）
+    # 自定义文本卡片：key 为卡片 id，包含内容与样式（字体名/加粗/斜体/字号/对齐/颜色/背景渐变）
     "custom_text": {
         "text-section": {
             "text": "",
@@ -171,6 +171,11 @@ DEFAULT_SETTINGS = {
             "size": 18,
             "align": "left",
             "color": "",
+            "bg_grad": False,
+            "bg_grad_c1": "",
+            "bg_grad_c2": "",
+            "bg_grad_angle": 135,
+            "bg_grad_size": 100,
         },
     },
     "feature_toggles": {
