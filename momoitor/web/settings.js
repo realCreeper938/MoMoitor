@@ -65,6 +65,7 @@ function initSettings() {
     // Monitor
     const monitorSel = document.getElementById('opt-monitor');
     const hideMissingChk = document.getElementById('opt-hide-missing');
+    const onTopChk = document.getElementById('opt-ontop');
 
     // Theme
     const colorschemeSel = document.getElementById('opt-colorscheme');
@@ -298,6 +299,7 @@ function initSettings() {
             monitorSel.value = d.monitor || 0;
         } catch (e) { console.warn('get_monitors:', e); }
         hideMissingChk.checked = d.hide_when_monitor_missing === true;
+        onTopChk.checked = d.on_top !== false;
 
         // Theme
         colorschemeSel.value = g.colorscheme || 'gruvbox';
@@ -421,6 +423,7 @@ function initSettings() {
                 monitor: parseInt(monitorSel.value) || 0,
                 gpu_index: parseInt(gpuSel.value) || 0,
                 hide_when_monitor_missing: hideMissingChk.checked,
+                on_top: onTopChk.checked,
             },
             clock: {
                 ...(existing.clock || {}),

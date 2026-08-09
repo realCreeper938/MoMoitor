@@ -198,6 +198,7 @@ DEFAULT_SETTINGS = {
         "gpu_index": 0,
         "hide_when_monitor_missing": False,
         "show_hw_names": False,
+        "on_top": True,  # 窗口是否始终置顶
     },
     # 时钟（含背景）
     "clock": {

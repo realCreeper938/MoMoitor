@@ -74,6 +74,31 @@ def set_caption(window, enabled: bool):
     )
 
 
+def set_on_top(window, enabled: bool) -> bool:
+    """设置窗口是否始终置顶（HWND_TOPMOST / HWND_NOTOPMOST）。"""
+    hwnd = _resolve_hwnd(window)
+    if not hwnd:
+        logger.warning("Could not get HWND for always-on-top toggle")
+        return False
+
+    SWP_NOMOVE = 0x0002
+    SWP_NOSIZE = 0x0001
+    SWP_NOACTIVATE = 0x0010
+    HWND_TOPMOST = -1
+    HWND_NOTOPMOST = -2
+    insert_after = HWND_TOPMOST if enabled else HWND_NOTOPMOST
+
+    result = ctypes.windll.user32.SetWindowPos(
+        int(hwnd), insert_after, 0, 0, 0, 0,
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE,
+    )
+    if not result:
+        logger.warning("SetWindowPos for on_top={} failed, err={}", enabled, ctypes.windll.kernel32.GetLastError())
+        return False
+    logger.debug("Window always-on-top = {}", enabled)
+    return True
+
+
 def move_to_monitor(window, index: int) -> bool:
     """移动并调整窗口到目标显示器，失败时最多重试 3 次。"""
     monitors = get_monitors()

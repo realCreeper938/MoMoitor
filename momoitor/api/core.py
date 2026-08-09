@@ -80,6 +80,7 @@ class ApiCore:
     def save_settings(self, settings):
         old_monitor = self._settings.get("display", {}).get("monitor", 0)
         old_fullscreen = self._settings.get("general", {}).get("fullscreen", True)
+        old_on_top = self._settings.get("display", {}).get("on_top", True)
         self._settings = settings
         if '_weather' in self.__dict__:
             self._weather.invalidate()
@@ -88,6 +89,8 @@ class ApiCore:
             mon_idx = settings.get("display", {}).get("monitor", 0)
             monitor_changed = mon_idx != old_monitor
             fullscreen_changed = settings.get("general", {}).get("fullscreen") != old_fullscreen
+            if settings.get("display", {}).get("on_top", True) != old_on_top:
+                win_svc.set_on_top(self._window, settings.get("display", {}).get("on_top", True))
             if settings.get("general", {}).get("fullscreen"):
                 if monitor_changed or fullscreen_changed:
                     win_svc.move_to_monitor(self._window, mon_idx)

@@ -49,6 +49,7 @@ def create_window(monitor):
     index = os.path.join(WEB_DIR, "index.html")
 
     mon_idx = api._settings.get("display", {}).get("monitor", 0)
+    on_top = api._settings.get("display", {}).get("on_top", True)
     monitors = win_svc.get_monitors()
     wx = wy = None
     ww, wh = 800, 600
@@ -59,7 +60,7 @@ def create_window(monitor):
     window = webview.create_window(
         "MoMoitor", url=index, js_api=api,
         fullscreen=False, frameless=False, easy_drag=False,
-        background_color="#050505", on_top=True,
+        background_color="#050505", on_top=on_top,
         x=wx, y=wy, width=ww, height=wh,
     )
     api.set_window(window)
