@@ -195,6 +195,39 @@ function _updateCovers(cover) {
         const el = document.getElementById(id);
         if (el) { el.src = cover || ''; el.style.display = cover ? '' : 'none'; }
     });
+    _applyCoverAccent(cover);
+}
+
+/* Sample the cover's dominant color and expose it as --music-accent so the
+   large card can paint a subtle glow from the top-right / bottom-right corners. */
+function _applyCoverAccent(cover) {
+    const section = document.getElementById('music-section');
+    if (!section) return;
+    if (!cover) { section.style.removeProperty('--music-accent'); return; }
+    const img = new Image();
+    img.onload = () => {
+        try {
+            const size = 48;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, size, size);
+            const data = ctx.getImageData(0, 0, size, size).data;
+            let r = 0, g = 0, b = 0, n = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
+            }
+            r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n);
+            // Lift dark/desaturated averages so the glow reads on the dark theme.
+            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+            const mix = lum < 70 ? 0.35 : 0.15;
+            const boost = (c) => Math.round(c + (255 - c) * mix);
+            section.style.setProperty('--music-accent', `rgb(${boost(r)}, ${boost(g)}, ${boost(b)})`);
+        } catch (e) { /* tainted canvas or unsupported — leave glow off */ }
+    };
+    img.onerror = () => section.style.removeProperty('--music-accent');
+    img.src = cover;
 }
 
 async function refreshMusic() {

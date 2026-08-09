@@ -2349,6 +2349,35 @@ body.no-hover-anim .term-box:hover {
     align-items: center;
 }
 
+/* 音乐大卡片：右上/右下角根据封面主色绘制的柔和渐变色。色值由 JS 采样
+   封面后写入 --music-accent；无封面或采样失败时不显示。 */
+#music-section[data-span="2"]::before,
+#music-section[data-span="2"]::after {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: var(--radius-md);
+    width: 62%;
+    height: 62%;
+}
+
+/* 右上角光晕 */
+#music-section[data-span="2"]::after {
+    top: 0;
+    right: 0;
+    background:
+        radial-gradient(ellipse at 100% 0%, color-mix(in srgb, var(--music-accent, transparent) 42%, transparent) 0%, transparent 72%);
+}
+
+/* 右下角光晕 */
+#music-section[data-span="2"]::before {
+    bottom: 0;
+    right: 0;
+    background:
+        radial-gradient(ellipse at 100% 100%, color-mix(in srgb, var(--music-accent, transparent) 42%, transparent) 0%, transparent 72%);
+}
+
 /* Click ripple spawned from the pointer position */
 .ctrl-ripple {
     position: absolute;
