@@ -7,8 +7,13 @@ import os
 import sys
 
 # 1) 确保用户数据目录存在（打包模式下无控制台，日志目录必须显式创建）
-_appdata = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
-_DATA_DIR = os.path.join(_appdata, "MoMoitor")
+# 打包版数据目录 = 程序运行目录（与 momoitor/config.py 保持一致）；
+# 开发模式（理论上不会走到本钩子）退回 appdata。
+if getattr(sys, "frozen", False):
+    _DATA_DIR = os.path.dirname(sys.executable)
+else:
+    _appdata = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+    _DATA_DIR = os.path.join(_appdata, "MoMoitor")
 try:
     os.makedirs(_DATA_DIR, exist_ok=True)
 except Exception:

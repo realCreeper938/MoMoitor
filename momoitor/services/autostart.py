@@ -15,7 +15,7 @@ import sys
 from loguru import logger
 
 from momoitor.common import run_hidden
-from momoitor.config import DATA_DIR, PROJECT_ROOT
+from momoitor.config import PROJECT_ROOT
 
 TASK_NAME = "MoMoitor"
 
@@ -23,8 +23,13 @@ _FROZEN = getattr(sys, "frozen", False)
 
 
 def _vbs_location() -> str:
-    """autostart.vbs 始终写入 %LOCALAPPDATA%\\MoMoitor（用户级、始终可写），两种模式一致。"""
-    return DATA_DIR
+    """autostart.vbs 始终写入 %LOCALAPPDATA%\\MoMoitor（用户级、始终可写），两种模式一致。
+
+    注意：与用户数据目录（打包版为程序运行目录）无关——该文件由计划任务调用，
+    必须位于用户始终可写的位置。
+    """
+    _appdata = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
+    return os.path.join(_appdata, "MoMoitor")
 
 
 def _vbs_content() -> str:

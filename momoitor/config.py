@@ -18,6 +18,7 @@ import mimetypes
 import os
 import sys
 import copy
+import shutil
 from loguru import logger
 
 # 为本地静态文件服务注册字体 MIME 类型（Windows mimetypes 缺失），
@@ -33,10 +34,12 @@ if _FROZEN:
     BASE_DIR = sys._MEIPASS
     PROJECT_ROOT = os.path.dirname(sys.executable)  # dist 目录
     _data_root = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
-    DATA_DIR = os.path.join(_data_root, "MoMoitor")
+    _LEGACY_DATA_DIR = os.path.join(_data_root, "MoMoitor")  # 旧版数据目录（appdata）
+    DATA_DIR = PROJECT_ROOT  # 打包版：用户数据存放到程序运行目录
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # momoitor/
     PROJECT_ROOT = os.path.dirname(BASE_DIR)  # 仓库根目录
+    _LEGACY_DATA_DIR = os.path.join(os.environ.get("LOCALAPPDATA") or os.path.expanduser("~"), "MoMoitor")
     DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 
 WEB_DIR = os.path.join(BASE_DIR, "web")
@@ -44,6 +47,45 @@ LIB_DIR = os.path.join(BASE_DIR, "libs")
 
 WALLPAPERS_DIR = os.path.join(DATA_DIR, "wallpapers")
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
+
+
+def _migrate_legacy_data():
+    """打包版首次运行时，将旧版 %LOCALAPPDATA%\\MoMoitor 中的数据迁移到新数据目录。
+
+    仅当新数据目录尚不存在设置文件时执行；以拷贝方式迁移（不删除旧数据，
+    避免迁移失败导致数据丢失），迁移完成后旧目录保留。
+    """
+    if not _FROZEN:
+        return
+    if os.path.abspath(_LEGACY_DATA_DIR) == os.path.abspath(DATA_DIR):
+        return
+    if not os.path.isdir(_LEGACY_DATA_DIR):
+        return
+    if os.path.exists(SETTINGS_FILE):  # 已迁移过（新目录已有数据）
+        return
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        migrated = 0
+        for name in os.listdir(_LEGACY_DATA_DIR):
+            src = os.path.join(_LEGACY_DATA_DIR, name)
+            dst = os.path.join(DATA_DIR, name)
+            if os.path.exists(dst):
+                continue
+            if os.path.isdir(src):
+                shutil.copytree(src, dst)
+            else:
+                shutil.copy2(src, dst)
+            migrated += 1
+        if migrated:
+            logger.info(
+                "Migrated {} item(s) from legacy data dir {} to {}",
+                migrated, _LEGACY_DATA_DIR, DATA_DIR,
+            )
+    except Exception as e:
+        logger.warning("Legacy data migration failed: {}", e)
+
+
+_migrate_legacy_data()
 
 APP_VERSION = "0.6.0"
 
