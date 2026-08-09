@@ -2319,8 +2319,6 @@ function applyFontSize(pct) {
     setTimeout(recalcProcLimit, 0);
 }
 
-let _weatherConfigured = false;   // 天气 API 是否已配置（由启动时的设置决定）
-
 let _featureToggles = {};
 
 /** Whether a layout-controlled section may be shown, honoring BOTH the feature
@@ -2350,8 +2348,7 @@ function applyFeatureToggles(toggles) {
     const clockBg = document.getElementById('clock-bg-image');
     if (clockBg) clockBg.style.display = ft.clock_bg !== false ? '' : 'none';
     const weatherEl = document.getElementById('h-weather-compact');
-    if (weatherEl) weatherEl.style.display =
-        (ft.weather !== false && _weatherConfigured) ? '' : 'none';
+    if (weatherEl) weatherEl.style.display = (ft.weather !== false) ? '' : 'none';
     // Top brightness/volume controls
     _topControlEnabled = ft.top_control !== false;
     const topControlPopup = document.getElementById('top-control-popup');
@@ -3583,7 +3580,7 @@ function initSettings() {
 
         // Feature toggles
         const ft = s.feature_toggles || {};
-        ['top_control','calendar','top_process','sysinfo','traffic','background'].forEach(key => {
+        ['top_control','calendar','weather','top_process','sysinfo','traffic','background'].forEach(key => {
             const cb = document.getElementById('ft-' + key);
             if (cb) cb.checked = ft[key] !== false;
         });
@@ -3653,7 +3650,7 @@ function initSettings() {
 
         // Feature toggles
         s.feature_toggles = {};
-        ['top_control','calendar','top_process','sysinfo','traffic','background'].forEach(key => {
+        ['top_control','calendar','weather','top_process','sysinfo','traffic','background'].forEach(key => {
             const cb = document.getElementById('ft-' + key);
             s.feature_toggles[key] = cb ? cb.checked : true;
         });
@@ -3684,7 +3681,6 @@ function initSettings() {
         applyFonts(s.font_ui, s.font_data, s.font_clock);
         await applyClockBackgroundSetting(s.clock_bg_image, s.clock_bg_opacity, s.clock_bg_blur, s.clock_bg_gradient !== false, s.clock_bg_fit || 'fit', s.clock_bg_offset_x ?? 50, s.clock_bg_offset_y ?? 50);
         applyHwNames(true);
-        _weatherConfigured = !!(s.weather_key_id && s.weather_project_id && s.weather_private_key);
         applyFeatureToggles(s.feature_toggles || {});
 
         const wxChanged = s.weather_lat !== oldWeatherLat || s.weather_lon !== oldWeatherLon ||
@@ -3949,7 +3945,6 @@ window.addEventListener('pywebviewready', async () => {
 
     const s = await pywebview.api.get_settings();
     window._appSettings = s;
-    _weatherConfigured = !!(s.weather_key_id && s.weather_project_id && s.weather_private_key);
     console.log('Boot settings:', JSON.stringify({ lang: s.language, scheme: s.colorscheme }));
 
     applyLang(s.language || 'en');
@@ -4017,8 +4012,8 @@ window.addEventListener('pywebviewready', async () => {
     applyLayout(s.layout);
     const ft = s.feature_toggles || {};
 
-    // Start intervals only for enabled features (weather also needs credentials configured)
-    const weatherOn = ft.weather !== false && _weatherConfigured;
+    // Start intervals only for enabled features
+    const weatherOn = ft.weather !== false;
     _startInterval(weatherOn, refreshWeather, 600000);
     _startInterval(weatherOn, refreshWeatherDetail, 600000);
     _startInterval(weatherOn, refreshAirQuality, 1800000);

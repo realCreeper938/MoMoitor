@@ -56,4 +56,4 @@
 
 ## DEFAULT_SETTINGS.feature_toggles
 
-`calendar, top_process, sysinfo, traffic, clock_bg, top_control`（默认全开）
+`calendar, weather, top_process, sysinfo, traffic, clock_bg, top_control`（默认全开）

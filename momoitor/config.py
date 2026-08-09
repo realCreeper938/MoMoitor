@@ -120,6 +120,7 @@ DEFAULT_SETTINGS = {
     },
     "feature_toggles": {
         "calendar": True,
+        "weather": True,  # 是否在时钟侧栏显示天气（即使未配置天气 API 也可开启）
         "top_process": True,
         "sysinfo": True,
         "traffic": True,
