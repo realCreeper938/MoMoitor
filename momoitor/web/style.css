@@ -1563,6 +1563,11 @@ body.layout-mode .drop-slot.hide {
     border-width: 4px;
 }
 
+/* Hover animation off: keep the border ring flat */
+body.no-hover-anim .term-box:hover {
+    border-width: 0;
+}
+
 /* Header underline fades left→right from the section color to transparent */
 .box-header {
     position: relative;

@@ -87,6 +87,7 @@ DEFAULT_SETTINGS = {
     "hide_when_monitor_missing": False,
     "colorscheme": "gruvbox",
     "hover_highlight": True,  # 鼠标悬停监控项时高亮该项、其余降低透明度
+    "hover_animation": True,  # 鼠标悬停卡片时的边框高亮动画
     "clock_24h": True,  # 时钟默认 24 小时制，可在设置中切换为 12 小时制
     "clock_show_seconds": True,  # 时钟是否显示秒
     "weather_lat": "39.92",

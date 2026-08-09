@@ -43,6 +43,7 @@ const LANGS = {
         "desc-hidemissing": "Auto-hide when the selected monitor is disconnected",
         // Theme
         "settings-appearance": "Appearance",
+        "label-hover-anim": "Hover animation",
         "label-hover-highlight": "Highlight on hover",
         "label-lyric-anim": "Lyric animation",
         "theme-group-dark": "Dark",
@@ -241,6 +242,7 @@ const LANGS = {
         "label-hidemissing": "缺少时隐藏",
         "desc-hidemissing": "选中的显示器断开时自动隐藏窗口",
         "settings-appearance": "外观",
+        "label-hover-anim": "悬停动画",
         "label-hover-highlight": "悬停高亮监控项",
         "label-lyric-anim": "歌词动画",
         "theme-group-dark": "暗色",

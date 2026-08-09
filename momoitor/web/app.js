@@ -123,6 +123,13 @@ function applyHoverHighlight(enabled) {
     }
 }
 
+/* Enable/disable the card hover border-ring animation */
+let _hoverAnimEnabled = true; // settings-driven: animated border ring on hover
+function applyHoverAnim(enabled) {
+    _hoverAnimEnabled = !!enabled;
+    document.body.classList.toggle('no-hover-anim', !_hoverAnimEnabled);
+}
+
 /* Enable/disable lyric horizontal scroll animation (歌词过长时的滚动动画).
    Only gates the single-line horizontal scroll; line switching is always instant. */
 let _lyricAnimEnabled = false; // settings-driven: horizontal scroll only
@@ -3509,6 +3516,7 @@ function initSettings() {
     const fullscreenChk = document.getElementById('opt-fullscreen');
     const autostartChk = document.getElementById('opt-autostart');
     const hoverHighlightChk = document.getElementById('opt-hover-highlight');
+    const hoverAnimChk = document.getElementById('opt-hover-anim');
     const lyricAnimChk = document.getElementById('opt-lyric-anim');
     const updateNotifyChk = document.getElementById('opt-update-notify');
 
@@ -3706,6 +3714,8 @@ function initSettings() {
         fullscreenChk.checked = s.fullscreen !== false;
         hoverHighlightChk.checked = s.hover_highlight !== false;
         applyHoverHighlight(s.hover_highlight !== false);
+        hoverAnimChk.checked = s.hover_animation !== false;
+        applyHoverAnim(s.hover_animation !== false);
         lyricAnimChk.checked = s.lyric_animation === true;
         applyLyricAnim(s.lyric_animation === true);
         autostartChk.checked = await pywebview.api.get_autostart();
@@ -3866,6 +3876,7 @@ function initSettings() {
             font_size: parseInt(fontsizeRange.value),
             fullscreen: fullscreenChk.checked,
             hover_highlight: hoverHighlightChk.checked,
+            hover_animation: hoverAnimChk.checked,
             lyric_animation: lyricAnimChk.checked,
             update_check_enabled: updateNotifyChk.checked,
             refresh_interval: parseInt(intervalSel.value),
@@ -3919,6 +3930,9 @@ function initSettings() {
         // Update global settings cache
         window._appSettings = { ...window._appSettings, ...s };
 
+        applyHoverAnim(s.hover_animation !== false);
+        applyHoverHighlight(s.hover_highlight !== false);
+
         cachedMonitor = s.monitor;
         cachedHideMissing = s.hide_when_monitor_missing;
 
@@ -3934,6 +3948,7 @@ function initSettings() {
         applyFontSize(s.font_size);
         applyColorscheme(s.colorscheme || 'gruvbox');
         applyHoverHighlight(s.hover_highlight !== false);
+        applyHoverAnim(s.hover_animation !== false);
         applyLyricAutoTranslate(s.lyrics_auto_translate === true);
         applyFonts(s.font_ui, s.font_data, s.font_clock);
         await applyClockBackgroundSetting(s.clock_bg_image, s.clock_bg_opacity, s.clock_bg_blur, s.clock_bg_gradient !== false, s.clock_bg_fit || 'fit', s.clock_bg_offset_x ?? 50, s.clock_bg_offset_y ?? 50);
