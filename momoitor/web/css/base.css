@@ -1,0 +1,86 @@
+/* 启动加载动画：程序完全加载完成前显示（body 隐藏时也可见�?*/
+.boot-loading {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.3s ease, visibility 0s 0.3s;
+}
+
+.boot-loading.hide {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.boot-loading-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.boot-spinner {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid color-mix(in srgb, var(--text) 18%, transparent);
+    border-top-color: var(--accent);
+    animation: boot-spin 0.9s linear infinite;
+}
+
+@keyframes boot-spin {
+    to { transform: rotate(360deg); }
+}
+
+.boot-loading-title {
+    font-family: var(--font-data);
+    font-size: calc(18px * var(--font-scale));
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+}
+
+/* Terminal container */
+#terminal {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 0;
+    gap: 1px;
+}
+
+/* Shortcuts list �?shown in the settings General tab */
+.shortcuts-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 6px 16px;
+    margin-top: 6px;
+}
+
+.shortcuts-list .shortcut-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+.shortcuts-list .shortcut-key {
+    font-family: var(--font-data);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    color: var(--text);
+    min-width: 32px;
+    text-align: center;
+}

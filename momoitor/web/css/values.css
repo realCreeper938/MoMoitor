@@ -1,0 +1,331 @@
+/* Split row */
+.split-row {
+    flex: 1;
+    display: flex;
+    gap: 8px;
+    min-height: 0;
+}
+
+.data-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    flex-shrink: 0;
+    min-width: clamp(120px, 17vw, 220px);
+}
+
+#cpu-section .data-col,
+#mem-section .data-col,
+#gpu-section .data-col {
+    width: 100%;
+}
+
+#cpu-section .box-content,
+#mem-section .box-content,
+#gpu-section .box-content {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+/* CPU/GPU: usage on TOP, info-lines BELOW �?a left-aligned vertical stack
+   anchored to the bottom of the tall card. box-content / split-row are
+   row-direction flex, so the vertical pin lives on `align-items`. */
+#cpu-section[data-span="2"] > .box-content,
+#gpu-section[data-span="2"] > .box-content,
+#mem-section[data-span="2"] > .box-content,
+#net-section[data-span="2"] > .box-content,
+#fps-section[data-span="2"] > .box-content {
+    align-items: flex-end;
+    padding-bottom: 30px;
+}
+
+/* CPU/GPU name label in the top-left corner, aligned with the value /
+   info-lines (left:20px matches the box-content padding) �?hidden while
+   hovering so it doesn't sit over the sparkline hover info. */
+.corner-label {
+    position: absolute;
+    top: 12px;
+    left: 20px;
+    z-index: 2;
+    font-family: var(--font-data);
+    font-size: calc(12px * var(--font-scale));
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    opacity: 0.7;
+    pointer-events: none;
+    user-select: none;
+    transition: opacity 0.15s ease;
+}
+
+#cpu-section[data-span="2"]:hover .corner-label,
+#gpu-section[data-span="2"]:hover .corner-label,
+#mem-section[data-span="2"]:hover .corner-label,
+#net-section[data-span="2"]:hover .corner-label,
+#fps-section[data-span="2"]:hover .corner-label {
+    opacity: 0;
+}
+
+/* CPU/GPU/MEM small card (span 1): hide the corner label �?it only fits the tall form */
+#cpu-section:not([data-span="2"]) .corner-label,
+#gpu-section:not([data-span="2"]) .corner-label,
+#mem-section:not([data-span="2"]) .corner-label,
+#net-section:not([data-span="2"]) .corner-label {
+    display: none;
+}
+
+/* CPU/GPU/MEM (and FPS large) data-col: flex column, value on top, info-lines below */
+#cpu-section[data-span="2"] .data-col,
+#gpu-section[data-span="2"] .data-col,
+#mem-section[data-span="2"] .data-col,
+#net-section[data-span="2"] .data-col,
+#fps-section[data-span="2"] .data-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+}
+
+/* CPU/GPU/MEM (and FPS large) value: flush left, suffix immediately adjacent */
+#cpu-section[data-span="2"] .metric-value.big,
+#gpu-section[data-span="2"] .metric-value.big,
+#mem-section[data-span="2"] .metric-value.big,
+#fps-section[data-span="2"] .metric-value.big {
+    text-align: left;
+    min-width: 0;
+}
+
+/* CPU/GPU/MEM (and FPS large) info-lines: all left-aligned. In the old 2-col
+   grid these used align-self: end/start to meet in the middle �?in the flex
+   column that now pushes them right, so force them back to the left. */
+#cpu-section[data-span="2"] .info-line,
+#gpu-section[data-span="2"] .info-line,
+#mem-section[data-span="2"] .info-line,
+#net-section[data-span="2"] .info-line,
+#fps-section[data-span="2"] .info-line,
+#cpu-section[data-span="2"] .info-line:nth-of-type(2),
+#gpu-section[data-span="2"] .info-line:nth-of-type(2),
+#mem-section[data-span="2"] .info-line:nth-of-type(2),
+#net-section[data-span="2"] .info-line:nth-of-type(2),
+#fps-section[data-span="2"] .info-line:nth-of-type(2),
+#cpu-section[data-span="2"] .info-line:nth-of-type(3),
+#gpu-section[data-span="2"] .info-line:nth-of-type(3),
+#mem-section[data-span="2"] .info-line:nth-of-type(3),
+#net-section[data-span="2"] .info-line:nth-of-type(3),
+#fps-section[data-span="2"] .info-line:nth-of-type(3) {
+    align-self: flex-start;
+}
+
+/* Network arrow */
+#net-section .arrow {
+    color: var(--green);
+    font-size: calc(18px * var(--font-scale));
+    margin-right: 4px;
+}
+
+#net-section .box-header { color: var(--green); border-bottom-color: var(--green); }
+
+#net-section .metric-value {
+    font-family: var(--font-data);
+    font-size: calc(clamp(30px, 3.6vw, 50px) * var(--font-scale));
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+#net-section .value-row {
+    display: grid;
+    grid-template-columns: 22px minmax(42px, max-content) max-content;
+    align-items: baseline;
+    column-gap: 5px;
+}
+
+#net-section .unit {
+    font-size: calc(13px * var(--font-scale));
+}
+
+/* Net large card (span 2): bigger down/up values + arrows to fill the tall card */
+#net-section[data-span="2"] .metric-value {
+    font-size: calc(clamp(44px, 5.2vw, 80px) * var(--font-scale));
+}
+
+#net-section[data-span="2"] .arrow {
+    font-size: calc(clamp(28px, 3.2vw, 46px) * var(--font-scale));
+    margin-right: 8px;
+}
+
+#net-section[data-span="2"] .unit {
+    font-size: calc(clamp(17px, 1.8vw, 24px) * var(--font-scale));
+}
+
+#net-section[data-span="2"] .value-row {
+    grid-template-columns: clamp(26px, 2.6vw, 40px) minmax(42px, max-content) max-content;
+    column-gap: 6px;
+}
+
+#net-section[data-span="2"] .net-host-row {
+    gap: 4px;
+    margin-top: 6px;
+}
+
+#net-section .net-host-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+#net-section .net-host-row #sysinfo-ip {
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+#net-section .net-host-row #sysinfo-ip:hover {
+    color: var(--accent);
+}
+
+
+
+.host-dim {
+    color: var(--text-dim);
+    font-size: calc(clamp(16px, 1.6vw, 24px) * var(--font-scale));
+}
+
+/* Value row */
+.value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.metric-value.big {
+    font-family: var(--font-data);
+    font-size: calc(clamp(72px, 8vw, 120px) * var(--font-scale));
+    font-weight: 700;
+    line-height: 1;
+    opacity: 1;
+}
+
+/* Section specific colors for values */
+/* CPU / GPU / Memory / FPS big values use the scheme's plain text color (no brand coloring) */
+#cpu-section .metric-value.big,
+#gpu-section .metric-value.big,
+#mem-section .metric-value.big,
+#fps-section .metric-value.big {
+    color: var(--text);
+}
+
+#fps-section .pct {
+    font-size: calc(clamp(18px, 2vw, 26px) * var(--font-scale));
+}
+
+/* FPS bottom-right process name (no icon) */
+.fps-process {
+    position: absolute;
+    right: 10px;
+    bottom: 6px;
+    max-width: 40%;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.fps-process-name {
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.85;
+}
+
+#fps-section .fps-process {
+    right: 12px;
+    bottom: 5px;
+}
+
+#cpu-section .pct,
+#gpu-section .pct,
+#mem-section .pct {
+    font-size: calc(clamp(13px, 1.4vw, 20px) * var(--font-scale));
+    font-weight: 400;
+    color: var(--text-dim);
+    opacity: 0.65;
+}
+
+/* Info lines */
+.info-line {
+    font-size: calc(clamp(14px, 1.3vw, 20px) * var(--font-scale));
+    line-height: 1;
+    opacity: 0.85;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-line .mono {
+    color: var(--text);
+    font-size: calc(clamp(14px, 1.4vw, 20px) * var(--font-scale));
+    font-weight: 500;
+}
+
+.info-line .unit {
+    color: var(--text-dim);
+    font-size: calc(clamp(11px, 1.05vw, 15px) * var(--font-scale));
+    margin-left: 1px;
+}
+
+/* Disk section */
+
+.unit {
+    color: var(--text-dim);
+    font-size: calc(12px * var(--font-scale));
+    margin-left: 1px;
+}
+
+.pct {
+    font-family: var(--font-data);
+    color: var(--text-dim);
+    font-size: calc(clamp(18px, 2.4vw, 30px) * var(--font-scale));
+}
+
+/* Temperature colors */
+.temp-high { color: var(--red) !important; }
+.temp-warn { color: var(--yellow) !important; }
+.temp-normal { color: var(--green) !important; }
+
+/* FPS colors */
+.fps-good { color: var(--green) !important; }
+.fps-ok { color: var(--yellow) !important; }
+.fps-bad { color: var(--red) !important; }
+
+/* Warnings */
+#temp-warning, #data-error {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 16px 32px;
+    font-weight: 700;
+    font-size: calc(16px * var(--font-scale));
+    z-index: 1000;
+    color: var(--text);
+}
+
+#temp-warning {
+    background: color-mix(in srgb, var(--red) 85%, transparent);
+    animation: pulse 1s ease-in-out infinite;
+}
+
+#data-error {
+    background: rgba(var(--bg-rgb), 0.85);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}

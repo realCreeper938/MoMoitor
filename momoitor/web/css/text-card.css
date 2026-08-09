@@ -1,0 +1,420 @@
+.card-edit-panel {
+    display: none;
+    position: fixed;
+    left: 50%;
+    bottom: 78px;
+    transform: translateX(-50%);
+    z-index: 1002;
+    width: min(420px, 92vw);
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+}
+.card-edit-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+.card-edit-body .ce-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.card-edit-body .ce-field-inline {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+.card-edit-body .ce-label {
+    font-size: calc(11px * var(--font-scale));
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.card-edit-body textarea#ce-text {
+    width: 100%;
+    resize: vertical;
+    min-height: 70px;
+    padding: 8px 10px;
+    background: var(--nord0);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font-data);
+    font-size: calc(13px * var(--font-scale));
+    line-height: 1.5;
+}
+.card-edit-body textarea#ce-text:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.card-edit-body input[type="text"],
+.card-edit-body input[type="number"] {
+    background: var(--nord0);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: calc(12px * var(--font-scale));
+    padding: 6px 10px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.card-edit-body input[type="text"]:focus,
+.card-edit-body input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.card-edit-body input.input-sm {
+    width: 100% !important;
+}
+.card-edit-body .ce-field-inline input.input-sm {
+    width: 120px !important;
+}
+.card-edit-body input[type="color"] {
+    width: 44px;
+    height: 30px;
+    padding: 2px;
+    background: var(--nord0);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+.card-edit-body .ce-field-inline #ce-color-reset {
+    font-size: calc(11px * var(--font-scale));
+    padding: 4px 10px;
+}
+.card-edit-body .ce-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+.card-edit-body .ce-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text);
+    cursor: pointer;
+}
+.card-edit-body .ce-toggle input {
+    accent-color: var(--accent);
+}
+.card-edit-body .ce-align {
+    display: flex;
+    gap: 6px;
+}
+.card-edit-body .ce-align button {
+    flex: 1;
+    padding: 5px 8px;
+    background: var(--nord0);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-dim);
+    font-size: calc(12px * var(--font-scale));
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+.card-edit-body .ce-align button.active {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.card-edit-body .ce-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 2px;
+}
+.card-list-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--nord0);
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.card-list-item:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.card-list-item:active {
+    cursor: grabbing;
+}
+.card-list-item.dragging {
+    opacity: 0.4;
+}
+.card-list-item .card-list-name {
+    font-family: var(--font-data);
+    font-size: calc(11px * var(--font-scale));
+    font-weight: 600;
+    color: var(--text);
+}
+/* Size options shown next to the card name for cards that support both sizes */
+.card-list-item .card-list-sizes {
+    font-family: var(--font-ui);
+    font-size: calc(9px * var(--font-scale));
+    font-weight: 400;
+    color: var(--text-dim);
+    margin-left: 6px;
+}
+/* Mini card preview �?echoes the real card's small (memory-style) look */
+.card-list-preview {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 62px;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--nord0) 55%, var(--card-accent, var(--text)) 6%);
+    border-top: 2px solid var(--card-accent, var(--text));
+}
+.card-list-preview .clp-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+}
+.card-list-preview .clp-value {
+    font-family: var(--font-data);
+    font-size: calc(22px * var(--font-scale));
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+}
+.card-list-preview .clp-pct {
+    font-family: var(--font-data);
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+}
+.card-list-preview .clp-info {
+    font-family: var(--font-ui);
+    font-size: calc(9px * var(--font-scale));
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+.card-list-preview .clp-unit,
+.card-list-preview .clp-sep {
+    font-family: var(--font-ui);
+    font-size: calc(8px * var(--font-scale));
+    color: var(--text-dim);
+}
+.card-list-preview .clp-duo {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+}
+.card-list-preview .clp-arrow {
+    font-family: var(--font-data);
+    font-size: calc(11px * var(--font-scale));
+    color: var(--card-accent, var(--text));
+}
+.card-list-preview .clp-proc {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 5px;
+}
+.card-list-preview .clp-proc-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--nord0) 55%, var(--card-accent, var(--text)) 10%);
+    overflow: hidden;
+}
+.card-list-preview .clp-proc-bar i {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--card-accent, var(--text));
+    opacity: 0.7;
+}
+.card-list-preview .clp-music {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.card-list-preview .clp-cover {
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--card-accent, var(--text)), transparent);
+    opacity: 0.8;
+}
+.card-list-preview .clp-music-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.card-list-preview .clp-weather {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.card-list-preview .clp-weather-icon {
+    font-size: calc(22px * var(--font-scale));
+    line-height: 1;
+    color: var(--card-accent, var(--text));
+    flex-shrink: 0;
+}
+.card-list-preview .clp-weather-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.card-list-preview .clp-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    min-height: 40px;
+}
+.card-list-preview .clp-text-lines {
+    font-family: var(--font-ui);
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.card-list-preview .clp-text-empty {
+    font-family: var(--font-data);
+    font-size: calc(16px * var(--font-scale));
+    font-weight: 700;
+    color: var(--card-accent, var(--text));
+}
+.card-list-preview .clp-title {
+    font-family: var(--font-data);
+    font-size: calc(10px * var(--font-scale));
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.card-list-preview .clp-artist {
+    font-family: var(--font-ui);
+    font-size: calc(8px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+/* FPS large card: show corner-label, hide box-header (matches CPU/GPU large form) */
+#fps-section .corner-label {
+    display: none;
+}
+
+#fps-section[data-span="2"] .corner-label {
+    display: block;
+}
+
+/* FPS large card process name: top-right, shown only on hover (like CPU/GPU .hw-name) */
+#fps-section[data-span="2"] .fps-process {
+    top: 10px;
+    right: 14px;
+    bottom: auto;
+    max-width: 70%;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+#fps-section[data-span="2"]:hover .fps-process {
+    opacity: 0.85;
+}
+
+/* Hidden cards */
+.term-box[style*="display: none"] {
+    display: none !important;
+}
+
+/* ── 插件系统 ── */
+#plugin-body-root {
+    display: contents;
+}
+
+.plugin-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+.plugin-row.plugin-invalid {
+    opacity: 0.55;
+}
+.plugin-toggle {
+    flex: 0 0 auto;
+}
+.plugin-info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.plugin-name {
+    font-weight: 600;
+    color: var(--text);
+    font-size: calc(13px * var(--font-scale));
+}
+.plugin-ver {
+    color: var(--text-dim);
+    font-weight: normal;
+    font-size: calc(11px * var(--font-scale));
+    margin-left: 4px;
+}
+.plugin-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+.plugin-tag {
+    font-size: calc(10px * var(--font-scale));
+    padding: 1px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    background: var(--surface);
+}
+.plugin-tag-plugin {
+    color: var(--cyan);
+    border-color: var(--cyan);
+}
+.plugin-author {
+    color: var(--text-dim);
+    font-size: calc(11px * var(--font-scale));
+}
+.plugin-desc {
+    color: var(--text-dim);
+    font-size: calc(12px * var(--font-scale));
+    margin-top: 4px;
+    overflow-wrap: anywhere;
+}
+.plugin-homepage {
+    color: var(--accent);
+    font-size: calc(11px * var(--font-scale));
+    margin-top: 4px;
+    overflow-wrap: anywhere;
+}
+.plugin-error {
+    color: var(--red);
+    font-size: calc(11px * var(--font-scale));
+    margin-top: 4px;
+    overflow-wrap: anywhere;
+}
+.plugin-empty {
+    color: var(--text-dim);
+    font-size: calc(13px * var(--font-scale));
+    padding: 16px 0;
+}

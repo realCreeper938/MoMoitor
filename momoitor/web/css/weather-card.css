@@ -1,0 +1,576 @@
+/* ---- Weather card (grid) ---- */
+#weather-section {
+    --wx-accent: var(--orange);
+    --wx-accent-soft: var(--orange);
+}
+
+/* Weather-condition accent palette (set by JS via data-wx on the section) */
+#weather-section[data-wx="sun"]      { --wx-accent: #fabd2f; --wx-accent-soft: #fe8019; }
+#weather-section[data-wx="cloud"]    { --wx-accent: #f2b05e; --wx-accent-soft: #e8893f; }
+#weather-section[data-wx="overcast"] { --wx-accent: #8a939c; --wx-accent-soft: #757f88; }
+#weather-section[data-wx="rain"]     { --wx-accent: #6cb3d9; --wx-accent-soft: #4592bd; }
+#weather-section[data-wx="snow"]     { --wx-accent: #b7d8ea; --wx-accent-soft: #8cc3e0; }
+#weather-section[data-wx="fog"]      { --wx-accent: #9b9489; --wx-accent-soft: #82796c; }
+#weather-section[data-wx="storm"]    { --wx-accent: #b48ead; --wx-accent-soft: #8f6f9e; }
+
+/* Ambient background tint keyed to the current weather condition */
+.wx-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background:
+        radial-gradient(150% 110% at 10% -12%, color-mix(in srgb, var(--wx-accent) 26%, transparent), transparent 60%),
+        radial-gradient(130% 100% at 105% 115%, color-mix(in srgb, var(--wx-accent-soft) 16%, transparent), transparent 55%);
+    opacity: var(--wx-bg-opacity, 0.5);
+    transition: opacity 0.8s ease;
+}
+
+#weather-section .box-content {
+    position: relative;
+    z-index: 1;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Hero: icon + temperature on one line */
+.wx-card-hero {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+}
+
+.wx-card-icon {
+    font-size: calc(40px * var(--font-scale));
+    line-height: 1;
+    color: var(--wx-accent);
+    text-shadow: 0 4px 20px color-mix(in srgb, var(--wx-accent) 45%, transparent);
+    flex-shrink: 0;
+}
+
+.wx-card-temp-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 0;
+}
+
+#weather-section .metric-value.big {
+    color: var(--text);
+}
+
+.wx-card-unit {
+    font-weight: 600;
+    color: var(--text-dim);
+}
+
+/* Condition text, below the temperature */
+.wx-card-temp-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    min-width: 0;
+}
+
+.wx-card-text {
+    font-size: calc(16px * var(--font-scale));
+    font-weight: 600;
+    color: var(--wx-accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.wx-card-sub {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 70%;
+    min-width: 0;
+    opacity: 0;
+    text-align: right;
+    pointer-events: none;
+    user-select: none;
+    transition: opacity 0.2s ease;
+}
+
+#weather-section:hover .wx-card-sub {
+    opacity: 0.85;
+}
+
+.wx-card-city,
+.wx-card-updated {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Details: pill chips */
+.wx-card-details {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+}
+
+.wx-card-detail {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text-dim);
+    white-space: nowrap;
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+}
+
+.wx-card-detail .nf-icon {
+    font-size: calc(13px * var(--font-scale));
+    color: var(--wx-accent);
+}
+
+.wx-card-detail .mono {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* Precipitation + alerts share a row when both present; alerts fill the row when no precip */
+.wx-card-info {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    /* Fill the remaining card height so the alerts list gets as much room as
+       possible (up to its own max-height) before it starts scrolling. */
+    flex: 1 1 auto;
+}
+
+/* Precipitation forecast �?big card only */
+.wx-card-precip {
+    flex: 1 1 0;
+    min-width: 0;
+    border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+    padding-top: 8px;
+    /* Keep content bottom-aligned so the chart sits at the same height as the
+       alert chips when the info row grows. */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.wx-card-precip-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: calc(11px * var(--font-scale));
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+}
+
+.wx-card-precip-title .nf-icon {
+    color: var(--wx-accent);
+}
+
+.wx-card-precip-text {
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text);
+    margin-bottom: 6px;
+}
+
+.wx-card-precip-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: calc(32px * var(--font-scale));
+    width: 100%;
+    overflow: hidden;
+    padding: 0 1px;
+}
+
+.wx-precip-bar {
+    flex: 1 1 0;
+    min-width: 2px;
+    max-width: 8px;
+    border-radius: 2px 2px 0 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--wx-accent) 92%, white 8%), var(--wx-accent));
+    opacity: 0.85;
+    transition: height 0.3s ease;
+}
+
+/* Alerts �?big card only */
+.wx-card-alerts {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+    padding-top: 8px;
+    display: flex;
+    flex-direction: column;
+}
+
+#weather-section.has-precip .wx-card-alerts {
+    border-left: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+    padding-left: 12px;
+}
+
+.wx-card-alerts-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: calc(11px * var(--font-scale));
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+}
+
+.wx-card-alerts-title .nf-icon {
+    color: var(--red);
+}
+
+.wx-card-alerts-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 100px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: block;
+}
+
+.wx-card-alerts-list .wx-alert-chip {
+    display: inline-flex;
+    vertical-align: top;
+    margin: 2px 4px;
+}
+
+.wx-card-alerts-list .wx-alert-more {
+    display: inline-block;
+    margin: 2px 4px;
+}
+
+.wx-card-alerts-list::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+.wx-card-alerts.wx-alerts-fade .wx-card-alerts-list {
+    -webkit-mask-image: linear-gradient(to bottom, black 84%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 84%, transparent 100%);
+}
+
+/* Compact alert chip: name only, hover shows a tooltip with the details */
+.wx-alert-chip {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--alert-color, var(--red)) 14%, transparent);
+    border-left: 3px solid var(--alert-color, var(--red));
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text);
+    cursor: help;
+    min-width: 0;
+}
+
+.wx-alert-chip .nf-icon {
+    color: var(--alert-color, var(--red));
+    flex-shrink: 0;
+}
+
+.wx-alert-chip-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Floating alert tooltip �?appended to <body>, never clipped by the card */
+.wx-tip {
+    position: fixed;
+    z-index: 1000;
+    width: max-content;
+    max-width: min(440px, calc(100vw - 16px));
+    min-width: 190px;
+    padding: 10px 12px 8px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 95%, var(--tip-color, var(--red)) 5%));
+    border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+    border-left: 3px solid var(--tip-color, var(--red));
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+    color: var(--text);
+    font-size: calc(12px * var(--font-scale));
+    animation: wxTipIn 0.15s ease;
+    pointer-events: none;
+}
+
+@keyframes wxTipIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.wx-tip-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: calc(13px * var(--font-scale));
+    color: var(--tip-color, var(--red));
+    margin-bottom: 4px;
+}
+
+.wx-tip-headline {
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.wx-tip-desc {
+    margin-top: 4px;
+    color: var(--text-dim);
+    line-height: 1.55;
+}
+
+.wx-tip-foot {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+/* Small card (span 1): one stat row + a summary line; alerts hidden, no precip chart */
+#weather-section:not([data-span="2"]) .wx-card-alerts {
+    display: none !important;
+}
+
+#weather-section:not([data-span="2"]) > .box-content {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 4px 12px;
+    padding: 4px 14px;
+}
+
+/* Flatten nested wrappers so every stat flows in one row */
+#weather-section:not([data-span="2"]) .wx-card-hero,
+#weather-section:not([data-span="2"]) .wx-card-info,
+#weather-section:not([data-span="2"]) .wx-card-precip {
+    display: contents;
+}
+
+#weather-section:not([data-span="2"]) .wx-card-icon {
+    order: 0;
+    font-size: calc(48px * var(--font-scale));
+}
+
+/* Temp + description stay grouped as a column (description below temperature) */
+#weather-section:not([data-span="2"]) .wx-card-temp-col {
+    order: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+}
+
+#weather-section:not([data-span="2"]) .metric-value.big {
+    font-size: calc(26px * var(--font-scale));
+}
+
+#weather-section:not([data-span="2"]) .wx-card-unit {
+    font-size: calc(12px * var(--font-scale));
+}
+
+/* Details: compact pill chips, forced below the temperature row by default */
+#weather-section:not([data-span="2"]) .wx-card-details {
+    order: 2;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 4px;
+}
+
+#weather-section:not([data-span="2"]) .wx-card-detail {
+    padding: 3px 9px;
+    font-size: calc(11px * var(--font-scale));
+    gap: 5px;
+}
+
+#weather-section:not([data-span="2"]) .wx-card-detail .nf-icon {
+    font-size: calc(12px * var(--font-scale));
+}
+
+/* Condition + precipitation summary shown under the temperature */
+#weather-section:not([data-span="2"]) .wx-card-text {
+    font-size: calc(13px * var(--font-scale));
+    white-space: normal;
+    overflow: visible;
+    max-width: 100%;
+}
+
+/* Precipitation summary text is merged into .wx-card-text on the small card */
+#weather-section:not([data-span="2"]) .wx-card-precip-text {
+    display: none;
+}
+
+#weather-section:not([data-span="2"]) .wx-card-precip-title,
+#weather-section:not([data-span="2"]) .wx-card-precip-chart {
+    display: none;
+}
+
+/* City/updated not shown on small card */
+#weather-section:not([data-span="2"]) .wx-card-sub {
+    display: none !important;
+}
+
+/* Weather big card (span 2): bottom-pinned hero, details below */
+#weather-section[data-span="2"] > .box-content {
+    justify-content: flex-end;
+    gap: 10px;
+    padding-bottom: 28px;
+}
+
+/* No precipitation forecast and no alerts: the info row collapses, leaving the
+   hero pinned to the top by the growing empty row — push it down a bit. */
+#weather-section[data-span="2"]:not(.wx-info) > .box-content {
+    padding-top: 6vh;
+}
+
+#weather-section[data-span="2"] .wx-card-hero {
+    gap: 18px;
+    align-items: center;
+}
+
+#weather-section[data-span="2"] .wx-card-icon {
+    font-size: calc((clamp(62px, 6.6vw, 102px) + clamp(26px, 3vw, 46px) * 0.4 + 2px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"] .metric-value.big {
+    font-size: calc(clamp(56px, 6vw, 92px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"] .wx-card-unit {
+    font-size: calc(22px * var(--font-scale));
+}
+
+#weather-section[data-span="2"] .wx-card-text {
+    font-size: calc(clamp(24px, 2.8vw, 42px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"] .wx-card-city,
+#weather-section[data-span="2"] .wx-card-updated {
+    font-size: calc(12px * var(--font-scale));
+}
+
+#weather-section[data-span="2"] .wx-card-detail {
+    font-size: calc(13px * var(--font-scale));
+    padding: 5px 11px;
+}
+
+/* Weather big card compact mode when precipitation forecast is present:
+   smaller hero, description below the temperature and within the icon's width */
+#weather-section[data-span="2"].wx-info > .box-content {
+    gap: 8px;
+    /* Compact mode shows precip/alerts: give the info row the freed padding
+       so more alerts are visible before the list starts scrolling. */
+    padding-bottom: 10px;
+}
+
+#weather-section[data-span="2"].wx-info .wx-card-hero {
+    gap: 12px;
+}
+
+#weather-section[data-span="2"].wx-info .wx-card-icon {
+    font-size: calc((clamp(34px, 3.6vw, 56px) + clamp(15px, 1.7vw, 20px) * 1.1 + 2px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info .metric-value.big {
+    font-size: calc(clamp(34px, 3.6vw, 56px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info .wx-card-unit {
+    font-size: calc(15px * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info .wx-card-text {
+    font-size: calc(clamp(15px, 1.7vw, 20px) * var(--font-scale));
+    max-width: calc(clamp(72px, 8vw, 120px) * var(--font-scale));
+}
+
+/* Weather big card hover: shrink the content above the divider line so the
+   precip/alerts area below gets a bit more room. Only when precip/alerts are
+   shown (.wx-info); with no info the content stays its full size on hover. */
+#weather-section[data-span="2"] > .box-content,
+#weather-section[data-span="2"] .wx-card-hero,
+#weather-section[data-span="2"] .wx-card-icon,
+#weather-section[data-span="2"] .metric-value.big,
+#weather-section[data-span="2"] .wx-card-unit,
+#weather-section[data-span="2"] .wx-card-text,
+#weather-section[data-span="2"] .wx-card-details,
+#weather-section[data-span="2"] .wx-card-detail {
+    transition: font-size 0.25s ease, gap 0.25s ease, max-height 0.25s ease;
+}
+
+#weather-section[data-span="2"].wx-info:hover > .box-content {
+    gap: 8px;
+}
+
+#weather-section[data-span="2"].wx-info:hover .wx-card-hero {
+    gap: 10px;
+}
+
+#weather-section[data-span="2"].wx-info:hover .wx-card-icon {
+    font-size: calc((clamp(28px, 3vw, 44px) + clamp(13px, 1.4vw, 16px) * 1.1 + 2px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info:hover .metric-value.big {
+    font-size: calc(clamp(28px, 3vw, 44px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info:hover .wx-card-unit {
+    font-size: calc(13px * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info:hover .wx-card-text {
+    font-size: calc(clamp(13px, 1.4vw, 16px) * var(--font-scale));
+    max-width: calc(clamp(56px, 6vw, 88px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info:hover .wx-card-details {
+    gap: 5px;
+}
+
+#weather-section[data-span="2"].wx-info:hover .wx-card-detail {
+    font-size: calc(12px * var(--font-scale));
+    padding: 4px 9px;
+}

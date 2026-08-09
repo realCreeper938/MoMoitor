@@ -1,0 +1,353 @@
+/* ---- Custom text card ---- */
+#text-section .box-content {
+    align-items: flex-start;
+    justify-content: center;
+}
+#text-section:not([data-span="2"]) .box-content {
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+}
+.custom-text {
+    width: 100%;
+    min-width: 0;
+    color: var(--text);
+    font-size: calc(18px * var(--font-scale));
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+.custom-text.empty {
+    color: var(--text-dim);
+    opacity: 0.6;
+}
+#text-section:not([data-span="2"]) .custom-text {
+    text-align: center;
+    max-height: 100%;
+    overflow: hidden;
+}
+#text-section[data-span="2"] .custom-text {
+    max-height: 100%;
+    overflow: hidden;
+}
+
+/* Grid */
+.term-grid {
+    position: relative;
+    flex: 1;
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    padding: 8px;
+    background: var(--bg);
+    min-height: 0;
+}
+
+/* Clock moved to the right side: card columns on the left, clock last. */
+.term-grid.clock-right {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 150px;
+}
+
+/* Drop-slot preview shown while dragging a card over the grid */
+body.layout-mode .drop-slot {
+    position: absolute;
+    z-index: 5;
+    border: 2px dashed var(--accent);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    pointer-events: none;
+    transition: left 0.12s ease, top 0.12s ease, width 0.12s ease, height 0.12s ease;
+}
+body.layout-mode .drop-slot.hide {
+    display: none;
+}
+
+/* Layout-mode hint bubble above the clock */
+.clock-drag-hint {
+    position: absolute;
+    z-index: 40;
+    display: none;
+    padding: 4px 10px;
+    border-radius: 7px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: calc(11px * var(--font-scale));
+    line-height: 1.3;
+    white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    transform: translate(-50%, -100%);
+}
+.clock-drag-hint.show {
+    display: block;
+}
+.clock-drag-hint::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--border);
+}
+
+/* Box �?subtle vertical gradient border: base color on top, accent-tinted at bottom */
+.term-box {
+    position: relative;
+    border: 0 solid transparent;
+    background:
+        linear-gradient(var(--surface), var(--surface)) padding-box,
+        linear-gradient(180deg, var(--border) 0%, color-mix(in srgb, var(--accent) 22%, var(--border)) 60%, color-mix(in srgb, var(--accent) 45%, var(--border)) 100%) border-box;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    transition: opacity 0.15s ease, border-width 0.15s ease;
+}
+
+/* Focus dim �?hovered box stays full, all others drop to 50% */
+.term-box.dimmed {
+    opacity: 0.5;
+}
+
+/* Hovered box grows the border ring from 0 to 4px */
+.term-box:hover {
+    border-width: 4px;
+}
+
+/* Hover animation off: keep the border ring flat */
+body.no-hover-anim .term-box:hover {
+    border-width: 0;
+}
+
+/* Header underline fades left→right from the section color to transparent */
+.box-header {
+    position: relative;
+    z-index: 10;
+    padding: 3px 10px;
+    font-family: var(--font-data);
+    font-weight: 700;
+    font-size: calc(12px * var(--font-scale));
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid transparent;
+    flex-shrink: 0;
+}
+
+.box-content {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 16px;
+    gap: 2px;
+}
+
+/* Section colors */
+#cpu-section .box-header { color: var(--cyan); border-bottom-color: var(--cyan); }
+#gpu-section .box-header { color: var(--accent); border-bottom-color: var(--accent); }
+#mem-section .box-header { color: var(--magenta); border-bottom-color: var(--magenta); }
+#fps-section .box-header { color: var(--yellow); border-bottom-color: var(--yellow); }
+#disk-section .box-header { color: var(--blue); border-bottom-color: var(--blue); }
+#clock-section .box-header { display: none; }
+
+/* Background sparkline (90s resource usage, CPU-rendered SVG, no GPU) */
+.sparkline-bg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+/* Sparkline hover time label */
+.spark-time-label {
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    z-index: 3;
+    font-family: var(--font-data);
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text);
+    pointer-events: none;
+    background: rgba(var(--bg-rgb), 0.7);
+    padding: 1px 5px;
+    line-height: 1.4;
+    border-radius: var(--radius-sm);
+}
+
+/* Sparkline hover cursor �?dashed vertical line + dot at the pointed data point.
+   Positioned in JS in viewBox 0..100 coords; hidden by default (opacity 0). */
+.sparkline-bg .spark-cursor {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+    stroke: var(--text);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.sparkline-bg .spark-line {
+    fill: none;
+    stroke-width: 0.6;
+    vector-effect: non-scaling-stroke;
+    opacity: 0.22;
+}
+
+.sparkline-bg .spark-area {
+    opacity: 0.06;
+}
+
+#cpu-section .spark-line { stroke: var(--cyan); }
+#gpu-section .spark-line { stroke: var(--accent); }
+#mem-section .spark-line { stroke: var(--magenta); }
+#fps-section .spark-line { stroke: var(--metric-fps); }
+
+#cpu-section .spark-area { fill: var(--cyan); }
+#gpu-section .spark-area { fill: var(--accent); }
+#mem-section .spark-area { fill: var(--magenta); }
+#fps-section .spark-area { fill: var(--metric-fps); }
+
+/* Network sparklines �?two overlapping layers (download + upload), more faded */
+#net-section .sparkline-bg-over { z-index: 0; }
+#net-section .spark-line,
+#disk-section .spark-line { stroke-width: 0.5; opacity: 0.14; }
+#net-section .spark-area,
+#disk-section .spark-area { opacity: 0.04; }
+#net-section .sparkline-bg[data-spark="net_down"] .spark-line { stroke: var(--blue); }
+#net-section .sparkline-bg[data-spark="net_down"] .spark-area { fill: var(--blue); }
+#net-section .sparkline-bg[data-spark="net_up"] .spark-line { stroke: var(--orange); }
+#net-section .sparkline-bg[data-spark="net_up"] .spark-area { fill: var(--orange); }
+
+#clock-section,
+#clock-section .box-content {
+    overflow: visible;
+}
+
+/* ===== Grid Layout ===== */
+/* Fixed card positions �?Clock in col 1 (all rows), main cards in col 2,
+   side cards (disk/proc) in col 3. */
+#clock-section {
+    grid-column: 1;
+    grid-row: 1 / -1;
+}
+
+#cpu-section  { grid-column: 2;          grid-row: 2 / span 2; }
+#gpu-section  { grid-column: 3;          grid-row: 2 / span 2; }
+#mem-section  { grid-column: 2;          grid-row: 4; }
+#net-section  { grid-column: 2;          grid-row: 1; }
+#fps-section  { grid-column: 3;          grid-row: 4; }
+#proc-section { grid-column: 3;          grid-row: 5; }
+#music-section { grid-column: 2;         grid-row: 5; }
+#weather-section { grid-column: 2;       grid-row: 5; }
+#text-section { grid-column: 3;          grid-row: 1; }
+
+/* Hide box headers */
+#cpu-section > .box-header,
+#mem-section > .box-header,
+#gpu-section > .box-header,
+#net-section > .box-header,
+#fps-section > .box-header,
+#disk-section > .box-header,
+#music-section > .box-header,
+#weather-section > .box-header,
+#text-section > .box-header {
+    display: none;
+}
+
+
+/* ---- Left sidebar ---- */
+.h-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 8px 4px;
+    width: 100%;
+    flex: 1;
+}
+
+.h-date {
+    font-size: calc(24px * var(--font-scale));
+    font-weight: 700;
+    color: var(--text);
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.h-lunar {
+    font-size: calc(14px * var(--font-scale));
+    font-weight: 700;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 2px;
+}
+
+.h-time-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    /* Center the clock vertically (between date/lunar and weather), nudged up slightly */
+    margin: auto 0;
+    transform: translateY(-2.5vh);
+}
+
+.h-time-row {
+    font-family: var(--font-clock);
+    font-size: calc(64px * var(--font-scale));
+    font-weight: 400;
+    color: var(--text);
+    line-height: 1.05;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 12 小时制的时段词（凌晨/早上/...），显示在时钟上�?*/
+.h-period {
+    font-size: calc(20px * var(--font-scale));
+    font-weight: 700;
+    color: var(--text-dim);
+    text-align: center;
+    letter-spacing: 0.5em;
+    margin-right: -0.5em; /* 抵消 letter-spacing 造成的右侧偏�?*/
+    min-height: 24px;
+    line-height: 24px;
+}
+
+/* 24 小时制时隐藏时段词，不预留额外空�?*/
+.h-time-block.is-24h .h-period {
+    min-height: 0;
+    line-height: 0;
+    font-size: calc(0 * var(--font-scale));
+}
+
+/* 12 小时制时，时段词与时间之间的间距稍微加大 */
+.h-time-block:not(.is-24h) .h-period {
+    margin-bottom: 8px;
+}
+
+.h-weather {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: calc(13px * var(--font-scale));
+    font-weight: 700;
+    color: var(--text-dim);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.h-weather .wx-icon {
+    font-size: calc(18px * var(--font-scale));
+}

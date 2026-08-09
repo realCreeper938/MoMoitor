@@ -1,0 +1,283 @@
+/* Weather compact in top bar */
+.weather-compact {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: calc(13px * var(--font-scale));
+    color: var(--text-dim);
+    position: relative;
+    cursor: default;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.wx-icon {
+    font-size: calc(18px * var(--font-scale));
+}
+
+/* Weather popup */
+.wx-popup {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: opacity 0.2s, transform 0.2s, visibility 0s 0.2s;
+    z-index: 100;
+    max-width: min(560px, 92vw);
+}
+
+.weather-compact:hover .wx-popup {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transform: translateY(0);
+    transition: opacity 0.2s, transform 0.2s, visibility 0s;
+}
+
+
+.wx-popup-body {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    white-space: nowrap;
+}
+
+.wx-popup-icon {
+    font-size: calc(42px * var(--font-scale));
+    line-height: 1;
+    color: var(--orange);
+    text-shadow: 0 4px 18px color-mix(in srgb, var(--orange) 35%, transparent);
+    flex-shrink: 0;
+}
+
+.wx-popup-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.wx-popup-temp-row {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+}
+
+.wx-popup-temp {
+    font-size: calc(28px * var(--font-scale));
+    font-weight: 700;
+    color: var(--orange);
+    line-height: 1.1;
+}
+
+.wx-popup-unit {
+    font-size: calc(13px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+.wx-popup-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wx-popup-text {
+    font-size: calc(13px * var(--font-scale));
+    color: var(--text);
+}
+
+.wx-popup-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    flex-shrink: 0;
+}
+
+.wx-popup-city {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+.wx-popup-city .nf-icon {
+    font-size: calc(11px * var(--font-scale));
+    width: auto;
+    color: var(--accent);
+}
+
+.wx-popup-updated {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+.wx-popup-updated .nf-icon {
+    font-size: calc(11px * var(--font-scale));
+    width: auto;
+    color: var(--text-dim);
+}
+
+.wx-popup-details {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding-left: 14px;
+    border-left: 1px solid var(--border);
+    font-size: calc(13px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+.wx-detail-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.wx-detail-item .nf-icon {
+    font-size: calc(13px * var(--font-scale));
+    width: auto;
+    color: var(--text-dim);
+}
+
+.wx-detail-item .mono {
+    color: var(--text);
+    font-weight: 500;
+}
+
+.wx-detail-unit {
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+.nf-icon {
+    font-size: calc(14px * var(--font-scale));
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* Precipitation forecast */
+.wx-precip {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.wx-precip-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: calc(11px * var(--font-scale));
+    color: var(--blue);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+}
+
+.wx-precip-title .nf-icon {
+    font-size: calc(13px * var(--font-scale));
+}
+
+.wx-precip-text {
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text);
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.wx-precip-chart {
+    font-family: var(--font-ui);
+    font-size: calc(12px * var(--font-scale));
+    line-height: 1.2;
+    color: var(--blue);
+    white-space: pre;
+    letter-spacing: 2px;
+    text-align: center;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+/* Weather alerts */
+.wx-alerts {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    white-space: normal;
+}
+
+.wx-alerts-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: calc(11px * var(--font-scale));
+    color: var(--red);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+}
+
+.wx-alerts-title .nf-icon {
+    font-size: calc(13px * var(--font-scale));
+}
+
+.wx-alert-item {
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text);
+    padding: 3px 6px;
+    margin-bottom: 3px;
+    border-left: 3px solid var(--red);
+    background: rgba(var(--bg-rgb), 0.5);
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.wx-alert-item .alert-type {
+    font-weight: 700;
+    margin-right: 4px;
+}
+
+.wx-alert-item .alert-time {
+    font-size: calc(10px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+.wx-alert-item .alert-desc {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    font-size: calc(10px * var(--font-scale));
+    color: var(--text-dim);
+    margin-top: 2px;
+    line-height: 1.4;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.wx-alert-item .alert-headline {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.wx-alert-more {
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+    padding: 2px 6px;
+    font-style: italic;
+}

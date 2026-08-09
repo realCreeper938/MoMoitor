@@ -1,0 +1,472 @@
+/* ---- Right column: horizontal bars ---- */
+#cpu-section > .box-content,
+#mem-section > .box-content,
+#gpu-section > .box-content,
+#net-section > .box-content,
+#fps-section > .box-content {
+    flex: 1 1 auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 2px 20px;
+}
+
+/* Pull the FPS value further left for better balance (small form only) */
+#fps-section:not([data-span="2"]) > .box-content {
+    padding-left: 5px;
+}
+
+#cpu-section .split-row,
+#gpu-section .split-row,
+#mem-section .split-row,
+#net-section .split-row,
+#fps-section .split-row,
+#disk-section .split-row {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+/* data-col: big value on LEFT (row 1-2), 2 info-lines on RIGHT stacked vertically */
+#cpu-section .data-col,
+#gpu-section .data-col,
+#mem-section .data-col,
+#fps-section .data-col {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 8px 32px;
+    width: 100%;
+}
+
+/* Big value on the left, spanning both rows */
+#cpu-section .value-row,
+#gpu-section .value-row,
+#mem-section .value-row,
+#fps-section .value-row {
+    grid-column: 1;
+    grid-row: 1 / -1;
+}
+
+/* 1st info-line: right column, top row �?push to bottom so it meets the 2nd line in the center */
+#cpu-section .info-line:nth-of-type(2),
+#gpu-section .info-line:nth-of-type(2),
+#mem-section .info-line:nth-of-type(2),
+#fps-section .info-line:nth-of-type(2) {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+}
+
+/* 2nd info-line: right column, bottom row �?push to top so it meets the 1st line in the center */
+#cpu-section .info-line:nth-of-type(3),
+#gpu-section .info-line:nth-of-type(3),
+#mem-section .info-line:nth-of-type(3),
+#fps-section .info-line:nth-of-type(3) {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+}
+
+#cpu-section .info-line,
+#gpu-section .info-line,
+#mem-section .info-line,
+#fps-section .info-line {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Network: down/up stacked on LEFT, IP/host info on RIGHT */
+#net-section {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+#net-section > .box-content {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#net-section .data-col {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 0 32px;
+    width: 100%;
+}
+
+/* Down/up on the left, each on its own row, tight vertical spacing */
+#net-section .value-row {
+    grid-column: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    line-height: 1.1;
+}
+
+#net-section .value-row:nth-of-type(1) {
+    grid-row: 1;
+}
+
+#net-section .value-row:nth-of-type(2) {
+    grid-row: 2;
+}
+
+/* IP/host info in the middle, spanning both rows */
+#net-section .info-line {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    align-self: center;
+    font-variant-numeric: tabular-nums;
+}
+
+#net-section .arrow {
+    text-align: center;
+    width: 22px;
+    flex-shrink: 0;
+}
+
+/* Fixed width for net metric values */
+#net-section .metric-value {
+    font-variant-numeric: tabular-nums;
+    min-width: 4ch;
+    text-align: right;
+}
+
+/* Disk section �?net-style card beside Memory (grid row 3) */
+#disk-section {
+    grid-column: 3;
+    grid-row: 3;
+    order: unset;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+#disk-section > .box-content {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Read/write value-rows on the left, temp · used info on the right (like net).
+   Row gap 8px matches memory's info-line spacing; a larger column gap keeps the
+   left read/write values clear of the right info column. */
+#disk-section .data-col {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 8px 48px;
+    width: 100%;
+}
+
+#disk-section .value-row {
+    grid-column: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    line-height: 1.1;
+}
+
+#disk-section .value-row:nth-of-type(1) { grid-row: 1; }
+#disk-section .value-row:nth-of-type(2) { grid-row: 2; }
+
+#disk-section .info-line {
+    grid-column: 2;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Match memory/fps: pin the two info-lines to meet in the vertical center.
+   Disk has two value-rows first, so its info-lines are the 3rd/4th div children. */
+#disk-section .info-line:nth-of-type(3) {
+    grid-row: 1;
+    align-self: end;
+}
+
+#disk-section .info-line:nth-of-type(4) {
+    grid-row: 2;
+    align-self: start;
+}
+
+#disk-section .arrow {
+    text-align: center;
+    width: 22px;
+    flex-shrink: 0;
+    color: var(--text-dim);
+    font-size: calc(13px * var(--font-scale));
+    font-weight: 400;
+    font-family: var(--font-data);
+    opacity: 0.85;
+}
+
+#disk-section .metric-value {
+    font-variant-numeric: tabular-nums;
+    min-width: 4ch;
+    text-align: right;
+    font-family: var(--font-data);
+    font-size: calc(clamp(24px, 3vw, 42px) * var(--font-scale));
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+#disk-section .unit {
+    font-size: calc(13px * var(--font-scale));
+}
+
+/* Disk read/write sparklines */
+#disk-section .sparkline-bg-over { z-index: 0; }
+#disk-section .sparkline-bg[data-spark="disk_read"] .spark-line { stroke: var(--blue); }
+#disk-section .sparkline-bg[data-spark="disk_read"] .spark-area { fill: var(--blue); }
+#disk-section .sparkline-bg[data-spark="disk_write"] .spark-line { stroke: var(--orange); }
+#disk-section .sparkline-bg[data-spark="disk_write"] .spark-area { fill: var(--orange); }
+
+/* Main disk view fades out on hover to reveal partition details */
+#disk-section .split-row {
+    transition: opacity 0.2s ease;
+}
+
+#disk-section:hover .split-row {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Disk partition details �?fades in over the main view on hover */
+.disk-partitions {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    top: 4px;
+    bottom: 4px;
+    transition: opacity 0.2s ease;
+    opacity: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    pointer-events: none;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+#disk-section:hover .disk-partitions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.disk-part-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+.disk-part-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.disk-part-letter {
+    font-size: calc(11px * var(--font-scale));
+    font-weight: 700;
+    color: var(--text);
+    font-family: var(--font-data);
+}
+
+.disk-part-info {
+    font-size: calc(10px * var(--font-scale));
+    color: var(--text-dim);
+    font-family: var(--font-data);
+    font-variant-numeric: tabular-nums;
+}
+
+.disk-part-bar {
+    width: 100%;
+    height: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.disk-part-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), color-mix(in srgb, var(--blue) 70%, var(--accent)));
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+/* Usage thresholds �?turn amber as the drive fills, red when nearly full */
+.disk-part-fill.fill-warn {
+    background: var(--yellow);
+}
+
+.disk-part-fill.fill-danger {
+    background: var(--red);
+}
+
+/* Disk partition scrollbar */
+.disk-partitions::-webkit-scrollbar {
+    width: 3px;
+}
+.disk-partitions::-webkit-scrollbar-track {
+    background: transparent;
+}
+.disk-partitions::-webkit-scrollbar-thumb {
+    background: var(--text-dim);
+    border-radius: 2px;
+}
+
+/* Fix big value width so digit changes don't shift layout */
+#cpu-section .value-row,
+#gpu-section .value-row,
+#mem-section .value-row,
+#fps-section .value-row {
+    display: inline-flex;
+    align-items: baseline;
+}
+
+#cpu-section .metric-value.big,
+#gpu-section .metric-value.big,
+#mem-section .metric-value.big,
+#fps-section .metric-value.big {
+    font-variant-numeric: tabular-nums;
+    min-width: 3ch;
+    text-align: right;
+}
+
+#fps-section .metric-value.big {
+    min-width: 4ch;
+}
+
+/* Reduce big value font size */
+#cpu-section[data-span="2"] .metric-value.big,
+#gpu-section[data-span="2"] .metric-value.big,
+#mem-section[data-span="2"] .metric-value.big,
+#fps-section[data-span="2"] .metric-value.big {
+    font-size: calc(clamp(64px, 8vw, 120px) * var(--font-scale));
+}
+
+/* CPU/GPU small card (span 1): match the memory card size */
+#cpu-section:not([data-span="2"]) .metric-value.big,
+#gpu-section:not([data-span="2"]) .metric-value.big {
+    font-size: calc(clamp(56px, 6.5vw, 96px) * var(--font-scale));
+}
+
+/* MEM small card (span 1): default mem size; large card handled above */
+#mem-section .metric-value.big {
+    font-size: calc(clamp(56px, 6.5vw, 96px) * var(--font-scale));
+}
+
+#fps-section .metric-value.big {
+    font-size: calc(clamp(48px, 5.5vw, 80px) * var(--font-scale));
+}
+
+/* Larger info-line text for readability */
+#cpu-section .info-line,
+#gpu-section .info-line,
+#mem-section .info-line,
+#fps-section .info-line,
+#net-section .info-line,
+#disk-section .info-line {
+    font-size: calc(clamp(18px, 1.7vw, 23px) * var(--font-scale));
+    line-height: 1;
+    opacity: 0.85;
+}
+
+#cpu-section .info-line .mono,
+#gpu-section .info-line .mono,
+#mem-section .info-line .mono,
+#fps-section .info-line .mono,
+#net-section .info-line .mono,
+#disk-section .info-line .mono {
+    font-size: calc(clamp(16px, 1.6vw, 24px) * var(--font-scale));
+}
+
+#cpu-section[data-span="2"] .info-line,
+#gpu-section[data-span="2"] .info-line,
+#mem-section[data-span="2"] .info-line {
+    font-size: calc(clamp(19px, 1.9vw, 26px) * var(--font-scale));
+}
+
+#cpu-section .info-line .unit,
+#gpu-section .info-line .unit,
+#mem-section .info-line .unit,
+#fps-section .info-line .unit,
+#net-section .info-line .unit,
+#disk-section .info-line .unit {
+    font-size: calc(clamp(13px, 1.25vw, 18px) * var(--font-scale));
+}
+
+/* Slightly smaller FPS info-lines, so the box stays tidy around the big value */
+#fps-section:not([data-span="2"]) .info-line {
+    font-size: calc(clamp(15px, 1.45vw, 19px) * var(--font-scale));
+}
+
+#fps-section:not([data-span="2"]) .info-line .mono {
+    font-size: calc(clamp(13px, 1.35vw, 19px) * var(--font-scale));
+}
+
+#fps-section:not([data-span="2"]) .info-line .unit {
+    font-size: calc(clamp(11px, 1.05vw, 14px) * var(--font-scale));
+}
+
+/* FPS large card info-lines: match CPU/GPU font size and line spacing */
+#fps-section[data-span="2"] .info-line,
+#fps-section[data-span="2"] .info-line:nth-of-type(2),
+#fps-section[data-span="2"] .info-line:nth-of-type(3) {
+    font-size: calc(clamp(19px, 1.9vw, 26px) * var(--font-scale));
+    line-height: 1;
+}
+
+#fps-section[data-span="2"] .info-line .mono {
+    font-size: calc(clamp(16px, 1.6vw, 24px) * var(--font-scale));
+}
+
+#fps-section[data-span="2"] .info-line .unit {
+    font-size: calc(clamp(13px, 1.25vw, 18px) * var(--font-scale));
+}
+
+/* Larger process list text */
+.proc-item .proc-name,
+.proc-item .proc-value {
+    font-size: calc(13px * var(--font-scale));
+}
+
+/* Hardware name badge �?hidden by default, shown on section hover */
+.hw-name {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    z-index: 5;
+    font-family: var(--font-data);
+    font-size: calc(12px * var(--font-scale));
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    opacity: 0;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+    pointer-events: none;
+    user-select: none;
+    transition: opacity 0.2s ease;
+}
+
+/* CPU/GPU/MEM small card (span 1): no room for the hw-name badge */
+#cpu-section:not([data-span="2"]) .hw-name,
+#gpu-section:not([data-span="2"]) .hw-name,
+#mem-section:not([data-span="2"]) .hw-name {
+    display: none;
+}
+
+.term-box:hover .hw-name {
+    opacity: 0.85;
+}
