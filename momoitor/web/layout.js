@@ -497,45 +497,9 @@ function _addCard(id) {
 /* ===== Custom text card ===== */
 
 function _customTextCfg(id) {
-    const defaults = { text: '', font: '', bold: false, italic: false, size: 18, align: 'left', color: '',
-        bg_grad: false, bg_grad_c1: '', bg_grad_c2: '', bg_grad_size: 100 };
+    const defaults = { text: '', font: '', bold: false, italic: false, size: 18, align: 'left', color: '' };
     const stored = ((window._appSettings || {}).custom_text || {})[id] || {};
     return Object.assign({}, defaults, stored);
-}
-
-/* 文字卡片背景光晕：与音乐/天气大卡片一致的柔和径向渐变。启用时给
-   #text-section 加上 has-text-grad 类，并把两个颜色/大小写入 CSS 变量，
-   CSS 侧用 ::before 在卡片背景上绘制光晕。 */
-/* 提亮光晕颜色：深色（如 nord0/nord1）直接使用会与卡片背景融为一体而不可见，
-   与音乐卡片封面主色一样按亮度抬升，让光晕在深色背景上清晰可见。 */
-function _brightenGlowColor(hex, fallback) {
-    let s = (hex || '').trim();
-    if (s[0] !== '#') s = fallback;
-    const r = parseInt(s.slice(1, 3), 16);
-    const g = parseInt(s.slice(3, 5), 16);
-    const b = parseInt(s.slice(5, 7), 16);
-    if (isNaN(r) || isNaN(g) || isNaN(b)) return fallback;
-    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-    const mix = lum < 90 ? 0.45 : 0.25;
-    const lift = (c) => Math.round(c + (255 - c) * mix);
-    return 'rgb(' + lift(r) + ', ' + lift(g) + ', ' + lift(b) + ')';
-}
-
-function _applyTextBgGrad(cfg) {
-    const section = document.getElementById('text-section');
-    if (!section) return;
-    if (!cfg.bg_grad) {
-        section.classList.remove('has-text-grad');
-        section.style.removeProperty('--text-grad-c1');
-        section.style.removeProperty('--text-grad-c2');
-        section.style.removeProperty('--text-grad-scale');
-        return;
-    }
-    const size = Math.max(20, Math.min(300, parseInt(cfg.bg_grad_size, 10) || 100));
-    section.classList.add('has-text-grad');
-    section.style.setProperty('--text-grad-c1', _brightenGlowColor(cfg.bg_grad_c1, '#2e3440'));
-    section.style.setProperty('--text-grad-c2', _brightenGlowColor(cfg.bg_grad_c2, '#3b4252'));
-    section.style.setProperty('--text-grad-scale', (size / 100).toFixed(2));
 }
 
 function applyCustomText(id, cfgOverride) {
@@ -551,27 +515,18 @@ function applyCustomText(id, cfgOverride) {
     el.style.fontSize = (cfg.size || 18) + 'px';
     el.style.textAlign = cfg.align || 'left';
     el.style.color = (!empty && cfg.color) ? cfg.color : '';
-    _applyTextBgGrad(cfg);
 }
 
 /* ---- Editor panel ---- */
 let _ceEditId = 'text-section';
 let _ceAlign = 'left';
 let _ceColor = '';
-let _ceBgGrad = false;
-let _ceBgGradC1 = '';
-let _ceBgGradC2 = '';
-let _ceBgGradSize = 100;
 
 function openTextEditor(id) {
     _ceEditId = id;
     const cfg = _customTextCfg(id);
     _ceAlign = cfg.align || 'left';
     _ceColor = cfg.color || '';
-    _ceBgGrad = !!cfg.bg_grad;
-    _ceBgGradC1 = cfg.bg_grad_c1 || '';
-    _ceBgGradC2 = cfg.bg_grad_c2 || '';
-    _ceBgGradSize = parseInt(cfg.bg_grad_size, 10) || 100;
     const panel = document.getElementById('card-edit-panel');
     if (!panel) return;
     const textEl = document.getElementById('ce-text');
@@ -580,22 +535,12 @@ function openTextEditor(id) {
     const italicEl = document.getElementById('ce-italic');
     const sizeEl = document.getElementById('ce-size');
     const colorEl = document.getElementById('ce-color');
-    const bgGradEl = document.getElementById('ce-bg-grad');
-    const bgGradC1El = document.getElementById('ce-bg-grad-c1');
-    const bgGradC2El = document.getElementById('ce-bg-grad-c2');
-    const bgGradSizeEl = document.getElementById('ce-bg-grad-size');
     if (textEl) textEl.value = cfg.text;
     if (fontEl) fontEl.value = cfg.font;
     if (boldEl) boldEl.checked = !!cfg.bold;
     if (italicEl) italicEl.checked = !!cfg.italic;
     if (sizeEl) sizeEl.value = cfg.size;
     if (colorEl) colorEl.value = cfg.color || '#e8e8e8';
-    if (bgGradEl) bgGradEl.checked = _ceBgGrad;
-    if (bgGradC1El) bgGradC1El.value = _ceBgGradC1 || '#2e3440';
-    if (bgGradC2El) bgGradC2El.value = _ceBgGradC2 || '#3b4252';
-    if (bgGradSizeEl) bgGradSizeEl.value = _ceBgGradSize;
-    const bgGradOpts = document.getElementById('ce-bg-grad-opts');
-    if (bgGradOpts) bgGradOpts.style.display = _ceBgGrad ? '' : 'none';
     const btns = document.querySelectorAll('#ce-align button');
     btns.forEach(b => b.classList.toggle('active', b.dataset.align === _ceAlign));
     panel.style.display = 'flex';
@@ -620,10 +565,6 @@ function readTextEditorForm() {
         size: parseInt(sizeEl ? sizeEl.value : '18', 10) || 18,
         align: _ceAlign,
         color: _ceColor,
-        bg_grad: _ceBgGrad,
-        bg_grad_c1: _ceBgGradC1,
-        bg_grad_c2: _ceBgGradC2,
-        bg_grad_size: _ceBgGradSize,
     };
 }
 
@@ -674,51 +615,6 @@ function initTextCardEditor() {
         colorResetBtn.addEventListener('click', () => {
             _ceColor = '';
             if (colorEl) colorEl.value = '#e8e8e8';
-            previewTextCard();
-        });
-    }
-    const bgGradEl = document.getElementById('ce-bg-grad');
-    const bgGradOpts = document.getElementById('ce-bg-grad-opts');
-    if (bgGradEl) {
-        bgGradEl.addEventListener('change', () => {
-            _ceBgGrad = bgGradEl.checked;
-            if (bgGradOpts) bgGradOpts.style.display = _ceBgGrad ? '' : 'none';
-            previewTextCard();
-        });
-    }
-    const bgGradC1El = document.getElementById('ce-bg-grad-c1');
-    if (bgGradC1El) {
-        bgGradC1El.addEventListener('input', () => {
-            _ceBgGradC1 = bgGradC1El.value;
-            previewTextCard();
-        });
-    }
-    const bgGradC2El = document.getElementById('ce-bg-grad-c2');
-    if (bgGradC2El) {
-        bgGradC2El.addEventListener('input', () => {
-            _ceBgGradC2 = bgGradC2El.value;
-            previewTextCard();
-        });
-    }
-    const bgGradSizeEl = document.getElementById('ce-bg-grad-size');
-    if (bgGradSizeEl) {
-        bgGradSizeEl.addEventListener('input', () => {
-            _ceBgGradSize = parseInt(bgGradSizeEl.value, 10) || 100;
-            previewTextCard();
-        });
-    }
-    const bgGradResetBtn = document.getElementById('ce-bg-grad-reset');
-    if (bgGradResetBtn) {
-        bgGradResetBtn.addEventListener('click', () => {
-            _ceBgGrad = false;
-            _ceBgGradC1 = '';
-            _ceBgGradC2 = '';
-            _ceBgGradSize = 100;
-            if (bgGradEl) bgGradEl.checked = false;
-            if (bgGradC1El) bgGradC1El.value = '#2e3440';
-            if (bgGradC2El) bgGradC2El.value = '#3b4252';
-            if (bgGradSizeEl) bgGradSizeEl.value = 100;
-            if (bgGradOpts) bgGradOpts.style.display = 'none';
             previewTextCard();
         });
     }

@@ -1628,23 +1628,6 @@ html, body {
     overflow: hidden;
 }
 
-/* 文字卡片背景光晕：与音乐/天气大卡片一致的柔和径向渐变。颜色/大小由 JS
-   写入 --text-grad-c1/--text-grad-c2/--text-grad-scale，启用了背景渐变时才加
-   has-text-grad 类。 */
-#text-section.has-text-grad::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    background:
-        radial-gradient(150% 110% at 10% -12%, color-mix(in srgb, var(--text-grad-c1, transparent) 34%, transparent), transparent 60%),
-        radial-gradient(130% 100% at 105% 115%, color-mix(in srgb, var(--text-grad-c2, transparent) 24%, transparent), transparent 55%);
-    transform: scale(var(--text-grad-scale, 1));
-    opacity: 0.85;
-}
-
 /* Grid */
 .term-grid {
     position: relative;
@@ -5385,19 +5368,6 @@ body.layout-mode .layout-control-group .layout-del-btn {
     cursor: pointer;
 }
 .card-edit-body .ce-field-inline #ce-color-reset {
-    font-size: calc(11px * var(--font-scale));
-    padding: 4px 10px;
-}
-.card-edit-body #ce-bg-grad-opts {
-    margin-left: 14px;
-    padding-left: 10px;
-    border-left: 2px solid var(--border);
-    gap: 8px;
-}
-.card-edit-body #ce-bg-grad-opts .ce-field {
-    gap: 4px;
-}
-.card-edit-body .ce-field-inline #ce-bg-grad-reset {
     font-size: calc(11px * var(--font-scale));
     padding: 4px 10px;
 }
