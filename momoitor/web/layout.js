@@ -497,7 +497,7 @@ function _addCard(id) {
 /* ===== Custom text card ===== */
 
 function _customTextCfg(id) {
-    const defaults = { text: '', font: '', bold: false, italic: false, size: 18, align: 'left' };
+    const defaults = { text: '', font: '', bold: false, italic: false, size: 18, align: 'left', color: '' };
     const stored = ((window._appSettings || {}).custom_text || {})[id] || {};
     return Object.assign({}, defaults, stored);
 }
@@ -514,16 +514,19 @@ function applyCustomText(id, cfgOverride) {
     el.style.fontStyle = cfg.italic ? 'italic' : 'normal';
     el.style.fontSize = (cfg.size || 18) + 'px';
     el.style.textAlign = cfg.align || 'left';
+    el.style.color = (!empty && cfg.color) ? cfg.color : '';
 }
 
 /* ---- Editor panel ---- */
 let _ceEditId = 'text-section';
 let _ceAlign = 'left';
+let _ceColor = '';
 
 function openTextEditor(id) {
     _ceEditId = id;
     const cfg = _customTextCfg(id);
     _ceAlign = cfg.align || 'left';
+    _ceColor = cfg.color || '';
     const panel = document.getElementById('card-edit-panel');
     if (!panel) return;
     const textEl = document.getElementById('ce-text');
@@ -531,11 +534,13 @@ function openTextEditor(id) {
     const boldEl = document.getElementById('ce-bold');
     const italicEl = document.getElementById('ce-italic');
     const sizeEl = document.getElementById('ce-size');
+    const colorEl = document.getElementById('ce-color');
     if (textEl) textEl.value = cfg.text;
     if (fontEl) fontEl.value = cfg.font;
     if (boldEl) boldEl.checked = !!cfg.bold;
     if (italicEl) italicEl.checked = !!cfg.italic;
     if (sizeEl) sizeEl.value = cfg.size;
+    if (colorEl) colorEl.value = cfg.color || '#e8e8e8';
     const btns = document.querySelectorAll('#ce-align button');
     btns.forEach(b => b.classList.toggle('active', b.dataset.align === _ceAlign));
     panel.style.display = 'flex';
@@ -559,6 +564,7 @@ function readTextEditorForm() {
         italic: italicEl ? italicEl.checked : false,
         size: parseInt(sizeEl ? sizeEl.value : '18', 10) || 18,
         align: _ceAlign,
+        color: _ceColor,
     };
 }
 
@@ -597,6 +603,21 @@ function initTextCardEditor() {
         el.addEventListener('input', previewTextCard);
         el.addEventListener('change', previewTextCard);
     });
+    const colorEl = document.getElementById('ce-color');
+    if (colorEl) {
+        colorEl.addEventListener('input', () => {
+            _ceColor = colorEl.value;
+            previewTextCard();
+        });
+    }
+    const colorResetBtn = document.getElementById('ce-color-reset');
+    if (colorResetBtn) {
+        colorResetBtn.addEventListener('click', () => {
+            _ceColor = '';
+            if (colorEl) colorEl.value = '#e8e8e8';
+            previewTextCard();
+        });
+    }
     const panel = document.getElementById('card-edit-panel');
     if (panel) panel.addEventListener('click', (e) => { e.stopPropagation(); });
 }

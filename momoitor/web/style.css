@@ -5358,6 +5358,19 @@ body.layout-mode .layout-control-group .layout-del-btn {
 .card-edit-body .ce-field-inline input.input-sm {
     width: 120px !important;
 }
+.card-edit-body input[type="color"] {
+    width: 44px;
+    height: 30px;
+    padding: 2px;
+    background: var(--nord0);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+.card-edit-body .ce-field-inline #ce-color-reset {
+    font-size: calc(11px * var(--font-scale));
+    padding: 4px 10px;
+}
 .card-edit-body .ce-row {
     display: flex;
     align-items: center;
