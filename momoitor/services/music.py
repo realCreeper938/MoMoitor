@@ -19,7 +19,6 @@
 """
 
 import base64
-import datetime
 import os
 import subprocess
 import threading
@@ -116,7 +115,9 @@ def seek_track(position: float):
     session = _get_session()
     if session:
         try:
-            session.try_change_playback_position_async(datetime.timedelta(seconds=float(position))).get()
+            # winrt 将 TimeSpan 映射为 100ns 整数刻度，不能用 timedelta
+            ticks = int(float(position) * 10_000_000)
+            session.try_change_playback_position_async(ticks).get()
             return True
         except Exception as e:
             logger.error("seek_track failed: {}", e)
