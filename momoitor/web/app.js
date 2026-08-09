@@ -2631,8 +2631,8 @@ function applyFeatureToggles(toggles) {
 }
 
 /* ===== Layout Adjustment ===== */
-const LAYOUT_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'disk-section', 'proc-section', 'music-section', 'weather-section'];
-const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'music-section', 'weather-section'];
+const LAYOUT_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'disk-section', 'proc-section', 'music-section', 'weather-section', 'text-section'];
+const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'music-section', 'weather-section', 'text-section'];
 /* Everything draggable during layout mode — cards plus the full-height clock. */
 const DRAG_IDS = LAYOUT_IDS.concat(['clock-section']);
 
@@ -2647,6 +2647,7 @@ const DEFAULT_LAYOUT = {
     'proc-section':   { col: 3, row: 5, span: 1, hidden: false },
     'music-section':  { col: 2, row: 5, span: 1, hidden: false },
     'weather-section': { col: 2, row: 1, span: 1, hidden: true },
+    'text-section':   { col: 3, row: 1, span: 1, hidden: true },
 };
 
 let _layout = {};
@@ -2816,6 +2817,14 @@ function _addLayoutControls() {
             handle.setAttribute('draggable', 'false');
             handle.addEventListener('pointerdown', function(e) { _resizeHandleDown(e, id); });
             el.appendChild(handle);
+        }
+        if (id === 'text-section' && !el.dataset.ceBound) {
+            el.dataset.ceBound = '1';
+            el.addEventListener('click', function(e) {
+                if (!_layoutMode) return;
+                if (e.target.closest('.layout-control-group') || e.target.closest('.layout-resize-handle')) return;
+                openTextEditor(id);
+            });
         }
     });
     _updateCardsBtn();
@@ -2987,6 +2996,7 @@ const CARD_META = {
     'proc-section': { name: 'Process', color: 'var(--text-dim)', type: 'proc' },
     'music-section': { name: 'Music', color: 'var(--accent)', type: 'music' },
     'weather-section': { name: 'Weather', color: 'var(--orange)', type: 'weather' },
+    'text-section': { name: 'Text', color: 'var(--accent)', type: 'text' },
 };
 
 function _cardPreviewHTML(id) {
@@ -3014,6 +3024,14 @@ function _cardPreviewHTML(id) {
             '<div class="clp-duo"><span class="clp-arrow">' + r[0] + '</span>'
             + '<span class="clp-value">' + r[1] + '</span>'
             + '<span class="clp-unit">' + r[2] + '</span></div>').join('');
+    }
+    if (m.type === 'text') {
+        const cfg = _customTextCfg('text-section');
+        const inner = escapeHtml(cfg.text || '');
+        return '<div class="clp-text" style="text-align:' + (cfg.align || 'left') + '">'
+            + (inner ? '<span class="clp-text-lines">' + inner + '</span>'
+                : '<span class="clp-text-empty">Aa</span>')
+            + '</div>';
     }
     return '<div class="clp-value-row"><span class="clp-value">' + m.value
         + '</span><span class="clp-pct">' + m.pct + '</span></div>'
@@ -3091,6 +3109,7 @@ function _placeCard(id, col, row, span) {
             _applyFpsFontSize();
         }
         if (id === 'weather-section') refreshWeatherCard();
+        if (id === 'text-section') applyCustomText(id);
     }
     _repackColumn(col, id, row);
     _rebalanceOverflow();
@@ -3117,6 +3136,115 @@ function _addCard(id) {
     }
     if (col === null) { showToast('空间不足'); return; }
     _placeCard(id, col, _columnHeight(col) + 1);
+}
+
+/* ===== Custom text card ===== */
+const TEXT_CARD_IDS = ['text-section'];
+
+function _customTextCfg(id) {
+    const defaults = { text: '', font: '', bold: false, italic: false, size: 18, align: 'left' };
+    const stored = ((window._appSettings || {}).custom_text || {})[id] || {};
+    return Object.assign({}, defaults, stored);
+}
+
+function applyCustomText(id, cfgOverride) {
+    const el = document.getElementById('custom-text-el');
+    if (!el) return;
+    const cfg = cfgOverride || _customTextCfg(id);
+    const empty = !cfg.text;
+    el.textContent = empty ? t('text-edit-hint') : cfg.text;
+    el.classList.toggle('empty', empty);
+    el.style.fontFamily = cfg.font ? '"' + cfg.font + '"' : '';
+    el.style.fontWeight = cfg.bold ? '700' : '400';
+    el.style.fontStyle = cfg.italic ? 'italic' : 'normal';
+    el.style.fontSize = (cfg.size || 18) + 'px';
+    el.style.textAlign = cfg.align || 'left';
+}
+
+/* ---- Editor panel ---- */
+let _ceEditId = 'text-section';
+let _ceAlign = 'left';
+
+function openTextEditor(id) {
+    _ceEditId = id;
+    const cfg = _customTextCfg(id);
+    _ceAlign = cfg.align || 'left';
+    const panel = document.getElementById('card-edit-panel');
+    if (!panel) return;
+    const textEl = document.getElementById('ce-text');
+    const fontEl = document.getElementById('ce-font');
+    const boldEl = document.getElementById('ce-bold');
+    const italicEl = document.getElementById('ce-italic');
+    const sizeEl = document.getElementById('ce-size');
+    if (textEl) textEl.value = cfg.text;
+    if (fontEl) fontEl.value = cfg.font;
+    if (boldEl) boldEl.checked = !!cfg.bold;
+    if (italicEl) italicEl.checked = !!cfg.italic;
+    if (sizeEl) sizeEl.value = cfg.size;
+    const btns = document.querySelectorAll('#ce-align button');
+    btns.forEach(b => b.classList.toggle('active', b.dataset.align === _ceAlign));
+    panel.style.display = 'flex';
+    if (textEl) textEl.focus();
+}
+
+function closeTextEditor() {
+    const panel = document.getElementById('card-edit-panel');
+    if (panel) panel.style.display = 'none';
+}
+
+function readTextEditorForm() {
+    const textEl = document.getElementById('ce-text');
+    const fontEl = document.getElementById('ce-font');
+    const boldEl = document.getElementById('ce-bold');
+    const italicEl = document.getElementById('ce-italic');
+    const sizeEl = document.getElementById('ce-size');
+    return {
+        text: textEl ? textEl.value : '',
+        font: fontEl ? fontEl.value.trim() : '',
+        bold: boldEl ? boldEl.checked : false,
+        italic: italicEl ? italicEl.checked : false,
+        size: parseInt(sizeEl ? sizeEl.value : '18', 10) || 18,
+        align: _ceAlign,
+    };
+}
+
+function previewTextCard() {
+    applyCustomText(_ceEditId, readTextEditorForm());
+}
+
+async function saveTextCard() {
+    const cfg = readTextEditorForm();
+    window._appSettings = window._appSettings || {};
+    window._appSettings.custom_text = window._appSettings.custom_text || {};
+    window._appSettings.custom_text[_ceEditId] = cfg;
+    applyCustomText(_ceEditId, cfg);
+    closeTextEditor();
+    try { await pywebview.api.save_settings(window._appSettings); } catch (e) { console.warn('save custom text:', e); }
+}
+
+function initTextCardEditor() {
+    const closeBtn = document.getElementById('card-edit-close');
+    if (closeBtn) closeBtn.addEventListener('click', closeTextEditor);
+    const saveBtn = document.getElementById('card-edit-save');
+    if (saveBtn) saveBtn.addEventListener('click', saveTextCard);
+    const cancelBtn = document.getElementById('card-edit-cancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', closeTextEditor);
+    const alignBox = document.getElementById('ce-align');
+    if (alignBox) alignBox.addEventListener('click', (e) => {
+        const b = e.target.closest('button[data-align]');
+        if (!b) return;
+        _ceAlign = b.dataset.align;
+        alignBox.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
+        previewTextCard();
+    });
+    ['ce-text', 'ce-font', 'ce-bold', 'ce-italic', 'ce-size'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', previewTextCard);
+        el.addEventListener('change', previewTextCard);
+    });
+    const panel = document.getElementById('card-edit-panel');
+    if (panel) panel.addEventListener('click', (e) => { e.stopPropagation(); });
 }
 
 let _toastEl = null;
@@ -4047,6 +4175,7 @@ function initSettings() {
             debug_logs: debugLogsChk.checked,
             debug: debugChk ? debugChk.checked : false,
             auto_launch_music_player: autoLaunchChk ? autoLaunchChk.checked : true,
+            custom_text: (window._appSettings && window._appSettings.custom_text) || {},
         };
 
         // Feature toggles
@@ -4407,6 +4536,7 @@ window.addEventListener('pywebviewready', async () => {
 
     initSettings();
     initLayoutControls();
+    initTextCardEditor();
     setupTopControl();
     // Disk partition hover: populate details on mouseenter
     const diskSection = document.getElementById('disk-section');
@@ -4425,6 +4555,7 @@ window.addEventListener('pywebviewready', async () => {
     applyFeatureToggles(s.feature_toggles || {});
     // Apply saved layout
     applyLayout(s.layout);
+    applyCustomText('text-section');
     const ft = s.feature_toggles || {};
 
     // Start intervals only for enabled features

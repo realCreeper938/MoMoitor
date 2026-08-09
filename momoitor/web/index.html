@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoMoitor</title>
-    <link rel="stylesheet" href="style.css?v=28">
+    <link rel="stylesheet" href="style.css?v=30">
 </head>
 <body>
     <!-- 启动加载动画：程序未完全加载完成时显示 -->
@@ -382,6 +382,15 @@
                 </div>
             </div>
 
+            <!-- Custom text card -->
+            <div class="term-box" id="text-section" style="display:none">
+                <div class="layout-drag-handle">⠿</div>
+                <div class="box-header">Custom Text</div>
+                <div class="box-content text-content">
+                    <div class="custom-text" id="custom-text-el"></div>
+                </div>
+            </div>
+
             <!-- Top process (horizontal mode only, beside FPS) -->
             <div class="term-box" id="proc-section">
                 <div class="layout-drag-handle">⠿</div>
@@ -520,6 +529,50 @@
             <button type="button" class="card-list-close" id="card-list-close" aria-label="Close">&times;</button>
         </div>
         <div class="card-list-body" id="card-list-body"></div>
+    </div>
+
+    <!-- Custom text card editor -->
+    <div class="card-edit-panel" id="card-edit-panel" style="display:none">
+        <div class="card-list-header">
+            <span data-i18n="text-edit-title">Edit Custom Text</span>
+            <button type="button" class="card-list-close" id="card-edit-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="card-edit-body">
+            <div class="ce-field">
+                <label class="ce-label" for="ce-text" data-i18n="text-edit-content">Content</label>
+                <textarea id="ce-text" rows="5" placeholder=""></textarea>
+            </div>
+            <div class="ce-field">
+                <label class="ce-label" for="ce-font" data-i18n="text-edit-font">Font</label>
+                <input type="text" id="ce-font" class="input-sm" placeholder="Consolas">
+            </div>
+            <div class="ce-row">
+                <label class="ce-toggle">
+                    <input type="checkbox" id="ce-bold">
+                    <span data-i18n="text-edit-bold">Bold</span>
+                </label>
+                <label class="ce-toggle">
+                    <input type="checkbox" id="ce-italic">
+                    <span data-i18n="text-edit-italic">Italic</span>
+                </label>
+            </div>
+            <div class="ce-field ce-field-inline">
+                <label class="ce-label" for="ce-size" data-i18n="text-edit-size">Font Size</label>
+                <input type="number" id="ce-size" class="input-sm" min="8" max="72" value="18">
+            </div>
+            <div class="ce-field">
+                <span class="ce-label" data-i18n="text-edit-align">Alignment</span>
+                <div class="ce-align" id="ce-align">
+                    <button type="button" data-align="left" data-i18n="align-left">Left</button>
+                    <button type="button" data-align="center" data-i18n="align-center">Center</button>
+                    <button type="button" data-align="right" data-i18n="align-right">Right</button>
+                </div>
+            </div>
+            <div class="ce-actions">
+                <button type="button" class="text-btn" id="card-edit-save" data-i18n="btn-save">Save</button>
+                <button type="button" class="text-btn" id="card-edit-cancel" data-i18n="btn-close">Close</button>
+            </div>
+        </div>
     </div>
 
     <!-- Settings -->
