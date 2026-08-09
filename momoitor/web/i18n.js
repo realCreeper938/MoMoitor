@@ -460,9 +460,8 @@ function getCurrentLang() {
     return _currentLang;
 }
 
-/* ── i18n 内嵌链接 ──────────────────────────────────────────────
-   译文里可用 Markdown 式 [文字](URL) 嵌入链接，渲染为可点击的 <a>。
-   仅当匹配到该语法时才走 innerHTML；其余译文沿用 textContent。 */
+// i18n 内嵌链接：译文里可用 Markdown 式 [文字](URL) 嵌入链接，渲染为可点击的 <a>。
+// 仅当匹配到该语法时才走 innerHTML；其余译文沿用 textContent。
 const I18N_LINK_RE = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
 
 function i18nToHtml(text) {

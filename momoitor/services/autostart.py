@@ -1,13 +1,4 @@
-"""Windows scheduled task management for auto-start.
-
-主要方法:
-- is_enabled(): 检查自动启动任务是否存在
-- enable(): 创建计划任务以在登录时运行
-- disable(): 删除计划任务
-
-主要变量:
-- TASK_NAME: 计划任务名称 ("MoMoitor")
-"""
+"""通过 Windows 计划任务实现开机自启动。"""
 
 import os
 import sys

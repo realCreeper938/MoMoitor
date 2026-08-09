@@ -1,19 +1,15 @@
-/* ── 插件系统前端运行时 ────────────────────────────────────────────
- * 本文件必须在 boot.js 之前加载（index.html 中位于 settings.js 之后）。
- *
- * 它提供两套东西：
- * 1. window.PluginApi —— 供插件脚本调用的 API（注册卡片/设置项/事件等）
- * 2. initPlugins()    —— 启动时拉取后端收集的插件前端资源并注入页面
- *
- * 插件 frontend/main.js 的加载发生在 initPlugins() 中（boot 阶段），
- * 因此插件脚本可以安全地引用本文件定义的 PluginApi。
- */
+// 插件系统前端运行时：本文件必须在 boot.js 之前加载（index.html 中位于 settings.js 之后）。
+// 提供两套东西：
+// 1. window.PluginApi —— 供插件脚本调用的 API（注册卡片/设置项/事件等）
+// 2. initPlugins()    —— 启动时拉取后端收集的插件前端资源并注入页面
+// 插件 frontend/main.js 的加载发生在 initPlugins() 中（boot 阶段），
+// 因此插件脚本可以安全地引用本文件定义的 PluginApi。
 
 /* eslint-disable no-restricted-globals */
 (function () {
     'use strict';
 
-    /* ── 内部状态 ───────────────────────────────────────────── */
+    // 内部状态
     const cards = {};            // id -> { def, el, timer }
     const listeners = {};        // event -> [fn]
     const readyHooks = [];
@@ -33,7 +29,7 @@
         (listeners[event] || []).forEach(fn => _safeCall(fn, [data]));
     }
 
-    /* ── 卡片工具 ───────────────────────────────────────────── */
+    // 卡片工具
     function _titleText(title) {
         if (title && typeof title === 'object') {
             return title[getCurrentLang()] || title.en || title.zh || '';
@@ -105,7 +101,7 @@
         _tick(card);
     }
 
-    /* ── 公开 API ───────────────────────────────────────────── */
+    // 公开 API
     const PluginApi = {
         /* 卡片 */
         registerCard,
@@ -186,7 +182,7 @@
             }
         },
 
-        /* ── 内部（boot.js / Python 调用）── */
+        // 内部（boot.js / Python 调用）
         bootstrap() {
             if (booted) return;
             booted = true;
@@ -216,7 +212,7 @@
 
     window.PluginApi = PluginApi;
 
-    /* ── 主题注入 ───────────────────────────────────────────── */
+    // 主题注入
     function applyPluginThemes(themes) {
         if (!themes || !themes.length) return;
         let style = document.getElementById('plugin-theme-styles');
@@ -250,7 +246,7 @@
         style.textContent += css;
     }
 
-    /* ── 启动初始化 ─────────────────────────────────────────── */
+    // 启动初始化
     window.initPlugins = async function initPlugins() {
         if (!(window.pywebview && window.pywebview.api)) return;
         try {
@@ -285,7 +281,7 @@
         } catch (e) { window._pluginDataSources = []; }
     };
 
-    /* ── 设置页插件列表 ─────────────────────────────────────── */
+    // 设置页插件列表
     window.renderPluginList = async function renderPluginList() {
         const list = document.getElementById('plugin-list');
         if (!list) return;

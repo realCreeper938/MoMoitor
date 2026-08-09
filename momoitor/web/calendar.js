@@ -128,7 +128,6 @@ async function showDayPopup(cell, year, month, day) {
     const container = document.getElementById('clock-cal-popup');
     if (!container) return;
 
-    // Remove existing popup
     const existingPopup = document.querySelector('.cal-day-popup');
     if (existingPopup) existingPopup.remove();
 

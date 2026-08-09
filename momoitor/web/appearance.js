@@ -3,7 +3,7 @@ function applyColorscheme(scheme) {
     document.documentElement.setAttribute('data-colorscheme', scheme);
 }
 
-/* ── Clock sidebar background (horizontal mode) ── */
+// Clock sidebar background (horizontal mode)
 let lastResolvedClockBg = { image: '', path: '' };
 let clockBgState = { url: '', topColor: '', gradient: true, opacity: 0, blur: 0 };
 let _clockBgResizeTimer = null;
@@ -134,7 +134,7 @@ window.addEventListener('resize', () => {
     _clockBgResizeTimer = setTimeout(applyClockBackgroundGradient, 200);
 });
 
-/* ── Theme picker cards ── */
+// Theme picker cards
 const THEME_LIST = {
     dark: [
         { value: 'gruvbox', name: 'Gruvbox' },
@@ -214,7 +214,7 @@ function renderThemeCards(selectedScheme, onSelect) {
     THEME_LIST.light.forEach(t => lightGrid.appendChild(makeCard(t)));
 }
 
-/* ── Font picker ── */
+// Font picker
 // Each entry: { value: <css family name>, name: <display name>, preview: <text shown in the card> }
 const AVAILABLE_FONTS = [
     { value: 'JetBrains Maple Mono', name: 'JetBrains Maple Mono', preview: 'Aa 0123' },
@@ -277,7 +277,7 @@ function renderFontCards(slot, selectedFont, onSelect) {
     });
 }
 
-/* ── Image picker (thumbnail grid) ── */
+// Image picker (thumbnail grid)
 function renderImagePicker(container, bgList, selected, onChange) {
     if (!container) return;
     container.innerHTML = '';
@@ -382,7 +382,7 @@ function renderImagePicker(container, bgList, selected, onChange) {
     bgList.forEach(p => container.appendChild(makeImage(p)));
 }
 
-/* ── Segmented control helper ── */
+// Segmented control helper
 function initSegmented(container, value, onChange) {
     if (!container) return;
     const buttons = container.querySelectorAll('button');
@@ -399,7 +399,7 @@ function initSegmented(container, value, onChange) {
     return { set: setActive };
 }
 
-/* ── Clock background offset modal ── */
+// Clock background offset modal
 let clockBgOffsetState = { x: 50, y: 50, url: '', onChange: null };
 
 function openClockBgOffsetModal(url, offsetX, offsetY, onChange) {

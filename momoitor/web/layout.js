@@ -1,4 +1,4 @@
-/* ===== Layout Adjustment ===== */
+// Layout Adjustment
 const LAYOUT_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'disk-section', 'proc-section', 'music-section', 'weather-section', 'text-section'];
 const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'music-section', 'weather-section', 'text-section'];
 /* Everything draggable during layout mode — cards plus the full-height clock. */
@@ -312,7 +312,7 @@ function _deleteCard(id) {
     _updateCardsBtn();
 }
 
-/* ---- Resize handle drag (toggle card size) ---- */
+// Resize handle drag (toggle card size)
 let _resizingCard = null;
 let _resizeDelta = 0;
 
@@ -547,13 +547,7 @@ function _anyOverflow() {
 
 /* Whether some column other than `exceptCol` can fit one more `span`-sized card. */
 function _columnHasRoomFor(span, exceptCol) {
-    const cols = _gridCols();
-    const rows = _gridRows();
-    for (let c = 2; c <= cols + 1; c++) {
-        if (c === exceptCol) continue;
-        if (_columnHeight(c) + span <= rows + 1) return true;
-    }
-    return false;
+    return _findColumnWithRoom(span, exceptCol) !== null;
 }
 
 /* Pick a column other than `exceptCol` that can fit a card of `span` rows, or
@@ -593,7 +587,7 @@ function _addCard(id) {
     _placeCard(id, col, _firstFreeRow(col));
 }
 
-/* ===== Custom text card ===== */
+// Custom text card
 
 function _customTextCfg(id) {
     const defaults = { text: '', font: '', bold: false, italic: false, size: 18, align: 'left', color: '' };
@@ -616,7 +610,7 @@ function applyCustomText(id, cfgOverride) {
     el.style.color = (!empty && cfg.color) ? cfg.color : '';
 }
 
-/* ---- Editor panel ---- */
+// Editor panel
 let _ceEditId = 'text-section';
 let _ceAlign = 'left';
 let _ceColor = '';
@@ -841,7 +835,7 @@ function onLayoutDrop(e) {
     _syncLayoutFromDom();
 }
 
-/* ---- Dropping onto empty grid space (not over another card) ---- */
+// Dropping onto empty grid space (not over another card)
 
 let _dropSlotEl = null;
 

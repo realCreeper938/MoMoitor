@@ -367,7 +367,7 @@ function spawnCtrlRipple(btn, event) {
     ripple.addEventListener('animationend', () => ripple.remove());
 }
 
-/* ── Click MEM % to clean memory (sweep animation + count-down) ── */
+// Click MEM % to clean memory (sweep animation + count-down)
 let _memCleanPending = false;
 let _lastCleanAt = 0;
 let _memCleanRestoreTimer = null;

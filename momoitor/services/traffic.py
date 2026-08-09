@@ -1,16 +1,4 @@
-"""流量记录服务 - 记录每天上传/下载的总流量。
-
-主要方法:
-- TrafficService: 流量记录服务类
-  - start(): 启动后台记录线程
-  - stop(): 停止后台记录线程
-  - get_today(): 获取今日流量 {up, down}
-  - get_month(year, month): 获取某月每日流量数据
-  - get_top_processes(): 获取消耗流量最多的程序
-
-数据存储:
-- ./data/traffic.db: SQLite 数据库，包含 daily_traffic 和 proc_cache 两张表
-"""
+"""流量记录服务 —— 每日上传/下载流量统计（SQLite: data/traffic.db）。"""
 
 import os
 import time

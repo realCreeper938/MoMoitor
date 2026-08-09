@@ -1,22 +1,4 @@
-"""硬件监视服务 —— 快照查询、后端切换。
-
-主要方法:
-- HardwareService类: 线程安全的硬件监视器包装类
-  - snapshot(): 获取硬件数据快照（CPU、GPU、内存、磁盘、网络）
-  - get_hw_names(): 获取硬件名称列表
-  - get_gpu_list(): 获取可用GPU列表
-  - get_hw_detail(): 获取详细硬件信息
-  - get_memory(): 获取内存信息
-  - change_backend(source): 切换硬件监视器后端（LHM/HWiNFO）
-  - close(): 关闭硬件监视器
-
-主要变量:
-- HardwareService._monitor: 硬件监视器后端实例
-- HardwareService._lock: 线程锁
-- HardwareService._settings: 设置字典引用
-- HardwareService._backend_source: 当前后端来源标识
-- HardwareService._closed: 监视器关闭状态标志
-"""
+"""硬件监视服务 —— 线程安全地封装后端监视器，提供快照查询与后端切换。"""
 
 import math
 import threading

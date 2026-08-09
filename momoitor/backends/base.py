@@ -1,29 +1,8 @@
-"""硬件监视后端的抽象基类。
-
-主要方法:
-- BaseMonitor类: 硬件监视器后端抽象基类
-  - close(): 关闭监视器
-  - get_cpu(): 获取CPU信息 {clock, temp, power, load, voltage}
-  - get_gpu(index): 获取GPU信息 {temp, power, load, vram_used_gb, vram_total_gb, vram_temp}
-  - get_memory(): 获取内存信息 {used_gb, total_gb, percent, temp, volt, clock}
-  - get_disks(): 获取磁盘分区信息列表
-  - get_disk_status(): 获取磁盘状态 {activity, temp, read, write}
-  - get_hw_names(): 获取硬件名称 {cpu, gpu, mem, disk}
-  - get_hw_detail(gpu_index): 获取详细硬件信息
-  - get_network(): 获取网络流量信息 {up, down, name}
-  - snapshot(gpu_index): 获取完整硬件数据快照
-
-主要变量:
-- BaseMonitor._prev_net: 上一次网络IO计数器
-- BaseMonitor._prev_net_time: 上一次网络IO时间
-- BaseMonitor._net_name: 网络接口名称缓存
-- BaseMonitor._net_name_ts: 网络名称缓存时间戳
-"""
+"""硬件监视后端的抽象基类：统一硬件采集接口与网络速率计算。"""
 
 import abc
 import psutil
 import time
-from loguru import logger
 
 
 class BaseMonitor(abc.ABC):

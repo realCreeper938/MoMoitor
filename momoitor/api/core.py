@@ -36,7 +36,6 @@ class ApiCore:
             plugin_monitor_factory=self._plugin_manager.create_monitor,
         )
         self._fullscreen = False
-        self._random_bg = {}
         # 以下服务按需延迟初始化，避免启动时不必要的开销。
         # _weather / _holiday / _traffic / _lyrics 通过 __getattr__ 惰性创建。
         logger.info("API initialized")
@@ -64,13 +63,9 @@ class ApiCore:
         """服务端模式：注入 HTTP 后端用于关闭等操作。"""
         self._server_backend = backend
 
-    # ── JS 桥接 ──────────────────────────────────────────────
-
     def js_log(self, level, message):
         log_func = getattr(logger, level, logger.debug)
         log_func("[JS] {}", message)
-
-    # ── 设置 / 自启动 ────────────────────────────────────────
 
     def get_feature_toggles(self):
         return self._settings.get("feature_toggles", {})
@@ -164,8 +159,6 @@ class ApiCore:
             "urls": urls,
         }
 
-    # ── 显示器 / 窗口 ────────────────────────────────────────
-
     def get_monitors(self):
         return win_svc.get_monitors()
 
@@ -194,15 +187,11 @@ class ApiCore:
         if self._window:
             win_svc.minimize(self._window)
 
-    # ── 日历（悬浮窗）────────────────────────────────────────
-
     def show_calendar(self):
         return show_calendar(self._window)
 
     def hide_calendar(self):
         return hide_calendar(self._window)
-
-    # ── 生命周期 ─────────────────────────────────────────────
 
     def close_monitor(self):
         if '_traffic' in self.__dict__:
@@ -221,11 +210,8 @@ class ApiCore:
         if self._server_backend:
             self._server_backend.stop()
 
-    # ── 辅助 ─────────────────────────────────────────────────
-
     def _remove_window_shadow(self):
         try:
-            from ctypes import wintypes
             hwnd = self._window.native_handle
             if not hwnd:
                 return

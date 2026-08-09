@@ -1,15 +1,4 @@
-"""MoMoitor - Windows 硬件监视器。
-
-主要方法:
-- main(): 应用程序入口点，初始化硬件监视器并启动webview窗口或HTTP服务器
-- _cleanup_webview2_data(): 清理WebView2用户数据文件夹中的过时锁文件
-- _hide_console(): 隐藏控制台窗口，只显示webview界面
-
-主要变量:
-- logger: loguru日志实例，配置为输出到stderr和momonitor.log文件
-- SETTINGS_FILE: 设置文件路径（来自config模块）
-- WEB_DIR: 前端web文件目录路径
-"""
+"""MoMoitor - Windows 硬件监视器桌面入口。"""
 
 import ctypes
 import os

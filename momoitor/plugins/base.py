@@ -54,8 +54,6 @@ class PluginContext:
         self._manager = manager
         self._info = info
 
-    # ── 基本信息 ──────────────────────────────────────────────
-
     @property
     def id(self) -> str:
         return self._info.id
@@ -79,8 +77,6 @@ class PluginContext:
         """
         return self._manager.api
 
-    # ── 设置 ──────────────────────────────────────────────────
-
     def get_settings(self) -> dict:
         """读取当前设置（深拷贝，修改不会写回磁盘）。"""
         return self._manager.get_settings()
@@ -89,8 +85,6 @@ class PluginContext:
         """整体保存设置（会自动规范化并写回 data/settings.json）。"""
         return self._manager.save_settings(settings)
 
-    # ── API 方法 ──────────────────────────────────────────────
-
     def add_api_method(self, name: str, fn) -> None:
         """注册一个前端可调用的 API 方法。
 
@@ -98,8 +92,6 @@ class PluginContext:
         若 Api 尚未创建，该方法会被暂存并在 Api 就绪后自动绑定。
         """
         self._manager.add_api_method(name, fn)
-
-    # ── 钩子 ──────────────────────────────────────────────────
 
     def on_snapshot(self, fn) -> None:
         """注册硬件快照钩子。
@@ -121,8 +113,6 @@ class PluginContext:
     def on_settings_saved(self, fn) -> None:
         """注册设置保存钩子：设置被保存后调用 fn(settings)。"""
         self._manager.add_hook("settings_saved", fn)
-
-    # ── 能力注册 ──────────────────────────────────────────────
 
     def register_theme(self, theme: dict) -> None:
         """注册一个主题（配色方案）。
@@ -150,8 +140,6 @@ class PluginContext:
         实例化它作为硬件后端。注册后数据源会出现在 设置-数据 的下拉框中。
         """
         self._manager.register_data_source(self.id, config, monitor_cls)
-
-    # ── 前端通信 ──────────────────────────────────────────────
 
     def call_js(self, code: str):
         """在当前页面执行一段 JavaScript 并返回其结果。"""

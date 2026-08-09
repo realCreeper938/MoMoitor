@@ -1,8 +1,5 @@
 """显示器亮度调节 —— 多策略实现（Windows ctypes / PowerShell）。
 
-主要方法:
-- adjust_brightness(action, level, monitor_index): 调节显示器亮度
-
 策略（按优先级）:
 1. PowerShell + WMI（笔记本内置面板 —— 最可靠，无依赖）
 2. \\\\.\\LCD 上的 IOCTL（内核级笔记本亮度）

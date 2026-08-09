@@ -205,7 +205,6 @@ function updateChart(key, dynamicMax) {
             timeLabel = document.createElement('div');
             timeLabel.className = 'spark-time-label';
             section.appendChild(timeLabel);
-            // Add mousemove handler to the section
             section.addEventListener('mousemove', function(e) {
                 const rect = svg.getBoundingClientRect();
                 if (rect.width === 0) return;
@@ -700,7 +699,7 @@ function hideKillConfirm() {
     hideOverlay('kill-confirm-overlay');
 }
 
-/* ── 通用应用内确认弹窗（替代 window.confirm）────────────── */
+// 通用应用内确认弹窗（替代 window.confirm）
 let _appConfirmCb = null;
 
 function showAppConfirm(message, onOk) {
@@ -716,7 +715,7 @@ function hideAppConfirm() {
     hideOverlay('app-confirm-overlay');
 }
 
-/* ── 服务端模式提示框 ── */
+// 服务端模式提示框
 function showServerInfoModal(info) {
     const overlay = document.getElementById('server-info-overlay');
     if (!overlay) return;
@@ -739,7 +738,7 @@ function hideServerInfoModal() {
     hideOverlay('server-info-overlay');
 }
 
-/* ── 版本更新检测 ── */
+// 版本更新检测
 function showUpdateModal(info) {
     const overlay = document.getElementById('update-overlay');
     if (!overlay) return;
@@ -835,4 +834,11 @@ function _startInterval(enabled, fn, ms) {
         fn();
         _intervalMap.set(key, setInterval(fn, ms));
     }
+}
+
+function _startWeatherIntervals(enabled) {
+    _startInterval(enabled, refreshWeather, 600000);
+    _startInterval(enabled, refreshWeatherDetail, 600000);
+    _startInterval(enabled, refreshAirQuality, 1800000);
+    _startInterval(enabled, refreshAlerts, 600000);
 }

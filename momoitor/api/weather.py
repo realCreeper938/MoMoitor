@@ -10,8 +10,6 @@ from momoitor.services.calendar import get_huangli
 class WeatherMixin:
     """天气、黄历、节假日的 JS 桥接方法。"""
 
-    # ── 天气（委托给服务）────────────────────────────────────
-
     def get_weather(self):
         return self._weather.get_now()
 
@@ -33,8 +31,6 @@ class WeatherMixin:
         if not self._feature_on("weather"):
             return {"error": "disabled"}
         return self._weather.get_lunar_time(timezone)
-
-    # ── 黄历 / 节假日（委托给服务）───────────────────────────
 
     def get_huangli(self, year=None, month=None, day=None):
         if not self._feature_on("calendar"):

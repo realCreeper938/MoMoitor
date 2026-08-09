@@ -1,4 +1,4 @@
-/* ── 首次启动右上角提示 ─────────────────────────────────────── */
+// 首次启动右上角提示
 let _hintTimer = null;
 let _hintDismissed = false;
 
@@ -137,17 +137,13 @@ window.addEventListener('pywebviewready', async () => {
 
     // Apply feature toggles - hide UI elements for disabled features
     applyFeatureToggles(s.feature_toggles || {});
-    // Apply saved layout
     applyLayout(s.layout);
     applyCustomText('text-section');
     const ft = s.feature_toggles || {};
 
     // Start intervals only for enabled features
     const weatherOn = ft.weather !== false;
-    _startInterval(weatherOn, refreshWeather, 600000);
-    _startInterval(weatherOn, refreshWeatherDetail, 600000);
-    _startInterval(weatherOn, refreshAirQuality, 1800000);
-    _startInterval(weatherOn, refreshAlerts, 600000);
+    _startWeatherIntervals(weatherOn);
     _startInterval(true, refreshWeatherCard, 600000);
     _startInterval(ft.music !== false, refreshMusic, 3000);
     _startInterval(ft.fps !== false, refreshFps, 1000);
@@ -311,21 +307,19 @@ window.addEventListener('pywebviewready', async () => {
 
     async function checkMonitor() {
         try {
+            async function showMonitor() {
+                if (!monitorHidden) return;
+                document.body.style.visibility = 'visible';
+                monitorHidden = false;
+                await pywebview.api.move_to_monitor(cachedMonitor);
+            }
             if (!cachedHideMissing) {
-                if (monitorHidden) {
-                    document.body.style.visibility = 'visible';
-                    monitorHidden = false;
-                    await pywebview.api.move_to_monitor(cachedMonitor);
-                }
+                await showMonitor();
                 return;
             }
             const res = await pywebview.api.check_monitor();
             if (res.available) {
-                if (monitorHidden) {
-                    document.body.style.visibility = 'visible';
-                    monitorHidden = false;
-                    await pywebview.api.move_to_monitor(cachedMonitor);
-                }
+                await showMonitor();
             } else {
                 if (!monitorHidden) {
                     document.body.style.visibility = 'hidden';

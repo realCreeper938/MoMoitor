@@ -22,7 +22,7 @@ import sys
 
 from loguru import logger
 
-from momoitor.config import PLUGINS_DIR, load_settings, save_settings
+from momoitor.config import PLUGINS_DIR, save_settings
 from momoitor.config import _normalize_settings
 
 from .base import PluginContext, PluginError, PluginInfo
@@ -57,8 +57,6 @@ class PluginManager:
         self._activated = False
         self._shutdown_called = False
 
-    # ── 属性 ──────────────────────────────────────────────────
-
     @property
     def api(self):
         return self._api
@@ -66,8 +64,6 @@ class PluginManager:
     @property
     def plugins_dir(self) -> str:
         return self._dir
-
-    # ── 扫描 / 激活 ───────────────────────────────────────────
 
     def scan(self):
         """扫描插件目录。幂等，仅首次执行。"""
@@ -137,8 +133,6 @@ class PluginManager:
         info.error = error
         logger.error("Failed to activate plugin {}: {}", info.id, error)
 
-    # ── 配置加载 ──────────────────────────────────────────────
-
     def _load_config(self, name: str, path: str) -> PluginInfo:
         cfg_file = os.path.join(path, "config.py")
         if not os.path.isfile(cfg_file):
@@ -183,8 +177,6 @@ class PluginManager:
         if root not in sys.path:
             sys.path.insert(0, root)
 
-    # ── API 方法绑定 ──────────────────────────────────────────
-
     def add_api_method(self, name: str, fn):
         """注册插件 API 方法。Api 已创建则立即绑定。"""
         if not isinstance(name, str) or not name:
@@ -214,8 +206,6 @@ class PluginManager:
         也能正常调用。插件作者按普通函数编写（无需 self）。
         """
         setattr(api, name, fn)
-
-    # ── 能力注册（register() 中调用）──────────────────────────
 
     def register_theme(self, plugin_id: str, theme: dict) -> None:
         """插件在 register(ctx) 中注册主题。"""
@@ -248,8 +238,6 @@ class PluginManager:
             "plugin_id": plugin_id,
         }
 
-    # ── 数据源 ────────────────────────────────────────────────
-
     def create_monitor(self, source: str):
         """按数据源 value 查找已注册的数据源插件并实例化其 Monitor。
 
@@ -265,8 +253,6 @@ class PluginManager:
         except Exception as e:
             logger.error("Plugin {} Monitor init failed: {}", entry["plugin_id"], e)
             return None
-
-    # ── 前端资源 ──────────────────────────────────────────────
 
     def frontend_bundle(self) -> dict:
         """收集所有已启用插件的前端资源（head / body / style / script）。"""
@@ -296,8 +282,6 @@ class PluginManager:
                 except OSError as e:
                     logger.warning("Failed to read plugin frontend {}: {}", path, e)
         return result
-
-    # ── 对外查询 ──────────────────────────────────────────────
 
     def themes(self) -> list:
         """已注册主题的字典列表（供前端注册配色）。
@@ -334,8 +318,6 @@ class PluginManager:
             "valid": info.valid,
             "error": info.error,
         }
-
-    # ── 设置 ──────────────────────────────────────────────────
 
     def _current_settings(self) -> dict:
         """当前生效的设置：优先使用已挂载 Api 实例的最新设置。
@@ -382,8 +364,6 @@ class PluginManager:
         logger.info("Plugin {} {}", plugin_id, "enabled" if enabled else "disabled")
         return {"ok": True, "restart_required": True}
 
-    # ── 钩子执行 ──────────────────────────────────────────────
-
     def add_hook(self, name: str, fn):
         if name not in self._hooks:
             raise PluginError("未知钩子类型: {}".format(name))
@@ -426,8 +406,6 @@ class PluginManager:
                 fn(settings)
             except Exception as e:
                 logger.error("plugin settings_saved hook failed: {}", e)
-
-    # ── 前端通信 ──────────────────────────────────────────────
 
     def call_js(self, code: str):
         api = self._api

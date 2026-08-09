@@ -1,12 +1,4 @@
-"""窗口与系统空闲时间管理（Windows ctypes）。
-
-主要方法:
-- minimize(window): 最小化窗口
-- set_caption(window, enabled): 添加或移除窗口标题栏
-- move_to_monitor(window, index): 将窗口移动到指定显示器
-- get_monitors(): 枚举所有显示器（物理像素坐标 + 友好设备名）
-- get_idle_time(): 获取系统空闲时间（秒）
-"""
+"""窗口与系统空闲时间管理（Windows ctypes）。"""
 
 import ctypes
 import ctypes.wintypes

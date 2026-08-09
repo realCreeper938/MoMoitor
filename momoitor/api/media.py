@@ -23,9 +23,11 @@ from momoitor.services.volume import adjust_volume
 
 
 class MediaMixin:
-    """音乐 / FPS / 流量 / 壁纸 / 音量亮度 的 JS 桥接方法。"""
+    """音乐 / FPS / 流量 / 壁纸 / 音量亮度 的 JS 桥接方法。
 
-    # ── 音乐 / FPS ───────────────────────────────────────────
+    展示类卡片（音乐 / 歌词 / FPS / 流量 / 壁纸）与控制类（音量 / 亮度）
+    方法统一通过 feature_toggles 开关判断。
+    """
 
     def get_music(self):
         if not self._feature_on("music"):
@@ -88,8 +90,6 @@ class MediaMixin:
         idx = monitor_index if monitor_index is not None else self._settings.get("display", {}).get("monitor", 0)
         return adjust_brightness(action, level, idx)
 
-    # ── 流量（委托给服务）────────────────────────────────────
-
     def get_traffic_today(self):
         if not self._feature_on("traffic"):
             return {"error": "disabled"}
@@ -105,8 +105,6 @@ class MediaMixin:
             return {"error": "disabled"}
         return self._traffic.get_top_processes(int(limit))
 
-    # ── 壁纸 ──────────────────────────────────────────────────
-
     def get_bg_list(self):
         if not self._feature_on("clock_bg"):
             return []
@@ -115,12 +113,12 @@ class MediaMixin:
     def resolve_background_image(self, image=""):
         if not self._feature_on("clock_bg"):
             return ""
-        return bg_svc.resolve_background(image, self._random_bg)
+        return bg_svc.resolve_background(image)
 
     def get_clock_bg_top_color(self, image=""):
         if not self._feature_on("clock_bg"):
             return ""
-        return bg_svc.get_image_top_color(image, self._random_bg)
+        return bg_svc.get_image_top_color(image)
 
     def save_wallpaper(self, filename="", data_url=""):
         """前端导入壁纸：接收 base64 data URL，保存到用户壁纸目录，返回 wp/ 路径。"""

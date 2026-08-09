@@ -1,20 +1,7 @@
-"""应用程序设置管理。
+"""应用程序设置管理：加载/保存 schema 版本化的 settings.json，并提供路径与版本常量。
 
-主要方法:
-- load_settings(): 从 data/settings.json 加载设置，返回设置字典
-- save_settings(settings): 将设置保存到 data/settings.json 文件
-- has_weather_creds(s): 检查设置中是否包含天气 API 凭证
-
-主要变量:
-- PROJECT_ROOT: 项目根目录
-- DATA_DIR: 用户数据目录 (data/)
-- SETTINGS_FILE: 设置文件路径 (data/settings.json)
-- DEFAULT_SETTINGS: 默认设置字典，包含所有配置项的默认值
-- APP_VERSION: 程序版本号（关于页显示）
-
-设置结构: 新版为按功能分组（general/display/clock/fonts/weather/music/lyrics/
-server/layout/custom_text/feature_toggles），旧版为扁平键。load_settings 会在
-启动时自动检测并迁移旧版扁平结构到新版分组结构（并回写文件）。
+设置按功能分组（general/display/clock/fonts/weather/music/lyrics/server/layout/
+custom_text/feature_toggles）；旧版扁平结构会在加载时自动检测并迁移回写。
 """
 
 import json
@@ -381,7 +368,7 @@ def load_settings() -> dict:
     else:
         logger.warning("Settings file not found: {}", SETTINGS_FILE)
     _settings_cache = copy.deepcopy(DEFAULT_SETTINGS)
-    return copy.deepcopy(DEFAULT_SETTINGS)
+    return copy.deepcopy(_settings_cache)
 
 
 def save_settings(settings: dict):

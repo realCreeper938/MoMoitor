@@ -23,6 +23,13 @@ function wxIcon(iconCode) {
     return WX_ICONS[iconCode] || '\u{F0590}';
 }
 
+function appendMoreAlerts(container, count, maxShow) {
+    const more = document.createElement('div');
+    more.className = 'wx-alert-more';
+    more.textContent = `还有 ${count - maxShow} 个预警...`;
+    container.appendChild(more);
+}
+
 function wxCategory(iconCode) {
     const c = String(iconCode);
     if (c === '100' || c === '150') return 'sun';
@@ -201,12 +208,7 @@ async function refreshAlerts() {
             div.style.borderLeftColor = a.colorCode ? `rgb(${a.colorR},${a.colorG},${a.colorB})` : '';
             list.appendChild(div);
         }
-        if (alerts.length > maxShow) {
-            const more = document.createElement('div');
-            more.className = 'wx-alert-more';
-            more.textContent = `还有 ${alerts.length - maxShow} 个预警...`;
-            list.appendChild(more);
-        }
+        if (alerts.length > maxShow) appendMoreAlerts(list, alerts.length, maxShow);
         row.style.display = '';
     } catch (e) { console.warn('refreshAlerts:', e); }
 }
@@ -371,12 +373,7 @@ async function refreshWeatherCard() {
                     chip.addEventListener('mouseleave', hideWxTip);
                     alertsList.appendChild(chip);
                 }
-                if (alerts.length > maxShow) {
-                    const more = document.createElement('div');
-                    more.className = 'wx-alert-more';
-                    more.textContent = `还有 ${alerts.length - maxShow} 个预警...`;
-                    alertsList.appendChild(more);
-                }
+                if (alerts.length > maxShow) appendMoreAlerts(alertsList, alerts.length, maxShow);
                 const updateAlertsFade = () => {
                     const canScroll = alertsList.scrollHeight > alertsList.clientHeight + 1;
                     const atBottom = alertsList.scrollHeight - alertsList.scrollTop - alertsList.clientHeight < 8;

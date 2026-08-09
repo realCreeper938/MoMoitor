@@ -1,22 +1,4 @@
-"""Windows SMTC 音乐信息与播放控制。
-
-主要方法:
-- get_current(): 获取当前音乐播放信息
-- play_pause(): 播放/暂停音乐
-- next_track(): 下一曲
-- prev_track(): 上一曲
-- start(): 启动音乐轮询线程
-- stop(): 停止音乐轮询
-
-主要变量:
-- _have_smtc: SMTC可用性标志
-- _have_buffer: Buffer类可用性标志
-- _current: 当前音乐信息字典 {available, playing, title, artist, cover,
-  process_name, position, duration}
-- _lock: 线程锁
-- _running: 轮询运行标志
-- _last_track_key: 上一次曲目标识（用于检测曲目变化）
-"""
+"""Windows SMTC 音乐信息与播放控制。"""
 
 import base64
 import os
@@ -30,7 +12,6 @@ from momoitor.common import run_hidden
 _have_smtc = False
 _have_buffer = False
 try:
-    import winrt.windows.media.control as wmc
     from winrt.windows.media.control import (
         GlobalSystemMediaTransportControlsSessionManager as SessionManager,
         GlobalSystemMediaTransportControlsSessionPlaybackStatus as PlaybackStatus,

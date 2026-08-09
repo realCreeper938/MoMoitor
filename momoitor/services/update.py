@@ -1,9 +1,4 @@
-"""版本更新检测 —— 通过 GitHub API 查询最新 Release 并比对版本号。
-
-主要方法:
-- check_latest(): 查询最新版本，返回更新信息字典（无更新/失败时返回合适结果）
-- _parse_version(v): 解析点分版本号用于数值比较
-"""
+"""版本更新检测 —— 通过 GitHub API 查询最新 Release 并比对版本号。"""
 
 import re
 

@@ -1,25 +1,4 @@
-"""基于 HWiNFO 共享内存的硬件监视。
-
-主要方法:
-- HWiNFOMonitor类: 基于HWiNFO共享内存的硬件监视器
-  - snapshot(gpu_index): 获取硬件数据快照
-  - get_cpu(): 获取CPU信息
-  - get_gpu(index): 获取GPU信息
-  - get_memory(): 获取内存信息
-  - get_disks(): 获取磁盘分区信息
-  - get_disk_status(): 获取磁盘状态
-  - get_hw_names(): 获取硬件名称
-  - get_hw_detail(gpu_index): 获取详细硬件信息
-
-主要变量:
-- HWINFO_SM2_NAME: HWiNFO共享内存名称
-- SENSOR_STR_LEN: 传感器名称字符串长度 (128)
-- UNIT_STR_LEN: 单位字符串长度 (16)
-- SENSOR_TYPE_*: 传感器类型常量 (TEMP, VOLT, FAN, CURRENT, POWER, CLOCK, USAGE, OTHER)
-- HWiNFOMonitor._hw_names: 硬件名称缓存
-- HWiNFOMonitor._disk_cache: 磁盘分区缓存
-- HWiNFOMonitor._disk_cache_ts: 磁盘缓存时间戳
-"""
+"""基于 HWiNFO 共享内存的硬件监视后端。"""
 
 import ctypes
 import ctypes.wintypes

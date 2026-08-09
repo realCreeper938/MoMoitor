@@ -18,8 +18,6 @@ from momoitor.services.system import (clean_memory, get_sysinfo, get_time,
 class HardwareMixin:
     """硬件数据与系统信息的 JS 桥接方法。"""
 
-    # ── 硬件数据（委托给服务）────────────────────────────────
-
     def get_data(self):
         data = self._hw.snapshot()
         # 插件快照钩子：可在数据返回前端前修改/扩展
@@ -36,8 +34,6 @@ class HardwareMixin:
 
     def change_backend(self, source):
         return self._hw.change_backend(source)
-
-    # ── 系统信息（委托给服务）────────────────────────────────
 
     def get_time(self):
         return get_time()
@@ -60,8 +56,6 @@ class HardwareMixin:
             return {"error": "disabled"}
         return kill_process(int(pid))
 
-    # ── 端口扫描 ─────────────────────────────────────────────
-
     def get_listening_ports(self):
         return scan_listening_ports()
 
@@ -74,8 +68,6 @@ class HardwareMixin:
             logger.warning("clean_memory failed: {}", e)
             return {"ok": False, "error": str(e)}
 
-    # ── 系统/文本辅助 ────────────────────────────────────────
-
     def open_taskmgr(self):
         """启动 Windows 任务管理器并置于前台。"""
         import subprocess
@@ -84,7 +76,7 @@ class HardwareMixin:
             ctypes.windll.user32.AllowSetForegroundWindow(0xFFFFFFFF)
             subprocess.Popen(["taskmgr.exe"])
         except Exception as e:
-            logger.warning(f"open_taskmgr failed: {e}")
+            logger.warning("open_taskmgr failed: {}", e)
 
     def open_external(self, url):
         """在系统默认浏览器中打开外部链接。仅允许 http/https。"""
@@ -95,7 +87,7 @@ class HardwareMixin:
             webbrowser.open(url)
             return True
         except Exception as e:
-            logger.warning(f"open_external failed: {e}")
+            logger.warning("open_external failed: {}", e)
             return False
 
     def get_hardware_info(self):

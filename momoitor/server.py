@@ -1,14 +1,4 @@
-"""HTTP 服务器后端 —— 无需 pywebview 即可提供 Web UI 与 JSON API。
-
-主要方法:
-- ServerBackend: HTTP 服务器后端，处理静态文件、API 路由和 BasicAuth
-  - start(): 启动 HTTP 服务器（阻塞）
-  - stop(): 停止服务器
-  - _handle_api(method, args): 调用 Api 对应方法
-
-主要变量:
-- WEB_DIR: 前端 web 文件目录
-"""
+"""HTTP 服务器后端 —— 无需 pywebview 即可提供 Web UI 与 JSON API。"""
 
 import base64
 import inspect
@@ -129,15 +119,7 @@ class ServerBackend:
                     result = fn(*args)
                     if inspect.isawaitable(result):
                         import asyncio
-                        try:
-                            loop = asyncio.get_event_loop()
-                        except RuntimeError:
-                            loop = asyncio.new_event_loop()
-                            asyncio.set_event_loop(loop)
-                        if loop.is_closed():
-                            loop = asyncio.new_event_loop()
-                            asyncio.set_event_loop(loop)
-                        result = loop.run_until_complete(result)
+                        result = asyncio.run(result)
                     self._json(result)
                 except Exception as e:
                     logger.exception("API 调用 {} 失败", method)

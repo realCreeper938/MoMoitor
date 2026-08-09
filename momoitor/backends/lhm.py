@@ -1,25 +1,4 @@
-"""基于 LibreHardwareMonitor 的硬件监视。
-
-主要方法:
-- LHMMonitor类: 基于LibreHardwareMonitor的硬件监视器
-  - snapshot(gpu_index): 获取硬件数据快照
-  - get_cpu(): 获取CPU信息
-  - get_gpu(index): 获取GPU信息
-  - get_gpu_list(): 获取可用GPU列表
-  - get_memory(): 获取内存信息
-  - get_disks(): 获取磁盘分区信息
-  - get_disk_status(): 获取磁盘状态
-  - get_hw_names(): 获取硬件名称
-  - get_hw_detail(gpu_index): 获取详细硬件信息
-
-主要变量:
-- DLL_PATH: LibreHardwareMonitorLib.dll文件路径
-- LHMMonitor._computer: LHM Computer实例
-- LHMMonitor._disk_cache: 磁盘分区缓存
-- LHMMonitor._disk_cache_ts: 磁盘缓存时间戳
-- LHMMonitor._DISCRETE_KEYWORDS: 独立GPU关键词列表
-- LHMMonitor._IGPU_KEYWORDS: 集成GPU关键词列表
-"""
+"""基于 LibreHardwareMonitor 的硬件监视后端。"""
 
 import os
 import time
@@ -106,8 +85,6 @@ class LHMMonitor(BaseMonitor):
             version = None
         return {"name": "LibreHardwareMonitor", "version": version}
 
-    # ── 辅助 ─────────────────────────────────────────────────
-
     def _read_sensors(self, hw):
         sensors = []
         for s in hw.Sensors:
@@ -138,8 +115,6 @@ class LHMMonitor(BaseMonitor):
             return None
         return max(vals) if fn == "max" else sum(vals) / len(vals)
 
-    # ── GPU 优先级 ───────────────────────────────────────────
-
     _DISCRETE_KEYWORDS = {"rx ", "r9 ", "r7 ", "r5 ", "geforce", "rtx", "gtx", "quadro", "radeon pro"}
     _IGPU_KEYWORDS = {"vega", "graphics", "uhd", "iris"}
 
@@ -157,8 +132,6 @@ class LHMMonitor(BaseMonitor):
                 return 0
             return 1
         return 1
-
-    # ── 磁盘分区（缓存）──────────────────────────────────────
 
     def _get_disk_partitions(self):
         now = time.monotonic()
@@ -179,8 +152,6 @@ class LHMMonitor(BaseMonitor):
                 continue
         self._disk_cache = result
         return result
-
-    # ── 单遍快照 ─────────────────────────────────────────────
 
     def snapshot(self, gpu_index=None) -> dict:
         self._ensure_init()
@@ -276,8 +247,7 @@ class LHMMonitor(BaseMonitor):
             "net": self.get_network(),
         }
 
-    # ── 独立 getter（为兼容保留）─────────────────────────────
-
+    # 独立 getter：单传感器查询，为兼容旧 API 保留（snapshot 已是单遍采集）
     def get_cpu(self):
         self._ensure_init()
         for hw in self._computer.Hardware:
@@ -394,8 +364,6 @@ class LHMMonitor(BaseMonitor):
                 break
         return status
 
-    # ── 硬件名称 ─────────────────────────────────────────────
-
     def get_hw_names(self):
         self._ensure_init()
         now = time.monotonic()
@@ -434,8 +402,6 @@ class LHMMonitor(BaseMonitor):
             self._mem_name_ts = now
             return parts[0]
         return "Memory"
-
-    # ── 硬件详情（用于悬停弹窗）──────────────────────────────
 
     def get_hw_detail(self, gpu_index=None) -> dict:
         return {

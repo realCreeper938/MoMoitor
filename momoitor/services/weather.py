@@ -29,8 +29,6 @@ from loguru import logger
 from momoitor.config import has_weather_creds
 from momoitor.services.cache import TTLCache
 
-# ── QWeather 客户端 ─────────────────────────────────────────
-
 API_HOST = "https://devapi.qweather.com"
 
 
@@ -192,8 +190,6 @@ def get_alerts(lat: str, lon: str, key_id: str, project_id: str, private_key: st
     return result
 
 
-# ── WeatherService（按端点缓存）──────────────────────────────
-
 class WeatherService:
     """按端点缓存的线程安全天气数据提供者。"""
 
@@ -216,15 +212,11 @@ class WeatherService:
         return (w["lat"], w["lon"],
                 w["key_id"], w["project_id"], w["private_key"])
 
-    # ── 当前天气 ─────────────────────────────────────────────
-
     def get_now(self):
         s = self._creds()
         if not s:
             return {"error": "not_configured"}
         return self._cached_call("now", 600, get_now, s)
-
-    # ── 详情（当前 + 分钟级降水）─────────────────────────────
 
     def get_detail(self):
         s = self._creds()
@@ -240,15 +232,11 @@ class WeatherService:
             logger.warning("Minutely fetch failed: {}", e)
         return {"now": now_data, "minutely": minutely_data}
 
-    # ── 空气质量 ─────────────────────────────────────────────
-
     def get_airquality(self):
         s = self._creds()
         if not s:
             return {"error": "not_configured"}
         return self._cached_call("airquality", 600, get_airquality, s)
-
-    # ── 预警 ─────────────────────────────────────────────────
 
     def get_alerts(self):
         s = self._creds()
@@ -261,8 +249,6 @@ class WeatherService:
         if result:
             logger.info("Alerts updated: {} alert(s)", len(result))
         return result
-
-    # ── 农历时间 ─────────────────────────────────────────────
 
     def get_lunar_time(self, timezone="Asia/Shanghai"):
         tz = timezone or "Asia/Shanghai"
@@ -283,8 +269,6 @@ class WeatherService:
         except Exception as e:
             logger.warning("Lunar time fetch failed: {}", e)
             return {"error": str(e)}
-
-    # ── 内部 ─────────────────────────────────────────────────
 
     def _cached_call(self, key, ttl, fn, s):
         value, hit = self._cache.get(key, ttl)

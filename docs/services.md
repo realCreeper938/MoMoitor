@@ -17,10 +17,10 @@
 | 函数 | 说明 |
 |---|---|
 | `get_bg_list()` -> list | 内置+用户壁纸条目，形如 `bg/xxx.png`、`wp/xxx.png` |
-| `resolve_background(image, random_state)` -> str | 校验并返回可加载虚拟路径，无效返回 `""` |
+| `resolve_background(image)` -> str | 校验并返回可加载虚拟路径，无效返回 `""` |
 | `save_wallpaper(filename, data_url)` -> str | 保存 base64 导入壁纸（重名自动加序号），返回 `wp/` 路径 |
 | `delete_wallpaper(vpath)` -> bool | 删除 `wp/` 下用户壁纸；`_system*` 与内置禁止 |
-| `get_image_top_color(image, random_state)` -> str | 顶部几行平均色 `#rrggbb` |
+| `get_image_top_color(image)` -> str | 顶部几行平均色 `#rrggbb` |
 
 ## brightness
 

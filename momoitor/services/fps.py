@@ -1,21 +1,4 @@
-"""通过 RTSS（RivaTuner Statistics Server）共享内存追踪 FPS —— 仅限 Windows。
-
-主要方法:
-- get_current(): 获取当前FPS信息（包括历史数据、平均值、低1%等）
-- start(): 启动FPS轮询线程
-- stop(): 停止FPS轮询
-
-主要变量:
-- HISTORY_SIZE: 历史数据大小 (60)
-- SHARED_MEMORY_NAME: RTSS共享内存名称
-- _fps: 当前FPS值
-- _frametime: 当前帧时间
-- _process_name: 当前前台进程名
-- _history_fps: FPS历史数据队列
-- _history_ft: 帧时间历史数据队列
-- _lock: 线程锁
-- _running: 轮询运行标志
-"""
+"""通过 RTSS（RivaTuner Statistics Server）共享内存追踪 FPS —— 仅限 Windows。"""
 
 import time
 import threading

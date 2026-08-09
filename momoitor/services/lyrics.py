@@ -1,13 +1,7 @@
-"""歌词服务 —— 通过 Meting API 获取当前音乐的 LRC 歌词并解析。
+"""歌词服务 —— 通过 Meting API 获取 LRC 歌词并解析。
 
-主要方法:
-- LyricsService类: 歌词获取与解析服务
-  - get_lyrics(title, artist): 获取某首歌的歌词行列表 [{time, text}, ...]
-  - invalidate(): 清空缓存（保留表结构）
-
-数据来源: Meting API（如 https://meting.spr-aachen.com/api），地址由用户在
-「设置 → 数据 → 歌词」中填写。为避免给歌词服务器造成压力，歌词按 曲目|歌手 键
-缓存到 SQLite（data/lyrics.db），TTL 7 天；获取失败时回退使用过期缓存。
+歌词按 曲目|歌手 键缓存到 SQLite（data/lyrics.db），TTL 7 天；
+获取失败时回退使用过期缓存。API 地址由用户在「设置 → 数据 → 歌词」中填写。
 """
 
 import os

@@ -1,3 +1,16 @@
+function refreshAllWeather() {
+    refreshWeather();
+    refreshWeatherDetail();
+    refreshAirQuality();
+    refreshAlerts();
+    refreshWeatherCard();
+}
+
+function _deactivateSettingsTabs(sidebar) {
+    sidebar.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.settings-body > .tab-content').forEach(c => c.classList.remove('active'));
+}
+
 function initSettings() {
     const overlay = document.getElementById('settings-overlay');
     const saveBtn = document.getElementById('settings-save');
@@ -114,8 +127,7 @@ function initSettings() {
             if (!btn) return;
             const target = document.getElementById('tab-' + btn.dataset.tab);
             if (!target) return;
-            sidebar.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.settings-body > .tab-content').forEach(c => c.classList.remove('active'));
+            _deactivateSettingsTabs(sidebar);
             btn.classList.add('active');
             target.classList.add('active');
         });
@@ -169,11 +181,7 @@ function initSettings() {
         }
         if (e.ctrlKey && e.key === 'F5') {
             e.preventDefault();
-            refreshWeather();
-            refreshWeatherDetail();
-            refreshAirQuality();
-            refreshAlerts();
-            refreshWeatherCard();
+            refreshAllWeather();
             refreshMusic();
             poll();
         }
@@ -379,8 +387,7 @@ function initSettings() {
 
         // Show overlay
         if (window.PluginApi) PluginApi._notifySettingsOpen();
-        sidebar.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.settings-body > .tab-content').forEach(c => c.classList.remove('active'));
+        _deactivateSettingsTabs(sidebar);
         sidebar.querySelector('.nav-btn').classList.add('active');
         document.querySelector('.settings-body > .tab-content').classList.add('active');
         overlay.style.display = 'flex';
@@ -477,7 +484,6 @@ function initSettings() {
         await pywebview.api.set_autostart(autostartChk.checked);
         await pywebview.api.change_backend((s.general || {}).data_source);
 
-        // Update global settings cache
         window._appSettings = { ...window._appSettings, ...s };
 
         if (window.PluginApi) PluginApi._notifySettingsSaved(s);
@@ -508,10 +514,7 @@ function initSettings() {
 
         // Restart sidebar weather intervals to match the Show Weather toggle
         const wxSidebarOn = (s.feature_toggles || {}).weather !== false;
-        _startInterval(wxSidebarOn, refreshWeather, 600000);
-        _startInterval(wxSidebarOn, refreshWeatherDetail, 600000);
-        _startInterval(wxSidebarOn, refreshAirQuality, 1800000);
-        _startInterval(wxSidebarOn, refreshAlerts, 600000);
+        _startWeatherIntervals(wxSidebarOn);
 
         const wx = s.weather || {};
         const wxChanged = wx.lat !== oldWeatherLat || wx.lon !== oldWeatherLon ||
@@ -523,11 +526,7 @@ function initSettings() {
             oldWeatherKid = wx.key_id;
             oldWeatherSub = wx.project_id;
             oldWeatherKey = wx.private_key;
-            refreshWeather();
-            refreshWeatherDetail();
-            refreshAirQuality();
-            refreshAlerts();
-            refreshWeatherCard();
+            refreshAllWeather();
         }
 
         // If server mode is on, tell the user it runs headless and how to disable it

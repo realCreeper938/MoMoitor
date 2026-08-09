@@ -1,8 +1,5 @@
 """系统音量调节 —— 基于 pycaw。
 
-主要方法:
-- adjust_volume(action, level): 调节系统音量
-
 action: 'set' (0-100)、'get'、'up'、'down'、'mute'、'unmute'
 """
 

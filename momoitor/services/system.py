@@ -1,16 +1,6 @@
-"""系统信息服务 —— 时间、主机名、运行时长、空闲时间、进程。
-
-主要方法:
-- get_time(): 获取当前时间字符串 (HH:MM:SS)
-- get_sysinfo(): 获取系统信息（主机名、IP、运行时间）
-- get_top_processes(sort_by, limit): 获取占用 CPU/内存最高的进程列表
-- kill_process(pid): 终止指定 PID 的进程
-- scan_listening_ports(): 扫描所有监听 0.0.0.0 的端口，返回进程名、地址、端口
-- generate_qr_code(data): 生成二维码图片，返回 base64 编码的 PNG
-"""
+"""系统信息服务 —— 时间、主机名、运行时长、空闲时间、进程与监听端口。"""
 
 import ctypes
-import io
 import os
 import re
 import socket
@@ -104,7 +94,6 @@ def get_top_processes(sort_by: str = "cpu", limit: int = 1) -> list:
     CPU 百分比按逻辑核心数归一化，与 Windows 任务管理器一致（单核满载≈100%/N，全核满载可达100%）。
     """
     all_procs = _get_all_processes()
-    sort_by = "mem" if sort_by == "mem" else "cpu"
     key = "mem" if sort_by == "mem" else "cpu"
     all_procs.sort(key=lambda x: x.get(key, 0.0), reverse=True)
     return all_procs[:limit]

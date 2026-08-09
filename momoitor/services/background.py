@@ -1,13 +1,4 @@
-"""背景图片管理。
-
-主要方法:
-- get_bg_list(): 列出web/bg/目录中可用的背景图片
-- resolve_background(image, random_state): 解析背景设置值为可加载的相对路径
-- get_image_top_color(image, random_state): 提取背景图片顶部边缘平均色
-
-主要变量:
-- WEB_DIR: 前端web文件目录路径
-"""
+"""背景图片管理：内置/用户壁纸枚举、虚拟路径解析、保存删除与顶部颜色提取。"""
 
 import os
 import base64
@@ -61,7 +52,7 @@ def get_bg_list() -> list:
     return result
 
 
-def resolve_background(image: str, random_state: dict) -> str:
+def resolve_background(image: str) -> str:
     """将背景设置值解析为浏览器可加载的虚拟路径（bg/ 或 wp/）。"""
     if isinstance(image, str) and (image.startswith("bg/") or image.startswith("wp/")):
         if os.path.exists(_to_fs_path(image)):
@@ -125,13 +116,13 @@ def delete_wallpaper(vpath: str = "") -> bool:
         return False
 
 
-def get_image_top_color(image: str, random_state: dict) -> str:
+def get_image_top_color(image: str) -> str:
     """获取背景图片顶部边缘的平均颜色。
 
     用于在横版时钟栏背景图片高度不足时，生成与图片顶部颜色无缝衔接的渐变填充。
     返回形如 '#rrggbb' 的十六进制颜色字符串；不可用时返回空字符串。
     """
-    resolved = resolve_background(image, random_state)
+    resolved = resolve_background(image)
     if not resolved:
         return ""
     img_path = _to_fs_path(resolved)
