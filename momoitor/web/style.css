@@ -1069,12 +1069,10 @@ html, body {
 }
 
 #weather-section .metric-value.big {
-    font-size: calc(clamp(38px, 4.4vw, 70px) * var(--font-scale));
     color: var(--text);
 }
 
 .wx-card-unit {
-    font-size: calc(14px * var(--font-scale));
     font-weight: 600;
     color: var(--text-dim);
 }
@@ -1162,11 +1160,6 @@ html, body {
 .wx-card-detail .mono {
     color: var(--text);
     font-weight: 600;
-}
-
-.wx-detail-unit {
-    font-size: calc(11px * var(--font-scale));
-    color: var(--text-dim);
 }
 
 /* Precipitation + alerts share a row when both present; alerts fill the row when no precip */
@@ -1456,13 +1449,6 @@ html, body {
     display: none;
 }
 
-#weather-section:not([data-span="2"]) .wx-card-precip-text {
-    order: 4;
-    font-size: calc(12px * var(--font-scale));
-    color: var(--text-dim);
-    margin-bottom: 0;
-}
-
 #weather-section:not([data-span="2"]) .wx-card-precip-title,
 #weather-section:not([data-span="2"]) .wx-card-precip-chart {
     display: none;
@@ -1504,10 +1490,6 @@ html, body {
 #weather-section[data-span="2"] .wx-card-city,
 #weather-section[data-span="2"] .wx-card-updated {
     font-size: calc(12px * var(--font-scale));
-}
-
-#weather-section[data-span="2"] .wx-card-details {
-    gap: 6px;
 }
 
 #weather-section[data-span="2"] .wx-card-detail {
@@ -1830,10 +1812,11 @@ body.no-hover-anim .term-box:hover {
 #fps-section .spark-area { fill: var(--metric-fps); }
 
 /* Network sparklines �?two overlapping layers (download + upload), more faded */
-#net-section .sparkline-bg { z-index: 0; }
 #net-section .sparkline-bg-over { z-index: 0; }
-#net-section .spark-line { stroke-width: 0.5; opacity: 0.14; }
-#net-section .spark-area { opacity: 0.04; }
+#net-section .spark-line,
+#disk-section .spark-line { stroke-width: 0.5; opacity: 0.14; }
+#net-section .spark-area,
+#disk-section .spark-area { opacity: 0.04; }
 #net-section .sparkline-bg[data-spark="net_down"] .spark-line { stroke: var(--blue); }
 #net-section .sparkline-bg[data-spark="net_down"] .spark-area { fill: var(--blue); }
 #net-section .sparkline-bg[data-spark="net_up"] .spark-line { stroke: var(--orange); }
@@ -1855,7 +1838,6 @@ body.no-hover-anim .term-box:hover {
 #cpu-section  { grid-column: 2;          grid-row: 2 / span 2; }
 #gpu-section  { grid-column: 3;          grid-row: 2 / span 2; }
 #mem-section  { grid-column: 2;          grid-row: 4; }
-#disk-section { grid-column: 3;          grid-row: 1; }
 #net-section  { grid-column: 2;          grid-row: 1; }
 #fps-section  { grid-column: 3;          grid-row: 4; }
 #proc-section { grid-column: 3;          grid-row: 5; }
@@ -1870,7 +1852,6 @@ body.no-hover-anim .term-box:hover {
 #net-section > .box-header,
 #fps-section > .box-header,
 #disk-section > .box-header,
-#proc-section > .box-header,
 #music-section > .box-header,
 #weather-section > .box-header,
 #text-section > .box-header {
@@ -2412,7 +2393,6 @@ body.no-hover-anim .term-box:hover {
 
 /* ---- Clock sidebar background layer ---- */
 .clock-bg-layer {
-    display: none;
     position: absolute;
     inset: 0;
     z-index: 0;
@@ -2424,10 +2404,6 @@ body.no-hover-anim .term-box:hover {
     background-repeat: no-repeat;
     opacity: 0;
     transition: opacity 0.2s ease;
-}
-
-.clock-bg-layer {
-    display: block;
 }
 
 /* Ensure sidebar content sits above the background layer */
@@ -2656,10 +2632,7 @@ body.no-hover-anim .term-box:hover {
 }
 
 /* Disk read/write sparklines */
-#disk-section .sparkline-bg { z-index: 0; }
 #disk-section .sparkline-bg-over { z-index: 0; }
-#disk-section .spark-line { stroke-width: 0.5; opacity: 0.14; }
-#disk-section .spark-area { opacity: 0.04; }
 #disk-section .sparkline-bg[data-spark="disk_read"] .spark-line { stroke: var(--blue); }
 #disk-section .sparkline-bg[data-spark="disk_read"] .spark-area { fill: var(--blue); }
 #disk-section .sparkline-bg[data-spark="disk_write"] .spark-line { stroke: var(--orange); }
@@ -2768,8 +2741,7 @@ body.no-hover-anim .term-box:hover {
 #cpu-section .value-row,
 #gpu-section .value-row,
 #mem-section .value-row,
-#fps-section .value-row,
-#net-section .value-row {
+#fps-section .value-row {
     display: inline-flex;
     align-items: baseline;
 }
@@ -2790,7 +2762,8 @@ body.no-hover-anim .term-box:hover {
 /* Reduce big value font size */
 #cpu-section[data-span="2"] .metric-value.big,
 #gpu-section[data-span="2"] .metric-value.big,
-#mem-section[data-span="2"] .metric-value.big {
+#mem-section[data-span="2"] .metric-value.big,
+#fps-section[data-span="2"] .metric-value.big {
     font-size: calc(clamp(64px, 8vw, 120px) * var(--font-scale));
 }
 
@@ -2807,10 +2780,6 @@ body.no-hover-anim .term-box:hover {
 
 #fps-section .metric-value.big {
     font-size: calc(clamp(48px, 5.5vw, 80px) * var(--font-scale));
-}
-
-#net-section .metric-value {
-    font-size: calc(clamp(28px, 3.3vw, 48px) * var(--font-scale));
 }
 
 /* Larger info-line text for readability */
@@ -3053,11 +3022,6 @@ body.no-hover-anim .term-box:hover {
     font-size: calc(clamp(30px, 3.6vw, 50px) * var(--font-scale));
     font-weight: 700;
     line-height: 1.2;
-}
-
-#net-section .data-col {
-    width: 100%;
-    gap: 0 32px;
 }
 
 #net-section .value-row {
@@ -3827,7 +3791,7 @@ body.no-hover-anim .term-box:hover {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 12px 14px 2px !important;
+    padding: 12px 14px 2px;
     overflow: hidden;
     cursor: pointer;
     user-select: none;
@@ -5591,15 +5555,6 @@ body.layout-mode .layout-control-group .layout-del-btn {
 
 #fps-section[data-span="2"] .corner-label {
     display: block;
-}
-
-#fps-section[data-span="2"] .box-header {
-    display: none;
-}
-
-/* FPS large value: bigger than the small form to fill the card */
-#fps-section[data-span="2"] .metric-value.big {
-    font-size: calc(clamp(64px, 8vw, 120px) * var(--font-scale));
 }
 
 /* FPS large card process name: top-right, shown only on hover (like CPU/GPU .hw-name) */

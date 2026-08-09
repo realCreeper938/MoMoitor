@@ -138,10 +138,6 @@
     color: var(--red);
 }
 
-.cal-day.today.holiday .cal-day-num {
-    color: var(--red);
-}
-
 .cal-day-num {
     font-size: clamp(16px, 1.6vw, 22px);
     font-weight: 500;

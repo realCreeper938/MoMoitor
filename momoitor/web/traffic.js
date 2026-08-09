@@ -104,7 +104,7 @@ async function renderTrafficCalendar(year, month) {
 
         // Day number
         const numEl = document.createElement('div');
-        numEl.className = 'traffic-cal-day-num' + (total > 0 ? ' has-traffic' : '');
+        numEl.className = 'traffic-cal-day-num';
         numEl.textContent = d;
         cell.appendChild(numEl);
 

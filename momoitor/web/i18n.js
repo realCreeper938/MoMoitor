@@ -40,7 +40,6 @@ const LANGS = {
         "settings-display": "Display",
         "label-display": "Display",
         "label-hidemissing": "Hide if missing",
-        "desc-hidemissing": "Auto-hide when the selected monitor is disconnected",
         // Theme
         "settings-appearance": "Appearance",
         "label-hover-anim": "Hover animation",
@@ -94,7 +93,6 @@ const LANGS = {
         "layout-cards": "Add Card",
         "layout-cards-title": "Add Cards",
         "layout-resize-hint": "Drag cards to rearrange, pull the bottom edge handle to resize, click × to delete",
-        "text-card-name": "Custom Text",
         "text-edit-title": "Edit Custom Text",
         "text-edit-content": "Content",
         "text-edit-font": "Font",
@@ -253,7 +251,6 @@ const LANGS = {
         "settings-display": "显示",
         "label-display": "显示器",
         "label-hidemissing": "缺少时隐藏",
-        "desc-hidemissing": "选中的显示器断开时自动隐藏窗口",
         "settings-appearance": "外观",
         "label-hover-anim": "悬停动画",
         "label-hover-highlight": "悬停高亮监控项",
@@ -306,7 +303,6 @@ const LANGS = {
         "layout-cards": "添加卡片",
         "layout-cards-title": "添加卡片",
         "layout-resize-hint": "拖动卡片可调整位置，拖动卡片底部边缘手柄可切换大小，点击 × 删除卡片",
-        "text-card-name": "自定义文本",
         "text-edit-title": "编辑自定义文本",
         "text-edit-content": "内容",
         "text-edit-font": "字体",
@@ -446,11 +442,6 @@ function getCurrentLang() {
    译文里可用 Markdown 式 [文字](URL) 嵌入链接，渲染为可点击的 <a>。
    仅当匹配到该语法时才走 innerHTML；其余译文沿用 textContent。 */
 const I18N_LINK_RE = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
-
-function escapeHtml(s) {
-    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
 
 function i18nToHtml(text) {
     I18N_LINK_RE.lastIndex = 0;                 // 全局正则需先复位

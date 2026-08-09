@@ -328,7 +328,7 @@
                                     <button type="button" class="music-ctrl" id="h-music-next" title="Next" aria-label="Next">&#9197;</button>
                                 </div>
                             </div>
-                            <div class="music-progress" id="h-music-progress">
+                            <div class="music-progress">
                                 <span class="music-seek-tip" id="h-music-seek-tip"></span>
                                 <input type="range" class="music-seek" id="h-music-seek" min="0" max="1000" step="1" value="0">
                                 <span class="music-time-left" id="h-music-time-left">-0:00</span>
@@ -348,7 +348,7 @@
                 <div class="wx-bg"></div>
                 <div class="layout-drag-handle">⠿</div>
                 <div class="box-header">Weather</div>
-                <div class="box-content weather-content">
+                <div class="box-content">
                     <div class="wx-card-hero">
                         <span class="wx-card-icon" id="wx-card-icon">&#xF0590;</span>
                         <div class="wx-card-temp-col">
@@ -386,7 +386,7 @@
             <div class="term-box" id="text-section" style="display:none">
                 <div class="layout-drag-handle">⠿</div>
                 <div class="box-header">Custom Text</div>
-                <div class="box-content text-content">
+                <div class="box-content">
                     <div class="custom-text" id="custom-text-el"></div>
                 </div>
             </div>
@@ -515,7 +515,7 @@
     </div>
 
     <!-- Layout mode toolbar -->
-    <div class="layout-toolbar" id="layout-toolbar">
+    <div class="layout-toolbar">
         <span class="layout-toolbar-label" data-i18n="layout-mode-active">Layout Mode Active</span>
         <button type="button" class="text-btn hidden" id="layout-cards" data-i18n="layout-cards">Add Card</button>
         <button type="button" class="text-btn" id="layout-cancel" data-i18n="btn-close">Close</button>
@@ -798,7 +798,7 @@
                         <div class="subtab-content active" id="subtab-appearance">
                             <div class="setting-group">
                                 <div class="setting-group-title" data-i18n="settings-appearance">Appearance</div>
-                                <div class="theme-picker" id="theme-picker">
+                                <div class="theme-picker">
                                     <div class="theme-picker-section">
                                         <div class="theme-picker-label" data-i18n="theme-group-dark">Dark</div>
                                         <div class="theme-card-grid" id="theme-grid-dark"></div>
@@ -1018,42 +1018,40 @@
                         <div class="setting-group">
                             <div class="setting-group-title" data-i18n="settings-features">Feature Toggles</div>
                             <div class="setting-desc" data-i18n="desc-features">Disable features you don't need to reduce API calls and CPU usage. Hardware monitoring (CPU, GPU, Memory, Network, Disk) is always on.</div>
-                            <div class="feature-toggle-list">
-                                <div class="setting-item">
-                                    <span data-i18n="ft-top-control">Top Brightness/Volume</span>
-                                    <label class="toggle">
-                                        <input type="checkbox" id="ft-top-control" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="setting-item">
-                                    <span data-i18n="ft-calendar">Calendar Popup</span>
-                                    <label class="toggle">
-                                        <input type="checkbox" id="ft-calendar" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="setting-item">
-                                    <span data-i18n="ft-top-process">Top Processes</span>
-                                    <label class="toggle">
-                                        <input type="checkbox" id="ft-top_process" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="setting-item">
-                                    <span data-i18n="ft-sysinfo">System Info</span>
-                                    <label class="toggle">
-                                        <input type="checkbox" id="ft-sysinfo" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="setting-item">
-                                    <span data-i18n="ft-traffic">Traffic Record</span>
-                                    <label class="toggle">
-                                        <input type="checkbox" id="ft-traffic" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
+                            <div class="setting-item">
+                                <span data-i18n="ft-top-control">Top Brightness/Volume</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="ft-top_control" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="ft-calendar">Calendar Popup</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="ft-calendar" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="ft-top-process">Top Processes</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="ft-top_process" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="ft-sysinfo">System Info</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="ft-sysinfo" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="ft-traffic">Traffic Record</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="ft-traffic" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -1107,7 +1105,15 @@
     <link rel="stylesheet" href="calendar.css">
     <script src="i18n.js"></script>
     <script src="lunar.js"></script>
-    <script src="app.js"></script>
+    <script src="core.js"></script>
+    <script src="music.js"></script>
+    <script src="hwclock.js"></script>
+    <script src="weather.js"></script>
+    <script src="ports.js"></script>
+    <script src="appearance.js"></script>
+    <script src="layout.js"></script>
+    <script src="settings.js"></script>
+    <script src="boot.js"></script>
     <script src="calendar.js"></script>
     <script src="traffic.js"></script>
     <script>
