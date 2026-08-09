@@ -1177,6 +1177,9 @@ html, body {
     width: 100%;
     min-width: 0;
     min-height: 0;
+    /* Fill the remaining card height so the alerts list gets as much room as
+       possible (up to its own max-height) before it starts scrolling. */
+    flex: 1 1 auto;
 }
 
 /* Precipitation forecast �?big card only */
@@ -1185,6 +1188,11 @@ html, body {
     min-width: 0;
     border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
     padding-top: 8px;
+    /* Keep content bottom-aligned so the chart sits at the same height as the
+       alert chips when the info row grows. */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
 }
 
 .wx-card-precip-title {
@@ -1287,8 +1295,8 @@ html, body {
 }
 
 .wx-card-alerts.wx-alerts-fade .wx-card-alerts-list {
-    -webkit-mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
-    mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 84%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 84%, transparent 100%);
 }
 
 /* Compact alert chip: name only, hover shows a tooltip with the details */
@@ -1511,6 +1519,9 @@ html, body {
    smaller hero, description below the temperature and within the icon's width */
 #weather-section[data-span="2"].wx-info > .box-content {
     gap: 8px;
+    /* Compact mode shows precip/alerts: give the info row the freed padding
+       so more alerts are visible before the list starts scrolling. */
+    padding-bottom: 10px;
 }
 
 #weather-section[data-span="2"].wx-info .wx-card-hero {

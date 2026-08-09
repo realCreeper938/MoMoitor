@@ -538,14 +538,16 @@ function fpsShrinkScale(str) {
 }
 
 /* Re-apply the FPS big-value font size for the current card size:
-   span 2 (big) always uses full size; span 1 uses the digit-based shrink. */
+   span 2 (big) always uses the full size; span 1 uses a smaller base size
+   with the digit-based shrink on top. */
 function _applyFpsFontSize() {
     const fpsEl = document.getElementById('fps-val');
     if (!fpsEl) return;
     const section = document.getElementById('fps-section');
     const big = section && section.dataset.span === '2';
     const scale = big ? 1 : (_lastFpsScale || 1);
-    fpsEl.style.fontSize = `calc(${scale} * clamp(72px, 8vw, 120px) * var(--font-scale))`;
+    const base = big ? 'clamp(72px, 8vw, 120px)' : 'clamp(48px, 5.5vw, 80px)';
+    fpsEl.style.fontSize = `calc(${scale} * ${base} * var(--font-scale))`;
 }
 
 async function refreshFps() {
@@ -3281,15 +3283,19 @@ function onGridDrop(e) {
     const slot = _gridSlotFromEvent(e);
     if (!slot) return;
     const fromEl = document.getElementById(fromId);
-    const fromCol = fromEl && fromEl.style.gridColumn ? parseInt(fromEl.style.gridColumn) : null;
+    // Only a card actually visible on the grid occupies space in a column; cards
+    // dragged from the list are hidden and must be counted as a fresh addition.
+    const fromCol = fromEl && fromEl.style.display !== 'none' && fromEl.style.gridColumn ? parseInt(fromEl.style.gridColumn) : null;
     // Try to place at the slot with the card's preferred span; fall back to a
     // smaller span for resizable cards when the space won't fit, else abort.
     let span = getLayoutSpan(fromId);
-    const colHeight = _columnHeight(slot.col);
-    const otherHeight = _columnHeight(slot.col === 2 ? 3 : 2);
-    if (colHeight + span > 6 && otherHeight + span > 6) {
+    // Column height the target column will reach after the move: moving a card
+    // within the same column never grows it (removing it frees its span first),
+    // and the source column can only shrink, so only the target column matters.
+    const targetH = (fromCol === slot.col ? _columnHeight(slot.col) - span : _columnHeight(slot.col));
+    if (targetH + span > 6) {
         if (RESIZABLE_IDS.includes(fromId) && span > 1) {
-            if (colHeight + 1 > 6 && otherHeight + 1 > 6) { showToast('空间不足'); return; }
+            if (targetH + 1 > 6) { showToast('空间不足'); return; }
             span = 1;
         } else {
             showToast('空间不足');
