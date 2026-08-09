@@ -168,8 +168,8 @@ function clockPeriodLabel(h) {
 
 function startClock() {
     // 从持久化设置读取 12/24 小时制与显秒（startClock 在设置加载完成后调用）
-    _clock24 = (window._appSettings && window._appSettings.clock_24h) !== false;
-    _clockShowSeconds = (window._appSettings && window._appSettings.clock_show_seconds) !== false;
+    _clock24 = (window._appSettings && window._appSettings.clock && window._appSettings.clock.clock_24h) !== false;
+    _clockShowSeconds = (window._appSettings && window._appSettings.clock && window._appSettings.clock.clock_show_seconds) !== false;
 
     function tick() {
         const now = new Date();

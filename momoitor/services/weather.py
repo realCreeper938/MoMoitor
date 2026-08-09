@@ -212,8 +212,9 @@ class WeatherService:
         return s
 
     def _wx_args(self, s):
-        return (s["weather_lat"], s["weather_lon"],
-                s["weather_key_id"], s["weather_project_id"], s["weather_private_key"])
+        w = s["weather"]
+        return (w["lat"], w["lon"],
+                w["key_id"], w["project_id"], w["private_key"])
 
     # ── 当前天气 ─────────────────────────────────────────────
 

@@ -99,7 +99,7 @@ class LyricsService:
         """
         base = ""
         try:
-            base = (self._settings_getter() or {}).get("meting_api_base", "") or ""
+            base = ((self._settings_getter() or {}).get("music", {}) or {}).get("meting_api_base", "") or ""
         except Exception:
             pass
         return base.rstrip("/")

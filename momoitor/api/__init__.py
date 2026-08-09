@@ -30,7 +30,7 @@ class Api(ApiCore, HardwareMixin, WeatherMixin, MediaMixin):
 
 def create_monitor():
     settings = load_settings()
-    source = settings.get("data_source", "lhm")
+    source = settings.get("general", {}).get("data_source", "lhm")
     from momoitor.backends import LHMMonitor, HWiNFOMonitor
     if source == "hwinfo":
         return HWiNFOMonitor()
@@ -41,7 +41,7 @@ def create_window(monitor):
     api = Api(monitor)
     index = os.path.join(WEB_DIR, "index.html")
 
-    mon_idx = api._settings.get("monitor", 0)
+    mon_idx = api._settings.get("display", {}).get("monitor", 0)
     monitors = win_svc.get_monitors()
     wx = wy = None
     ww, wh = 800, 600

@@ -37,7 +37,7 @@ class MediaMixin:
             return {"available": False, "error": str(e)}
 
     def get_lyrics(self, title, artist=""):
-        if not self._settings.get("meting_api_base", "").strip():
+        if not self._settings.get("music", {}).get("meting_api_base", "").strip():
             return {"lines": []}
         try:
             return {"lines": self._lyrics.get_lyrics(title or "", artist or "")}
@@ -85,7 +85,7 @@ class MediaMixin:
         return adjust_volume(action, level)
 
     def adjust_brightness(self, action, level=None, monitor_index=None):
-        idx = monitor_index if monitor_index is not None else self._settings.get("monitor", 0)
+        idx = monitor_index if monitor_index is not None else self._settings.get("display", {}).get("monitor", 0)
         return adjust_brightness(action, level, idx)
 
     # ── 流量（委托给服务）────────────────────────────────────

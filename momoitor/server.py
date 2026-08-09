@@ -170,11 +170,11 @@ def run_server(api, settings: dict):
     """根据设置启动 HTTP 服务器（阻塞）。返回后端实例供外部管理。"""
     backend = ServerBackend(
         api,
-        host=settings.get("server_host", "0.0.0.0"),
-        port=int(settings.get("server_port", 20622)),
-        auth_enabled=bool(settings.get("server_auth_enabled", False)),
-        auth_user=settings.get("server_auth_user", ""),
-        auth_pass=settings.get("server_auth_pass", ""),
+        host=settings.get("server", {}).get("host", "0.0.0.0"),
+        port=int(settings.get("server", {}).get("port", 20622)),
+        auth_enabled=bool(settings.get("server", {}).get("auth_enabled", False)),
+        auth_user=settings.get("server", {}).get("auth_user", ""),
+        auth_pass=settings.get("server", {}).get("auth_pass", ""),
     )
     api.set_server_backend(backend)
     backend.start()

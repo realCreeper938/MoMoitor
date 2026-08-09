@@ -29,7 +29,7 @@ logger.remove()
 def _logging_level() -> str:
     try:
         s = load_settings()
-        return "DEBUG" if s.get("debug_logs") else "INFO"
+        return "DEBUG" if s.get("general", {}).get("debug_logs") else "INFO"
     except Exception:
         return "INFO"
 
@@ -77,7 +77,7 @@ def _run_webview(monitor, settings, t0):
     _hide_console()
     window, api = create_window(monitor)
     logger.info("Window created ({:.0f}ms), entering event loop", (time.monotonic() - t0) * 1000)
-    debug = bool(settings.get("debug", False))
+    debug = bool(settings.get("general", {}).get("debug", False))
     webview.start(debug=debug)
     logger.debug("Event loop exited normally")
     return api
@@ -107,7 +107,7 @@ def main():
         _show_error("MoMoitor 启动失败", "硬件监视器初始化失败，无法启动：\n\n" + str(e))
         return
     try:
-        if settings.get("server_mode", False):
+        if settings.get("server", {}).get("mode", False):
             api = _run_server(monitor, settings, t0)
         else:
             api = _run_webview(monitor, settings, t0)

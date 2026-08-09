@@ -34,12 +34,12 @@ class HardwareService:
         self._monitor = monitor
         self._lock = threading.RLock()
         self._settings = settings
-        self._backend_source = settings.get("data_source", "lhm")
+        self._backend_source = settings.get("general", {}).get("data_source", "lhm")
         self._closed = False
 
     def snapshot(self) -> dict:
         try:
-            gpu_index = self._settings.get("gpu_index", 0)
+            gpu_index = self._settings.get("display", {}).get("gpu_index", 0)
             with self._lock:
                 data = self._sanitize(self._monitor.snapshot(gpu_index=gpu_index))
             data["error"] = ""
@@ -74,7 +74,7 @@ class HardwareService:
 
     def get_hw_detail(self) -> dict:
         try:
-            gpu_index = self._settings.get("gpu_index", 0)
+            gpu_index = self._settings.get("display", {}).get("gpu_index", 0)
             with self._lock:
                 return self._sanitize(self._monitor.get_hw_detail(gpu_index=gpu_index))
         except Exception as e:
@@ -84,7 +84,7 @@ class HardwareService:
     def snapshot_with_detail(self) -> dict:
         """在同一个锁下返回快照与硬件详情。"""
         try:
-            gpu_index = self._settings.get("gpu_index", 0)
+            gpu_index = self._settings.get("display", {}).get("gpu_index", 0)
             with self._lock:
                 data = self._sanitize(self._monitor.snapshot(gpu_index=gpu_index))
                 detail = self._sanitize(self._monitor.get_hw_detail(gpu_index=gpu_index))
@@ -131,7 +131,7 @@ class HardwareService:
                 old_monitor.close()
             except Exception as e:
                 logger.warning("Failed to close previous backend: {}", e)
-        self._settings["data_source"] = source
+        self._settings.setdefault("general", {})["data_source"] = source
         save_settings(self._settings)
         logger.info("Switched to {} backend", source)
         return True

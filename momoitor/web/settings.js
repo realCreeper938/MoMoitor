@@ -209,27 +209,36 @@ function initSettings() {
     async function openSettings() {
         const s = await pywebview.api.get_settings();
 
+        const g = s.general || {};
+        const d = s.display || {};
+        const ck = s.clock || {};
+        const f = s.fonts || {};
+        const w = s.weather || {};
+        const m = s.music || {};
+        const ly = s.lyrics || {};
+        const sv = s.server || {};
+
         // General
-        languageSel.value = s.language || 'en';
-        fontsizeRange.value = s.font_size || 100;
-        fontsizeVal.textContent = (s.font_size || 100) + '%';
-        fullscreenChk.checked = s.fullscreen !== false;
-        hoverHighlightChk.checked = s.hover_highlight !== false;
-        applyHoverHighlight(s.hover_highlight !== false);
-        hoverAnimChk.checked = s.hover_animation !== false;
-        applyHoverAnim(s.hover_animation !== false);
-        lyricAnimChk.checked = s.lyric_animation === true;
-        applyLyricAnim(s.lyric_animation === true);
+        languageSel.value = g.language || 'en';
+        fontsizeRange.value = g.font_size || 100;
+        fontsizeVal.textContent = (g.font_size || 100) + '%';
+        fullscreenChk.checked = g.fullscreen !== false;
+        hoverHighlightChk.checked = g.hover_highlight !== false;
+        applyHoverHighlight(g.hover_highlight !== false);
+        hoverAnimChk.checked = g.hover_animation !== false;
+        applyHoverAnim(g.hover_animation !== false);
+        lyricAnimChk.checked = ly.animation === true;
+        applyLyricAnim(ly.animation === true);
         autostartChk.checked = await pywebview.api.get_autostart();
-        updateNotifyChk.checked = s.update_check_enabled !== false;
+        updateNotifyChk.checked = g.update_check_enabled !== false;
 
         // Data
-        intervalSel.value = String(s.refresh_interval || 1000);
-        datasourceSel.value = s.data_source || 'lhm';
-        metingUrlInput.value = s.meting_api_base || '';
-        lyricsWhitelistInput.value = s.lyrics_process_whitelist || '';
-        lyricsTranslateChk.checked = s.lyrics_auto_translate === true;
-        applyLyricAutoTranslate(s.lyrics_auto_translate === true);
+        intervalSel.value = String(g.refresh_interval || 1000);
+        datasourceSel.value = g.data_source || 'lhm';
+        metingUrlInput.value = m.meting_api_base || '';
+        lyricsWhitelistInput.value = ly.process_whitelist || '';
+        lyricsTranslateChk.checked = ly.auto_translate === true;
+        applyLyricAutoTranslate(ly.auto_translate === true);
 
         // GPU list
         try {
@@ -247,15 +256,15 @@ function initSettings() {
                 opt.textContent = 'Auto';
                 gpuSel.appendChild(opt);
             }
-            gpuSel.value = String(s.gpu_index || 0);
+            gpuSel.value = String(d.gpu_index || 0);
         } catch (e) { console.warn('get_gpu_list:', e); }
 
         // Weather
-        wxLat.value = s.weather_lat || '';
-        wxLon.value = s.weather_lon || '';
-        wxKid.value = s.weather_key_id || '';
-        wxSub.value = s.weather_project_id || '';
-        wxKey.value = s.weather_private_key || '';
+        wxLat.value = w.lat || '';
+        wxLon.value = w.lon || '';
+        wxKid.value = w.key_id || '';
+        wxSub.value = w.project_id || '';
+        wxKey.value = w.private_key || '';
 
         // Monitor
         try {
@@ -267,26 +276,26 @@ function initSettings() {
                 opt.textContent = `${m.name || 'Monitor'} (${m.width}x${m.height})`;
                 monitorSel.appendChild(opt);
             });
-            monitorSel.value = s.monitor || 0;
+            monitorSel.value = d.monitor || 0;
         } catch (e) { console.warn('get_monitors:', e); }
-        hideMissingChk.checked = s.hide_when_monitor_missing === true;
+        hideMissingChk.checked = d.hide_when_monitor_missing === true;
 
         // Theme
-        colorschemeSel.value = s.colorscheme || 'gruvbox';
-        renderThemeCards(s.colorscheme || 'gruvbox', (scheme) => {
+        colorschemeSel.value = g.colorscheme || 'gruvbox';
+        renderThemeCards(g.colorscheme || 'gruvbox', (scheme) => {
             colorschemeSel.value = scheme;
             applyColorscheme(scheme);
         });
         // Fonts
-        fontUiValue = s.font_ui || 'JetBrains Maple Mono';
-        fontDataValue = s.font_data || 'IoskeleyMono';
-        fontClockValue = s.font_clock || 'Departure Mono';
+        fontUiValue = f.ui || 'JetBrains Maple Mono';
+        fontDataValue = f.data || 'IoskeleyMono';
+        fontClockValue = f.clock || 'Departure Mono';
         renderFontCards('ui', fontUiValue, (v) => { fontUiValue = v; applyFonts(fontUiValue, fontDataValue, fontClockValue); });
         renderFontCards('data', fontDataValue, (v) => { fontDataValue = v; applyFonts(fontUiValue, fontDataValue, fontClockValue); });
         renderFontCards('clock', fontClockValue, (v) => { fontClockValue = v; applyFonts(fontUiValue, fontDataValue, fontClockValue); });
         try {
             const bgList = await pywebview.api.get_bg_list();
-            clockBgImgValue = s.clock_bg_image || '';
+            clockBgImgValue = ck.bg_image || '';
             renderImagePicker(clockBgImgPicker, bgList, clockBgImgValue, (val) => {
                 clockBgImgValue = val;
                 lastResolvedClockBg = { image: '', path: '' };
@@ -295,12 +304,12 @@ function initSettings() {
         } catch (e) { console.warn('get_bg_list:', e); }
 
         // Clock sidebar background
-        clockBgOpacityRange.value = String(s.clock_bg_opacity ?? 80);
-        clockBgOpacityVal.textContent = (s.clock_bg_opacity ?? 80) + '%';
-        clockBgBlurRange.value = String(s.clock_bg_blur || 0);
-        clockBgBlurVal.textContent = (s.clock_bg_blur || 0) + 'px';
-        clockBgGradientChk.checked = s.clock_bg_gradient !== false;
-        clockBgFitValue = s.clock_bg_fit || 'fit';
+        clockBgOpacityRange.value = String(ck.bg_opacity ?? 80);
+        clockBgOpacityVal.textContent = (ck.bg_opacity ?? 80) + '%';
+        clockBgBlurRange.value = String(ck.bg_blur || 0);
+        clockBgBlurVal.textContent = (ck.bg_blur || 0) + 'px';
+        clockBgGradientChk.checked = ck.bg_gradient !== false;
+        clockBgFitValue = ck.bg_fit || 'fit';
         if (!clockBgFitSel.dataset.init) {
             initSegmented(clockBgFitSel, clockBgFitValue, (v) => {
                 clockBgFitValue = v;
@@ -312,13 +321,13 @@ function initSettings() {
         } else {
             clockBgFitSel.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.value === clockBgFitValue));
         }
-        clockBgOffsetX = s.clock_bg_offset_x ?? 50;
-        clockBgOffsetY = s.clock_bg_offset_y ?? 50;
+        clockBgOffsetX = ck.bg_offset_x ?? 50;
+        clockBgOffsetY = ck.bg_offset_y ?? 50;
         updateClockBgGradientVisibility();
         updateClockBgOffsetVisibility();
 
         // Clock format & show-seconds (Time subtab)
-        clockFormatValue = s.clock_24h !== false ? '24' : '12';
+        clockFormatValue = ck.clock_24h !== false ? '24' : '12';
         if (!clockFormatSel.dataset.init) {
             initSegmented(clockFormatSel, clockFormatValue, (v) => {
                 clockFormatValue = v;
@@ -328,24 +337,24 @@ function initSettings() {
         } else {
             clockFormatSel.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.value === clockFormatValue));
         }
-        clockShowSecondsChk.checked = s.clock_show_seconds !== false;
+        clockShowSecondsChk.checked = ck.clock_show_seconds !== false;
         _clockShowSeconds = clockShowSecondsChk.checked;
         clockShowSecondsChk.addEventListener('change', () => {
             _clockShowSeconds = clockShowSecondsChk.checked;
         });
 
         // Server mode
-        serverModeChk.checked = s.server_mode === true;
-        serverHostInput.value = s.server_host || '0.0.0.0';
-        serverPortInput.value = s.server_port || 20622;
-        serverAuthChk.checked = s.server_auth_enabled === true;
-        serverUserInput.value = s.server_auth_user || '';
-        serverPassInput.value = s.server_auth_pass || '';
-        debugLogsChk.checked = s.debug_logs === true;
-        if (debugChk) debugChk.checked = s.debug === true;
+        serverModeChk.checked = sv.mode === true;
+        serverHostInput.value = sv.host || '0.0.0.0';
+        serverPortInput.value = sv.port || 20622;
+        serverAuthChk.checked = sv.auth_enabled === true;
+        serverUserInput.value = sv.auth_user || '';
+        serverPassInput.value = sv.auth_pass || '';
+        debugLogsChk.checked = g.debug_logs === true;
+        if (debugChk) debugChk.checked = g.debug === true;
 
         // Behavior
-        if (autoLaunchChk) autoLaunchChk.checked = s.auto_launch_music_player !== false;
+        if (autoLaunchChk) autoLaunchChk.checked = m.auto_launch_music_player !== false;
 
         // Feature toggles
         const ft = s.feature_toggles || {};
@@ -374,48 +383,72 @@ function initSettings() {
         const existing = window._appSettings || {};
         const s = {
             ...existing,
-            language: languageSel.value,
-            font_size: parseInt(fontsizeRange.value),
-            fullscreen: fullscreenChk.checked,
-            hover_highlight: hoverHighlightChk.checked,
-            hover_animation: hoverAnimChk.checked,
-            lyric_animation: lyricAnimChk.checked,
-            update_check_enabled: updateNotifyChk.checked,
-            refresh_interval: parseInt(intervalSel.value),
-            data_source: datasourceSel.value,
-            gpu_index: parseInt(gpuSel.value) || 0,
-            meting_api_base: metingUrlInput.value.trim(),
-            lyrics_process_whitelist: lyricsWhitelistInput.value.trim(),
-            lyrics_auto_translate: lyricsTranslateChk.checked,
-            weather_lat: wxLat.value.trim(),
-            weather_lon: wxLon.value.trim(),
-            weather_key_id: wxKid.value.trim(),
-            weather_project_id: wxSub.value.trim(),
-            weather_private_key: wxKey.value.trim(),
-            monitor: parseInt(monitorSel.value) || 0,
-            hide_when_monitor_missing: hideMissingChk.checked,
-            colorscheme: colorschemeSel.value,
-            clock_bg_image: clockBgImgValue,
-            clock_bg_opacity: parseInt(clockBgOpacityRange.value) || 0,
-            clock_bg_blur: parseInt(clockBgBlurRange.value) || 0,
-            clock_bg_gradient: clockBgGradientChk.checked,
-            clock_bg_fit: clockBgFitValue,
-            clock_bg_offset_x: clockBgOffsetX,
-            clock_bg_offset_y: clockBgOffsetY,
-            clock_24h: clockFormatValue !== '12',
-            clock_show_seconds: clockShowSecondsChk.checked,
-            font_ui: fontUiValue,
-            font_data: fontDataValue,
-            font_clock: fontClockValue,
-            server_mode: serverModeChk.checked,
-            server_host: serverHostInput.value.trim() || '0.0.0.0',
-            server_port: parseInt(serverPortInput.value) || 20622,
-            server_auth_enabled: serverAuthChk.checked,
-            server_auth_user: serverUserInput.value.trim(),
-            server_auth_pass: serverPassInput.value,
-            debug_logs: debugLogsChk.checked,
-            debug: debugChk ? debugChk.checked : false,
-            auto_launch_music_player: autoLaunchChk ? autoLaunchChk.checked : true,
+            general: {
+                ...(existing.general || {}),
+                language: languageSel.value,
+                font_size: parseInt(fontsizeRange.value),
+                fullscreen: fullscreenChk.checked,
+                hover_highlight: hoverHighlightChk.checked,
+                hover_animation: hoverAnimChk.checked,
+                update_check_enabled: updateNotifyChk.checked,
+                refresh_interval: parseInt(intervalSel.value),
+                data_source: datasourceSel.value,
+                colorscheme: colorschemeSel.value,
+                debug_logs: debugLogsChk.checked,
+                debug: debugChk ? debugChk.checked : false,
+            },
+            display: {
+                ...(existing.display || {}),
+                monitor: parseInt(monitorSel.value) || 0,
+                gpu_index: parseInt(gpuSel.value) || 0,
+                hide_when_monitor_missing: hideMissingChk.checked,
+            },
+            clock: {
+                ...(existing.clock || {}),
+                clock_24h: clockFormatValue !== '12',
+                clock_show_seconds: clockShowSecondsChk.checked,
+                bg_image: clockBgImgValue,
+                bg_opacity: parseInt(clockBgOpacityRange.value) || 0,
+                bg_blur: parseInt(clockBgBlurRange.value) || 0,
+                bg_gradient: clockBgGradientChk.checked,
+                bg_fit: clockBgFitValue,
+                bg_offset_x: clockBgOffsetX,
+                bg_offset_y: clockBgOffsetY,
+            },
+            fonts: {
+                ...(existing.fonts || {}),
+                ui: fontUiValue,
+                data: fontDataValue,
+                clock: fontClockValue,
+            },
+            weather: {
+                ...(existing.weather || {}),
+                lat: wxLat.value.trim(),
+                lon: wxLon.value.trim(),
+                key_id: wxKid.value.trim(),
+                project_id: wxSub.value.trim(),
+                private_key: wxKey.value.trim(),
+            },
+            music: {
+                ...(existing.music || {}),
+                meting_api_base: metingUrlInput.value.trim(),
+                auto_launch_music_player: autoLaunchChk ? autoLaunchChk.checked : true,
+            },
+            lyrics: {
+                ...(existing.lyrics || {}),
+                process_whitelist: lyricsWhitelistInput.value.trim(),
+                auto_translate: lyricsTranslateChk.checked,
+                animation: lyricAnimChk.checked,
+            },
+            server: {
+                ...(existing.server || {}),
+                mode: serverModeChk.checked,
+                host: serverHostInput.value.trim() || '0.0.0.0',
+                port: parseInt(serverPortInput.value) || 20622,
+                auth_enabled: serverAuthChk.checked,
+                auth_user: serverUserInput.value.trim(),
+                auth_pass: serverPassInput.value,
+            },
             custom_text: (window._appSettings && window._appSettings.custom_text) || {},
         };
 
@@ -428,30 +461,32 @@ function initSettings() {
 
         await pywebview.api.save_settings(s);
         await pywebview.api.set_autostart(autostartChk.checked);
-        await pywebview.api.change_backend(s.data_source);
+        await pywebview.api.change_backend((s.general || {}).data_source);
 
         // Update global settings cache
         window._appSettings = { ...window._appSettings, ...s };
 
-        applyHoverAnim(s.hover_animation !== false);
-        applyHoverHighlight(s.hover_highlight !== false);
+        applyHoverAnim((s.general || {}).hover_animation !== false);
+        applyHoverHighlight((s.general || {}).hover_highlight !== false);
 
-        if (s.hide_when_monitor_missing) {
+        if ((s.display || {}).hide_when_monitor_missing) {
             const res = await pywebview.api.check_monitor();
             document.body.style.visibility = res.available ? 'visible' : 'hidden';
         } else {
             document.body.style.visibility = 'visible';
         }
 
-        startPolling(s.refresh_interval);
-        applyLang(s.language || 'en');
-        applyFontSize(s.font_size);
-        applyColorscheme(s.colorscheme || 'gruvbox');
-        applyHoverHighlight(s.hover_highlight !== false);
-        applyHoverAnim(s.hover_animation !== false);
-        applyLyricAutoTranslate(s.lyrics_auto_translate === true);
-        applyFonts(s.font_ui, s.font_data, s.font_clock);
-        await applyClockBackgroundSetting(s.clock_bg_image, s.clock_bg_opacity, s.clock_bg_blur, s.clock_bg_gradient !== false, s.clock_bg_fit || 'fit', s.clock_bg_offset_x ?? 50, s.clock_bg_offset_y ?? 50);
+        startPolling((s.general || {}).refresh_interval);
+        applyLang((s.general || {}).language || 'en');
+        applyFontSize((s.general || {}).font_size);
+        applyColorscheme((s.general || {}).colorscheme || 'gruvbox');
+        applyHoverHighlight((s.general || {}).hover_highlight !== false);
+        applyHoverAnim((s.general || {}).hover_animation !== false);
+        applyLyricAutoTranslate((s.lyrics || {}).auto_translate === true);
+        const fnt = s.fonts || {};
+        applyFonts(fnt.ui, fnt.data, fnt.clock);
+        const ckc = s.clock || {};
+        await applyClockBackgroundSetting(ckc.bg_image, ckc.bg_opacity, ckc.bg_blur, ckc.bg_gradient !== false, ckc.bg_fit || 'fit', ckc.bg_offset_x ?? 50, ckc.bg_offset_y ?? 50);
         applyHwNames(true);
         applyFeatureToggles(s.feature_toggles || {});
 
@@ -462,15 +497,16 @@ function initSettings() {
         _startInterval(wxSidebarOn, refreshAirQuality, 1800000);
         _startInterval(wxSidebarOn, refreshAlerts, 600000);
 
-        const wxChanged = s.weather_lat !== oldWeatherLat || s.weather_lon !== oldWeatherLon ||
-            s.weather_key_id !== oldWeatherKid || s.weather_project_id !== oldWeatherSub ||
-            s.weather_private_key !== oldWeatherKey;
+        const wx = s.weather || {};
+        const wxChanged = wx.lat !== oldWeatherLat || wx.lon !== oldWeatherLon ||
+            wx.key_id !== oldWeatherKid || wx.project_id !== oldWeatherSub ||
+            wx.private_key !== oldWeatherKey;
         if (wxChanged) {
-            oldWeatherLat = s.weather_lat;
-            oldWeatherLon = s.weather_lon;
-            oldWeatherKid = s.weather_key_id;
-            oldWeatherSub = s.weather_project_id;
-            oldWeatherKey = s.weather_private_key;
+            oldWeatherLat = wx.lat;
+            oldWeatherLon = wx.lon;
+            oldWeatherKid = wx.key_id;
+            oldWeatherSub = wx.project_id;
+            oldWeatherKey = wx.private_key;
             refreshWeather();
             refreshWeatherDetail();
             refreshAirQuality();
@@ -479,7 +515,7 @@ function initSettings() {
         }
 
         // If server mode is on, tell the user it runs headless and how to disable it
-        if (s.server_mode) {
+        if ((s.server || {}).mode) {
             try {
                 const info = await pywebview.api.get_server_info();
                 showServerInfoModal(info);

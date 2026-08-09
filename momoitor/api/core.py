@@ -76,17 +76,17 @@ class ApiCore:
         return self._settings
 
     def save_settings(self, settings):
-        old_monitor = self._settings.get("monitor", 0)
-        old_fullscreen = self._settings.get("fullscreen", True)
+        old_monitor = self._settings.get("display", {}).get("monitor", 0)
+        old_fullscreen = self._settings.get("general", {}).get("fullscreen", True)
         self._settings = settings
         if '_weather' in self.__dict__:
             self._weather.invalidate()
         save_settings(settings)
         if self._window:
-            mon_idx = settings.get("monitor", 0)
+            mon_idx = settings.get("display", {}).get("monitor", 0)
             monitor_changed = mon_idx != old_monitor
-            fullscreen_changed = settings.get("fullscreen") != old_fullscreen
-            if settings.get("fullscreen"):
+            fullscreen_changed = settings.get("general", {}).get("fullscreen") != old_fullscreen
+            if settings.get("general", {}).get("fullscreen"):
                 if monitor_changed or fullscreen_changed:
                     win_svc.move_to_monitor(self._window, mon_idx)
                     self._window.fullscreen = True
@@ -102,7 +102,7 @@ class ApiCore:
 
     def dismiss_first_launch_hint(self):
         """用户已看到/关掉首次启动提示，持久化标记不再显示。"""
-        self._settings["hint_dismissed"] = True
+        self._settings.setdefault("general", {})["hint_dismissed"] = True
         save_settings(self._settings)
         return True
 
@@ -114,7 +114,7 @@ class ApiCore:
 
     def check_for_updates(self):
         """检查 GitHub 最新版本。设置中关闭更新通知时返回 None。"""
-        if not self._settings.get("update_check_enabled", True):
+        if not self._settings.get("general", {}).get("update_check_enabled", True):
             return None
         return check_latest_release()
 
@@ -138,8 +138,8 @@ class ApiCore:
 
     def get_server_info(self):
         """服务端模式信息：配置文件路径 + 浏览器可访问地址（用于保存时的提示框）。"""
-        host = self._settings.get("server_host", "0.0.0.0") or "0.0.0.0"
-        port = int(self._settings.get("server_port", 20622))
+        host = self._settings.get("server", {}).get("host", "0.0.0.0") or "0.0.0.0"
+        port = int(self._settings.get("server", {}).get("port", 20622))
         loopback = host in ("0.0.0.0", "::", "")
         urls = []
         if loopback or host in ("127.0.0.1", "localhost"):
@@ -169,7 +169,7 @@ class ApiCore:
 
     def check_monitor(self):
         monitors = win_svc.get_monitors()
-        idx = self._settings.get("monitor", 0)
+        idx = self._settings.get("display", {}).get("monitor", 0)
         return {"available": 0 <= idx < len(monitors), "count": len(monitors)}
 
     def set_caption(self, enabled: bool):

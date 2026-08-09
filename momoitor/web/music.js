@@ -297,8 +297,8 @@ async function refreshMusic() {
    current/next lines over the controls. */
 function handleLyrics(m) {
     const s = window._appSettings || {};
-    const metingBase = s.meting_api_base || '';
-    const inWhitelist = processInLyricsWhitelist(s.lyrics_process_whitelist, m && m.process_name);
+    const metingBase = (s.music || {}).meting_api_base || '';
+    const inWhitelist = processInLyricsWhitelist((s.lyrics || {}).process_whitelist, m && m.process_name);
     const lyricMode = !!(m && m.playing && m.position >= 0 && m.duration > 0 && metingBase && inWhitelist);
     if (!lyricMode) {
         if (_lyricActive) hideLyrics();

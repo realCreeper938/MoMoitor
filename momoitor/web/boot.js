@@ -23,7 +23,7 @@ function dismissFirstLaunchHint() {
 }
 
 function maybeShowFirstLaunchHint(s) {
-    if (!s || s.hint_dismissed) return;
+    if (!s || (s.general || {}).hint_dismissed) return;
     const el = document.getElementById('first-launch-hint');
     if (!el) return;
     el.style.display = 'flex';
@@ -64,18 +64,26 @@ window.addEventListener('pywebviewready', async () => {
     const s = await pywebview.api.get_settings();
     window._appSettings = s;
 
-    applyLang(s.language || 'en');
-    applyColorscheme(s.colorscheme || 'gruvbox');
-    applyFonts(s.font_ui, s.font_data, s.font_clock);
-    await applyClockBackgroundSetting(s.clock_bg_image, s.clock_bg_opacity, s.clock_bg_blur, s.clock_bg_gradient !== false, s.clock_bg_fit || 'fit', s.clock_bg_offset_x ?? 50, s.clock_bg_offset_y ?? 50);
-    applyFontSize(s.font_size || 100);
-    applyLyricAutoTranslate(s.lyrics_auto_translate === true);
+    const g = s.general || {};
+    const f = s.fonts || {};
+    const ck = s.clock || {};
+    const w = s.weather || {};
+    const mus = s.music || {};
+    const ly = s.lyrics || {};
+    const dsp = s.display || {};
+
+    applyLang(g.language || 'en');
+    applyColorscheme(g.colorscheme || 'gruvbox');
+    applyFonts(f.ui, f.data, f.clock);
+    await applyClockBackgroundSetting(ck.bg_image, ck.bg_opacity, ck.bg_blur, ck.bg_gradient !== false, ck.bg_fit || 'fit', ck.bg_offset_x ?? 50, ck.bg_offset_y ?? 50);
+    applyFontSize(g.font_size || 100);
+    applyLyricAutoTranslate(ly.auto_translate === true);
 
     // Move to target monitor + fullscreen, then show
-    if (s.monitor) {
-        await pywebview.api.move_to_monitor(s.monitor);
+    if (dsp.monitor) {
+        await pywebview.api.move_to_monitor(dsp.monitor);
     }
-    if (s.fullscreen !== false) {
+    if (g.fullscreen !== false) {
         pywebview.api.toggle_fullscreen();
     } else {
         // 非全屏时恢复原生标题栏（右上角最小化/最大化/关闭三键）
@@ -101,11 +109,11 @@ window.addEventListener('pywebviewready', async () => {
     applyHwNames(true);
     loadHwDetail();
 
-    oldWeatherLat = s.weather_lat || '';
-    oldWeatherLon = s.weather_lon || '';
-    oldWeatherKid = s.weather_key_id || '';
-    oldWeatherSub = s.weather_project_id || '';
-    oldWeatherKey = s.weather_private_key || '';
+    oldWeatherLat = w.lat || '';
+    oldWeatherLon = w.lon || '';
+    oldWeatherKid = w.key_id || '';
+    oldWeatherSub = w.project_id || '';
+    oldWeatherKey = w.private_key || '';
 
     initSettings();
     initLayoutControls();
@@ -117,10 +125,10 @@ window.addEventListener('pywebviewready', async () => {
         diskSection.addEventListener('mouseenter', renderDiskPartitions);
     }
     startClock();
-    startPolling(s.refresh_interval);
+    startPolling(g.refresh_interval);
 
     // Version update check — delayed so the popup doesn't interrupt startup
-    if (s.update_check_enabled !== false) {
+    if (g.update_check_enabled !== false) {
         setTimeout(checkForUpdate, 3000);
     }
 
@@ -159,7 +167,7 @@ window.addEventListener('pywebviewready', async () => {
     bindMusicCtrl('h-music-prev', () => pywebview.api.music_prev());
     bindMusicCtrl('h-music-toggle', async () => {
     const s = window._appSettings || {};
-    const autoLaunch = s.auto_launch_music_player !== false;
+    const autoLaunch = (s.music || {}).auto_launch_music_player !== false;
     const music = await pywebview.api.get_music();
     if (!music.available && autoLaunch) {
         const ok = await pywebview.api.launch_last_player();
@@ -295,8 +303,8 @@ window.addEventListener('pywebviewready', async () => {
 
     // Monitor presence polling
     let monitorHidden = false;
-    let cachedMonitor = s.monitor || 0;
-    let cachedHideMissing = s.hide_when_monitor_missing === true;
+    let cachedMonitor = dsp.monitor || 0;
+    let cachedHideMissing = dsp.hide_when_monitor_missing === true;
 
     async function checkMonitor() {
         try {
