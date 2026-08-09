@@ -552,9 +552,9 @@ let _featureToggles = {};
  * toggle and the layout's per-card hidden flag. Sections removed in the layout
  * must stay hidden even when their feature toggle is later re-applied. */
 function _sectionVisible(id) {
-    if (_normLayout(id).hidden) return false;
-    const key = { 'fps-section': 'fps', 'music-section': 'music', 'proc-section': 'top_process' }[id];
-    return key ? _featureToggles[key] !== false : true;
+    const card = getCard(id);
+    if (!card || card.hidden()) return false;
+    return card.feature ? _featureToggles[card.feature] !== false : true;
 }
 
 function applyFeatureToggles(toggles) {

@@ -81,19 +81,19 @@
         if (!el) return;
 
         // 接入现有布局系统
-        if (LAYOUT_IDS.indexOf(def.id) === -1) LAYOUT_IDS.push(def.id);
-        if (def.resizable !== false && RESIZABLE_IDS.indexOf(def.id) === -1) {
-            RESIZABLE_IDS.push(def.id);
-        }
-        DEFAULT_LAYOUT[def.id] = Object.assign(
-            { col: 2, row: 6, span: 1, hidden: false },
-            def.layout || {}
-        );
-        CARD_META[def.id] = {
-            name: _titleText(def.title) || def.id,
-            color: def.color || 'var(--accent)',
-            value: '—', pct: '', lines: [],
-        };
+        window.registerCard(def.id, {
+            el,
+            def: Object.assign(
+                { col: 2, row: 6, span: 1, hidden: false },
+                def.layout || {}
+            ),
+            resizable: def.resizable !== false,
+            meta: {
+                name: _titleText(def.title) || def.id,
+                color: def.color || 'var(--accent)',
+                value: '—', pct: '', lines: [],
+            },
+        });
 
         const card = { def, el, timer: null };
         cards[def.id] = card;

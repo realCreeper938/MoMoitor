@@ -1,102 +1,12 @@
-// Layout Adjustment
-const LAYOUT_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'disk-section', 'proc-section', 'music-section', 'weather-section', 'text-section'];
-const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'music-section', 'weather-section', 'text-section'];
-/* Everything draggable during layout mode — cards plus the full-height clock. */
-const DRAG_IDS = LAYOUT_IDS.concat(['clock-section']);
-
-const DEFAULT_LAYOUT = {
-    'clock-section':  { side: 'left' },
-    'cpu-section':    { col: 2, row: 1, span: 2, hidden: false },
-    'gpu-section':    { col: 3, row: 1, span: 2, hidden: false },
-    'mem-section':    { col: 2, row: 4, span: 1, hidden: false },
-    'disk-section':   { col: 3, row: 3, span: 1, hidden: false },
-    'net-section':    { col: 2, row: 3, span: 1, hidden: false },
-    'fps-section':    { col: 3, row: 4, span: 2, hidden: false },
-    'proc-section':   { col: 3, row: 5, span: 1, hidden: true },
-    'music-section':  { col: 2, row: 5, span: 1, hidden: false },
-    'weather-section': { col: 2, row: 1, span: 1, hidden: true },
-    'text-section':   { col: 3, row: 1, span: 1, hidden: true },
-};
-
-let _layout = {};
-
-/* Default card-area grid dimensions (rows × card columns).  The clock always
-   occupies its own full-height column, so the visible grid has cols+1 columns. */
-const DEFAULT_GRID = { rows: 5, cols: 2 };
-const GRID_ROWS_MIN = 2;
-const GRID_ROWS_MAX = 10;
-const GRID_COLS_MIN = 1;
-const GRID_COLS_MAX = 4;
-const CLOCK_WIDTH = 150;
-
-/* Effective grid dimensions read from the current layout (fall back to the
-   defaults when the saved layout omits them or stores an out-of-range value). */
-function _gridRows() {
-    const r = parseInt(_layout.rows, 10);
-    return r >= GRID_ROWS_MIN && r <= GRID_ROWS_MAX ? r : DEFAULT_GRID.rows;
-}
-
-function _gridCols() {
-    const c = parseInt(_layout.cols, 10);
-    return c >= GRID_COLS_MIN && c <= GRID_COLS_MAX ? c : DEFAULT_GRID.cols;
-}
-
-function _normLayout(id) {
-    const saved = _layout[id] || {};
-    const def = DEFAULT_LAYOUT[id];
-    const cols = _gridCols();
-    const rows = _gridRows();
-    /* Clamp to the current grid so changing rows/cols never leaves a card
-       (or its span) hanging outside the grid.  Abstract card cols are 2..cols+1
-       (1 is always the clock column). */
-    const col = saved.col || def.col;
-    const row = saved.row || def.row;
-    const span = saved.span != null ? saved.span : def.span;
-    return {
-        col: Math.max(2, Math.min(col, cols + 1)),
-        row: Math.max(1, Math.min(row, rows)),
-        span: Math.max(1, Math.min(span, rows)),
-        hidden: saved.hidden !== undefined ? saved.hidden === true : def.hidden === true,
-    };
-}
-
-function getLayoutSpan(id) {
-    return _normLayout(id).span;
-}
-
-/* Which side the clock column sits on (cards use abstract cols 2/3; the clock
-   is always full-height). 'right' flips the grid so the clock is at col 3. */
-function _clockSide() {
-    const c = _layout['clock-section'];
-    return c && c.side === 'right' ? 'right' : 'left';
-}
-
-/* Abstract layout col (1=clock, 2..cols+1=cards) → actual grid col. */
-function _gridColFor(col) {
-    if (col === 1) return _clockSide() === 'right' ? _gridCols() + 1 : 1;
-    if (_clockSide() === 'right') return col - 1;
-    return col;
-}
-
-/* Actual grid col → abstract layout col. */
-function _layoutColFor(col) {
-    if (_clockSide() === 'right') return col + 1;
-    return col;
-}
+// Layout Adjustment — grid geometry, layout mode, drag & drop, card list, text card editor.
 
 function applyLayout(layout) {
-    _layout = Object.assign({}, DEFAULT_GRID, layout && typeof layout === 'object' ? layout : {});
+    setLayout(Object.assign({}, DEFAULT_GRID, layout && typeof layout === 'object' ? layout : {}));
     const rows = _gridRows();
     const cols = _gridCols();
-    LAYOUT_IDS.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        const pos = _normLayout(id);
-        el.style.gridColumn = String(_gridColFor(pos.col));
-        el.style.gridRow = pos.row + ' / span ' + pos.span;
-        el.style.display = _sectionVisible(id) ? '' : 'none';
-        el.dataset.span = String(pos.span);
-        if (id === 'fps-section') _applyFpsSpan(el, pos.span);
+    layoutCards().forEach(card => {
+        if (!card.el) return;
+        card.applyGrid();
     });
     const grid = document.querySelector('.term-grid');
     if (grid) {
@@ -114,10 +24,10 @@ function applyLayout(layout) {
 
 function readLayout() {
     const layout = {};
-    LAYOUT_IDS.forEach(id => {
-        const el = document.getElementById(id);
-        const pos = _normLayout(id);
-        layout[id] = {
+    layoutCards().forEach(card => {
+        const el = card.el;
+        const pos = _normLayout(card.id);
+        layout[card.id] = {
             col: el && el.style.gridColumn ? _layoutColFor(parseInt(el.style.gridColumn) || pos.col) : pos.col,
             row: el && el.style.gridRow ? parseInt(el.style.gridRow) || pos.row : pos.row,
             span: pos.span,
@@ -131,8 +41,8 @@ function readLayout() {
 }
 
 function _colCards(col) {
-    return LAYOUT_IDS
-        .map(id => document.getElementById(id))
+    return layoutCards()
+        .map(card => card.el)
         .filter(el => el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === _gridColFor(col))
         .sort((a, b) => parseInt(a.style.gridRow) - parseInt(b.style.gridRow));
 }
@@ -151,8 +61,8 @@ function enterLayoutMode() {
     if (colsSel) colsSel.value = String(_gridCols());
     document.body.classList.add('layout-mode');
     _addLayoutControls();
-    DRAG_IDS.forEach(id => {
-        const el = document.getElementById(id);
+    allCards().forEach(card => {
+        const el = card.el;
         if (!el) return;
         el.setAttribute('draggable', 'true');
         el.addEventListener('dragstart', onLayoutDragStart);
@@ -161,6 +71,15 @@ function enterLayoutMode() {
         el.addEventListener('dragend', onLayoutDragEnd);
         el.addEventListener('drop', onLayoutDrop);
     });
+    const clockEl = document.getElementById('clock-section');
+    if (clockEl) {
+        clockEl.setAttribute('draggable', 'true');
+        clockEl.addEventListener('dragstart', onLayoutDragStart);
+        clockEl.addEventListener('dragover', onLayoutDragOver);
+        clockEl.addEventListener('dragleave', onLayoutDragLeave);
+        clockEl.addEventListener('dragend', onLayoutDragEnd);
+        clockEl.addEventListener('drop', onLayoutDrop);
+    }
     const grid = document.querySelector('.term-grid');
     if (grid) {
         grid.addEventListener('dragover', onGridDragOver);
@@ -176,8 +95,8 @@ function exitLayoutMode() {
     _hideClockHint();
     document.body.classList.remove('layout-mode');
     _removeLayoutControls();
-    DRAG_IDS.forEach(id => {
-        const el = document.getElementById(id);
+    allCards().forEach(card => {
+        const el = card.el;
         if (!el) return;
         el.removeAttribute('draggable');
         el.classList.remove('dragging', 'drag-over');
@@ -187,6 +106,16 @@ function exitLayoutMode() {
         el.removeEventListener('dragend', onLayoutDragEnd);
         el.removeEventListener('drop', onLayoutDrop);
     });
+    const clockEl = document.getElementById('clock-section');
+    if (clockEl) {
+        clockEl.removeAttribute('draggable');
+        clockEl.classList.remove('dragging', 'drag-over');
+        clockEl.removeEventListener('dragstart', onLayoutDragStart);
+        clockEl.removeEventListener('dragover', onLayoutDragOver);
+        clockEl.removeEventListener('dragleave', onLayoutDragLeave);
+        clockEl.removeEventListener('dragend', onLayoutDragEnd);
+        clockEl.removeEventListener('drop', onLayoutDrop);
+    }
     const grid = document.querySelector('.term-grid');
     if (grid) {
         grid.removeEventListener('dragover', onGridDragOver);
@@ -200,8 +129,9 @@ function exitLayoutMode() {
 function _addLayoutControls() {
     if (_layoutControlsAdded) return;
     _layoutControlsAdded = true;
-    LAYOUT_IDS.forEach(id => {
-        const el = document.getElementById(id);
+    layoutCards().forEach(card => {
+        const el = card.el;
+        const id = card.id;
         if (!el) return;
         const group = document.createElement('div');
         group.className = 'layout-control-group';
@@ -212,7 +142,7 @@ function _addLayoutControls() {
         delBtn.addEventListener('click', function(e) { e.stopPropagation(); _deleteCard(id); });
         group.appendChild(delBtn);
         el.appendChild(group);
-        if (RESIZABLE_IDS.includes(id)) {
+        if (card.resizable) {
             const handle = document.createElement('div');
             handle.className = 'layout-resize-handle';
             handle.setAttribute('data-card', id);
@@ -245,7 +175,7 @@ function _removeLayoutControls() {
 
 function _toggleCardSize(id) {
     const pos = _normLayout(id);
-    const el = document.getElementById(id);
+    const el = getCard(id).el;
     const first = el ? el.getBoundingClientRect() : null;
     const curRow = el && el.style.gridRow ? (parseInt(el.style.gridRow) || pos.row) : pos.row;
     const curCol = el && el.style.gridColumn ? _layoutColFor(parseInt(el.style.gridColumn) || pos.col) : pos.col;
@@ -259,7 +189,7 @@ function _toggleCardSize(id) {
     }
     const snap = _snapshotLayout();
     pos.span = pos.span === 2 ? 1 : 2;
-    _layout[id] = { col: curCol, row: curRow, span: pos.span, hidden: pos.hidden };
+    setCardPos(id, { col: curCol, row: curRow, span: pos.span, hidden: pos.hidden });
     if (el) {
         el.style.transition = 'none';
         el.style.gridRow = curRow + ' / span ' + pos.span;
@@ -302,10 +232,10 @@ function _flipCard(el, first) {
 
 function _deleteCard(id) {
     const pos = _normLayout(id);
-    const el = document.getElementById(id);
+    const el = getCard(id).el;
     const col = el && el.style.gridColumn ? _layoutColFor(parseInt(el.style.gridColumn) || pos.col) : pos.col;
     pos.hidden = true;
-    _layout[id] = { col: col, row: pos.row, span: pos.span, hidden: true };
+    setCardPos(id, { col: col, row: pos.row, span: pos.span, hidden: true });
     if (el) el.style.display = 'none';
     _repackColumn(col, null, null);
     _rebalanceOverflow();
@@ -323,7 +253,7 @@ function _resizeHandleDown(e, id) {
         _resizingCard = id;
         _resizeDelta = 0;
         document.body.classList.add('resizing');
-        const el = document.getElementById(id);
+        const el = getCard(id).el;
         if (el) el.classList.add('resizing');
         window.addEventListener('pointermove', _resizeHandleMove);
         window.addEventListener('pointerup', _resizeHandleUp);
@@ -351,51 +281,14 @@ function _resizeHandleUp() {
     _resizingCard = null;
     _resizeDelta = 0;
     document.body.classList.remove('resizing');
-    const el = document.getElementById(id);
+    const el = getCard(id).el;
     if (el) el.classList.remove('resizing');
     window.removeEventListener('pointermove', _resizeHandleMove);
     window.removeEventListener('pointerup', _resizeHandleUp);
 }
 
-/* Card metadata used by the card list: display name, accent color, and a
-   small mock of the card's content so the user can preview its style. */
-const CARD_META = {
-    'cpu-section': {
-        name: 'CPU', color: 'var(--cyan)',
-        value: '88', pct: '%',
-        lines: [['4200', 'MHz', '65', '°C'], ['120', 'W', '1.3', 'V']],
-    },
-    'gpu-section': {
-        name: 'GPU', color: 'var(--accent)',
-        value: '76', pct: '%',
-        lines: [['68', '°C', '180', 'W'], ['11.2', '/12 GB', '64', '°C']],
-    },
-    'mem-section': {
-        name: 'Memory', color: 'var(--magenta)',
-        value: '54', pct: '%',
-        lines: [['3600', 'MHz', '1.1', 'V'], ['8.6', '/16 GB', '45', '°C']],
-    },
-    'net-section': {
-        name: 'Network', color: 'var(--green)', type: 'duo',
-        duo: [['↓', '12.3', 'MB/s'], ['↑', '4.5', 'MB/s']],
-    },
-    'fps-section': {
-        name: 'FPS', color: 'var(--yellow)',
-        value: '144', pct: 'FPS',
-        lines: [['6.9', 'ms', '1% 118', ''], ['AVG 141', '', '99% 137', '']],
-    },
-    'disk-section': {
-        name: 'Disk', color: 'var(--blue)', type: 'duo',
-        duo: [['R', '120', 'MB/s'], ['W', '45', 'MB/s']],
-    },
-    'proc-section': { name: 'Process', color: 'var(--text-dim)', type: 'proc' },
-    'music-section': { name: 'Music', color: 'var(--accent)', type: 'music' },
-    'weather-section': { name: 'Weather', color: 'var(--orange)', type: 'weather' },
-    'text-section': { name: 'Text', color: 'var(--accent)', type: 'text' },
-};
-
 function _cardPreviewHTML(id) {
-    const m = CARD_META[id];
+    const m = getCard(id).meta;
     if (!m) return '';
     if (m.type === 'proc') {
         return '<div class="clp-proc">'
@@ -442,9 +335,10 @@ function _renderCardList() {
     const body = document.getElementById('card-list-body');
     if (!body) return;
     body.textContent = '';
-    const hidden = LAYOUT_IDS.filter(id => _normLayout(id).hidden);
-    hidden.forEach(id => {
-        const meta = CARD_META[id] || { name: id, color: 'var(--text)' };
+    const hidden = layoutCards().filter(card => _normLayout(card.id).hidden);
+    hidden.forEach(card => {
+        const id = card.id;
+        const meta = card.meta || { name: id, color: 'var(--text)' };
         const item = document.createElement('div');
         item.className = 'card-list-item';
         item.dataset.card = id;
@@ -464,10 +358,11 @@ function _renderCardList() {
     }
 }
 
-/* Cards that support both sizes (RESIZABLE_IDS) list their options next to the
+/* Cards that support both sizes (resizable) list their options next to the
    name, e.g. "CPU 1x1 · 1x2".  Non-resizable cards have a single fixed size. */
 function _cardSizesHTML(id) {
-    if (!RESIZABLE_IDS.includes(id)) return '';
+    const card = getCard(id);
+    if (!card || !card.resizable) return '';
     const sizes = [1, 2].map(s => '1x' + s);
     return '<span class="card-list-sizes">' + sizes.join(' · ') + '</span>';
 }
@@ -475,7 +370,7 @@ function _cardSizesHTML(id) {
 function _updateCardsBtn() {
     const cardsBtn = document.getElementById('layout-cards');
     if (!cardsBtn) return;
-    const hasHidden = LAYOUT_IDS.some(id => _normLayout(id).hidden);
+    const hasHidden = layoutCards().some(card => _normLayout(card.id).hidden);
     cardsBtn.classList.toggle('hidden', !hasHidden);
     const panel = document.getElementById('card-list-panel');
     if (panel && panel.style.display === 'flex') _renderCardList();
@@ -487,18 +382,10 @@ function _updateCardsBtn() {
 function _placeCard(id, col, row, span) {
     const pos = _normLayout(id);
     const s = span || pos.span;
-    pos.col = col;
-    pos.row = row;
-    pos.span = s;
-    pos.hidden = false;
-    _layout[id] = { col: col, row: row, span: s, hidden: false };
-    const el = document.getElementById(id);
+    const el = getCard(id).el;
+    setCardPos(id, { col: col, row: row, span: s, hidden: false });
     if (el) {
-        el.style.display = _sectionVisible(id) ? '' : 'none';
-        el.style.gridColumn = String(_gridColFor(col));
-        el.style.gridRow = row + ' / span ' + s;
-        el.dataset.span = String(s);
-        if (id === 'fps-section') _applyFpsSpan(el, s);
+        getCard(id).applyGrid();
         if (id === 'weather-section') refreshWeatherCard();
         if (id === 'text-section') applyCustomText(id);
     }
@@ -514,13 +401,13 @@ function _firstFreeRow(col) {
     const rows = _gridRows();
     for (let row = 1; row <= rows; row++) {
         let covered = false;
-        LAYOUT_IDS.forEach(function(id) {
+        layoutCards().forEach(function(card) {
             if (covered) return;
-            const el = document.getElementById(id);
+            const el = card.el;
             if (!el || el.style.display === 'none') return;
             if (parseInt(el.style.gridColumn) !== _gridColFor(col)) return;
             const r = parseInt(el.style.gridRow);
-            const s = getLayoutSpan(id);
+            const s = getLayoutSpan(card.id);
             if (row >= r && row < r + s) covered = true;
         });
         if (!covered) return row;
@@ -563,7 +450,7 @@ function _findColumnWithRoom(span, exceptCol) {
 }
 
 /* Click a card in the list: add it to whichever column still has room.
-   If the card supports both sizes (RESIZABLE_IDS) and no column fits the full
+   If the card supports both sizes (resizable) and no column fits the full
    span, fall back to the small (span 1) form automatically. */
 function _addCard(id) {
     const span = _normLayout(id).span;
@@ -575,7 +462,7 @@ function _addCard(id) {
         const free = rows + 1 - _columnHeight(c);
         if (free >= span && (col === null || free > bestFree)) { col = c; bestFree = free; }
     }
-    if (col === null && RESIZABLE_IDS.includes(id) && span > 1) {
+    if (col === null && getCard(id).resizable && span > 1) {
         bestFree = -1;
         for (let c = 2; c <= cols + 1; c++) {
             const free = rows + 1 - _columnHeight(c);
@@ -762,10 +649,11 @@ function onLayoutDragLeave(e) {
 
 function onLayoutDragEnd(e) {
     e.currentTarget.classList.remove('dragging', 'drag-over');
-    DRAG_IDS.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove('drag-over');
+    allCards().forEach(card => {
+        if (card.el) card.el.classList.remove('drag-over');
     });
+    const clockEl = document.getElementById('clock-section');
+    if (clockEl) clockEl.classList.remove('drag-over');
     _dragId = null;
     _dragFromList = false;
 }
@@ -786,7 +674,7 @@ function onLayoutDrop(e) {
         const colHeight = _columnHeight(toCol);
         const rows = _gridRows();
         if (colHeight + span > rows + 1 && !_columnHasRoomFor(span, toCol)) {
-            if (RESIZABLE_IDS.includes(fromId) && span > 1) {
+            if (getCard(fromId).resizable && span > 1) {
                 const small = 1;
                 if (colHeight + small > rows + 1) {
                     showToast('空间不足');
@@ -974,7 +862,7 @@ function onGridDrop(e) {
     const rows = _gridRows();
     const targetH = (fromCol === slot.col ? _columnHeight(slot.col) - span : _columnHeight(slot.col));
     if (targetH + span > rows + 1) {
-        if (RESIZABLE_IDS.includes(fromId) && span > 1) {
+        if (getCard(fromId).resizable && span > 1) {
             if (targetH + 1 > rows + 1) { showToast('空间不足'); return; }
             span = 1;
         } else {
@@ -1001,24 +889,25 @@ function _handleClockDrop(e) {
     const rect = grid.getBoundingClientRect();
     const side = (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right';
     _syncLayoutFromDom();
-    _layout['clock-section'] = { side: side };
-    applyLayout(_layout);
+    setCardPos('clock-section', { side: side });
+    applyLayout(getLayout());
 }
 
 /* Rebuild _layout from the current DOM (gridColumn/gridRow set by swaps,
    rebalances and repacks). Keeps _layout in sync so applyLayout() (e.g. the
    clock flip) does not revert prior drag/rebalance moves. */
 function _syncLayoutFromDom() {
-    LAYOUT_IDS.forEach(id => {
-        const el = document.getElementById(id);
+    layoutCards().forEach(card => {
+        const id = card.id;
+        const el = card.el;
         if (!el) return;
         const pos = _normLayout(id);
-        _layout[id] = {
+        setCardPos(id, {
             col: el.style.gridColumn ? _layoutColFor(parseInt(el.style.gridColumn) || pos.col) : pos.col,
             row: el.style.gridRow ? parseInt(el.style.gridRow) || pos.row : pos.row,
             span: pos.span,
             hidden: pos.hidden,
-        };
+        });
     });
 }
 
@@ -1054,10 +943,10 @@ function _packColumn(col) {
 
 function _columnHeight(col) {
     let maxEnd = 0;
-    LAYOUT_IDS.forEach(function(id) {
-        const el = document.getElementById(id);
+    layoutCards().forEach(function(card) {
+        const el = card.el;
         if (el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === _gridColFor(col)) {
-            const end = parseInt(el.style.gridRow) + getLayoutSpan(id);
+            const end = parseInt(el.style.gridRow) + getLayoutSpan(card.id);
             if (end > maxEnd) maxEnd = end;
         }
     });
@@ -1068,13 +957,13 @@ function _columnHeight(col) {
 function _bottomCardId(col) {
     let bottomId = null;
     let bottomRow = -1;
-    LAYOUT_IDS.forEach(function(id) {
-        const el = document.getElementById(id);
+    layoutCards().forEach(function(card) {
+        const el = card.el;
         if (el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === _gridColFor(col)) {
             const row = parseInt(el.style.gridRow);
             if (row > bottomRow) {
                 bottomRow = row;
-                bottomId = id;
+                bottomId = card.id;
             }
         }
     });
@@ -1085,8 +974,9 @@ function _bottomCardId(col) {
    cleanly (restored exactly) if it would overflow the grid. */
 function _snapshotLayout() {
     const snap = [];
-    LAYOUT_IDS.forEach(function(id) {
-        const el = document.getElementById(id);
+    layoutCards().forEach(function(card) {
+        const id = card.id;
+        const el = card.el;
         if (!el) return;
         snap.push({
             id: id,
@@ -1094,7 +984,7 @@ function _snapshotLayout() {
             row: el.style.gridRow || '',
             display: el.style.display || '',
             span: el.dataset.span || '',
-            layout: Object.assign({}, _layout[id] || {}),
+            layout: Object.assign({}, getLayout()[id] || {}),
         });
     });
     const clockEl = document.getElementById('clock-section');
@@ -1104,7 +994,7 @@ function _snapshotLayout() {
         row: '',
         display: '',
         span: '',
-        layout: Object.assign({}, _layout['clock-section'] || {}),
+        layout: Object.assign({}, getLayout()['clock-section'] || {}),
     });
     return snap;
 }
@@ -1115,8 +1005,8 @@ function _restoreLayout(snap) {
         if (!el) return;
         if (s.id === 'clock-section') {
             el.style.gridColumn = s.col;
-            if (s.layout && Object.keys(s.layout).length) _layout[s.id] = s.layout;
-            else delete _layout[s.id];
+            if (s.layout && Object.keys(s.layout).length) setCardPos(s.id, s.layout);
+            else setCardPos(s.id, null);
             const grid = document.querySelector('.term-grid');
             if (grid) grid.classList.toggle('clock-right', _clockSide() === 'right');
             return;
@@ -1125,8 +1015,8 @@ function _restoreLayout(snap) {
         el.style.gridRow = s.row;
         el.style.display = s.display;
         el.dataset.span = s.span;
-        if (s.layout && Object.keys(s.layout).length) _layout[s.id] = s.layout;
-        else delete _layout[s.id];
+        if (s.layout && Object.keys(s.layout).length) setCardPos(s.id, s.layout);
+        else setCardPos(s.id, null);
     });
 }
 
@@ -1148,7 +1038,7 @@ function _moveCardToBottom(fromCol, toCol) {
     // Keep _layout in sync so a later applyLayout (e.g. clock flip) doesn't
     // revert this cross-column move.
     const pos = _normLayout(bottomId);
-    _layout[bottomId] = { col: toCol, row: parseInt(el.style.gridRow) || pos.row, span, hidden: pos.hidden };
+    setCardPos(bottomId, { col: toCol, row: parseInt(el.style.gridRow) || pos.row, span, hidden: pos.hidden });
     return true;
 }
 
@@ -1174,8 +1064,8 @@ function _rebalanceOverflow() {
 }
 
 function resetLayout() {
-    _layout = {};
-    applyLayout(DEFAULT_LAYOUT);
+    setLayout({});
+    applyLayout(defaultLayout());
 }
 
 function initLayoutControls() {
@@ -1206,9 +1096,9 @@ function initLayoutControls() {
     }
     const applyDims = () => {
         if (!rowsSel || !colsSel) return;
-        _layout.rows = parseInt(rowsSel.value, 10) || DEFAULT_GRID.rows;
-        _layout.cols = parseInt(colsSel.value, 10) || DEFAULT_GRID.cols;
-        applyLayout(_layout);
+        getLayout().rows = parseInt(rowsSel.value, 10) || DEFAULT_GRID.rows;
+        getLayout().cols = parseInt(colsSel.value, 10) || DEFAULT_GRID.cols;
+        applyLayout(getLayout());
         _repackAll();
         _syncLayoutFromDom();
         _updateCardsBtn();
@@ -1279,7 +1169,8 @@ function _layoutChanged() {
     if (!_layoutSaved) return false;
     const cur = readLayout();
     if (cur.rows !== _layoutSaved.rows || cur.cols !== _layoutSaved.cols) return true;
-    if (LAYOUT_IDS.some(id => {
+    if (layoutCards().some(card => {
+        const id = card.id;
         const a = cur[id], b = _layoutSaved[id];
         return !a || !b
             || a.col !== b.col || a.row !== b.row
