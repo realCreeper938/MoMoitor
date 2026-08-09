@@ -1004,6 +1004,192 @@ html, body {
     font-style: italic;
 }
 
+/* ---- Weather card (grid) ---- */
+#weather-section .box-content {
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+}
+
+/* Main row: icon + temperature + condition */
+.wx-card-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+}
+
+.wx-card-icon {
+    font-size: calc(40px * var(--font-scale));
+    line-height: 1;
+    color: var(--orange);
+    text-shadow: 0 4px 18px color-mix(in srgb, var(--orange) 35%, transparent);
+    flex-shrink: 0;
+}
+
+.wx-card-temp-row {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+}
+
+#weather-section .metric-value.big {
+    font-size: calc(clamp(36px, 4.2vw, 68px) * var(--font-scale));
+    color: var(--text);
+}
+
+.wx-card-unit {
+    font-size: calc(13px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+.wx-card-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+}
+
+.wx-card-text {
+    font-size: calc(13px * var(--font-scale));
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.wx-card-city {
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.wx-card-city .nf-icon {
+    margin-right: 3px;
+}
+
+/* Details row */
+.wx-card-details {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    width: 100%;
+    min-width: 0;
+}
+
+.wx-card-detail {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+
+.wx-card-detail .nf-icon {
+    font-size: calc(13px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+.wx-card-detail .mono {
+    color: var(--text);
+}
+
+/* Precipitation forecast — big card only */
+.wx-card-precip {
+    width: 100%;
+    min-width: 0;
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+}
+
+.wx-card-precip-title {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+    margin-bottom: 3px;
+}
+
+.wx-card-precip-title .nf-icon {
+    color: var(--blue);
+}
+
+.wx-card-precip-text {
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text);
+    margin-bottom: 2px;
+}
+
+.wx-card-precip-chart {
+    font-family: var(--font-data);
+    font-size: calc(16px * var(--font-scale));
+    letter-spacing: 1px;
+    color: var(--blue);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Alerts — big card only */
+.wx-card-alerts {
+    width: 100%;
+    min-width: 0;
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.wx-card-alerts-title {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+    margin-bottom: 3px;
+}
+
+.wx-card-alerts-title .nf-icon {
+    color: var(--orange);
+}
+
+#weather-section:not([data-span="2"]) .wx-card-precip,
+#weather-section:not([data-span="2"]) .wx-card-alerts {
+    display: none !important;
+}
+
+/* Small card: more compact main row */
+#weather-section:not([data-span="2"]) .wx-card-main {
+    gap: 8px;
+}
+
+#weather-section:not([data-span="2"]) .wx-card-icon {
+    font-size: calc(24px * var(--font-scale));
+}
+
+#weather-section:not([data-span="2"]) .metric-value.big {
+    font-size: calc(22px * var(--font-scale));
+}
+
+#weather-section:not([data-span="2"]) .wx-card-text {
+    font-size: calc(12px * var(--font-scale));
+}
+
+#weather-section:not([data-span="2"]) .wx-card-city {
+    font-size: calc(10px * var(--font-scale));
+}
+
 /* Grid */
 .term-grid {
     position: relative;
@@ -1178,6 +1364,7 @@ body.layout-mode .drop-slot.hide {
 #fps-section  { grid-column: 3;          grid-row: 4; }
 #proc-section { grid-column: 3;          grid-row: 5; }
 #music-section { grid-column: 2;         grid-row: 5; }
+#weather-section { grid-column: 2;       grid-row: 5; }
 
 /* Hide box headers */
 #cpu-section > .box-header,
@@ -1187,7 +1374,8 @@ body.layout-mode .drop-slot.hide {
 #fps-section > .box-header,
 #disk-section > .box-header,
 #proc-section > .box-header,
-#music-section > .box-header {
+#music-section > .box-header,
+#weather-section > .box-header {
     display: none;
 }
 
@@ -2296,7 +2484,8 @@ body.layout-mode .drop-slot.hide {
 #gpu-section[data-span="2"]:hover .corner-label,
 #mem-section[data-span="2"]:hover .corner-label,
 #net-section[data-span="2"]:hover .corner-label,
-#fps-section[data-span="2"]:hover .corner-label {
+#fps-section[data-span="2"]:hover .corner-label,
+#weather-section[data-span="2"]:hover .corner-label {
     opacity: 0;
 }
 
@@ -2304,7 +2493,8 @@ body.layout-mode .drop-slot.hide {
 #cpu-section:not([data-span="2"]) .corner-label,
 #gpu-section:not([data-span="2"]) .corner-label,
 #mem-section:not([data-span="2"]) .corner-label,
-#net-section:not([data-span="2"]) .corner-label {
+#net-section:not([data-span="2"]) .corner-label,
+#weather-section:not([data-span="2"]) .corner-label {
     display: none;
 }
 
@@ -4717,6 +4907,23 @@ body.layout-mode .layout-control-group .layout-del-btn {
     opacity: 0.8;
 }
 .card-list-preview .clp-music-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.card-list-preview .clp-weather {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.card-list-preview .clp-weather-icon {
+    font-size: calc(22px * var(--font-scale));
+    line-height: 1;
+    color: var(--card-accent, var(--text));
+    flex-shrink: 0;
+}
+.card-list-preview .clp-weather-main {
     display: flex;
     flex-direction: column;
     gap: 2px;

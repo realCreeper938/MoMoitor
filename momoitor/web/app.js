@@ -1608,6 +1608,118 @@ async function refreshAlerts() {
     } catch (e) { console.warn('refreshAlerts:', e); }
 }
 
+/* Weather card — dedicated grid card with big/small variants. The small card
+   hides the precipitation forecast and alerts sections via CSS. */
+async function refreshWeatherCard() {
+    try {
+        const section = document.getElementById('weather-section');
+        if (!section) return;
+        const [w, d, aq, alerts] = await Promise.all([
+            pywebview.api.get_weather(),
+            pywebview.api.get_weather_detail(),
+            pywebview.api.get_airquality(),
+            pywebview.api.get_alerts(),
+        ]);
+
+        // Main block: icon + temperature + condition + city
+        const cardIcon = document.getElementById('wx-card-icon');
+        const cardTemp = document.getElementById('wx-card-temp');
+        const cardText = document.getElementById('wx-card-text');
+        const cardCity = document.getElementById('wx-card-city');
+        if (w && !w.error) {
+            if (cardIcon) cardIcon.textContent = wxIcon(w.icon);
+            if (cardTemp) cardTemp.textContent = fmt(w.temp, 0);
+            if (cardText) cardText.textContent = w.text || '--';
+            if (cardCity) cardCity.textContent = w.city || '--';
+        } else {
+            if (cardIcon) cardIcon.textContent = wxIcon('999');
+            if (cardTemp) cardTemp.textContent = '--';
+            if (cardText) cardText.textContent = '--';
+            if (cardCity) cardCity.textContent = '--';
+        }
+
+        // Details: feels-like / humidity / wind / AQI
+        if (d && d.now) {
+            setText('wx-card-feels', fmt(d.now.feelsLike, 0));
+            setText('wx-card-humidity', fmt(d.now.humidity, 0));
+            setText('wx-card-wind', (d.now.windDir || '') + (d.now.windScale ? ' ' + d.now.windScale : ''));
+        }
+        const aqiEl = document.getElementById('wx-card-aqi-val');
+        const aqiRow = document.getElementById('wx-card-aqi-row');
+        if (aqiRow && aqiEl) {
+            if (!aq || aq.error || !aq.indexes || aq.indexes.length === 0) {
+                aqiRow.style.display = 'none';
+            } else {
+                const idx = aq.indexes[0];
+                aqiEl.textContent = (idx.aqiDisplay || '--') + ' ' + (idx.category || '');
+                const cat = (idx.category || '').toLowerCase();
+                aqiEl.style.color = cat.includes('优') ? 'var(--green)' :
+                                    cat.includes('良') ? 'var(--yellow)' :
+                                    cat.includes('轻度') ? 'var(--orange)' :
+                                    cat.includes('中度') ? 'var(--orange)' :
+                                    cat.includes('重度') ? 'var(--red)' :
+                                    cat.includes('严重') ? 'var(--red)' : '';
+                aqiRow.style.display = '';
+            }
+        }
+
+        // Precipitation forecast (big card only; hidden on small via CSS)
+        const precipRow = document.getElementById('wx-card-precip-row');
+        const precipText = document.getElementById('wx-card-precip-text');
+        const precipChart = document.getElementById('wx-card-precip-chart');
+        if (precipRow && precipText && precipChart) {
+            if (d && d.minutely && d.minutely.minutely && d.minutely.minutely.length > 0) {
+                const items = d.minutely.minutely;
+                const hasPrecip = items.some(m => m.precip > 0);
+                if (hasPrecip) {
+                    precipText.textContent = d.minutely.summary || '--';
+                    const bars = items.map(m => {
+                        const p = m.precip;
+                        if (p <= 0) return '▁';
+                        if (p < 0.5) return '▃';
+                        if (p < 1) return '▅';
+                        if (p < 2) return '▇';
+                        return '█';
+                    });
+                    precipChart.textContent = bars.join('');
+                    precipRow.style.display = '';
+                } else {
+                    precipRow.style.display = 'none';
+                }
+            }
+        }
+
+        // Alerts (big card only; hidden on small via CSS)
+        const alertsRow = document.getElementById('wx-card-alerts-row');
+        const alertsList = document.getElementById('wx-card-alerts-list');
+        if (alertsRow && alertsList) {
+            if (!alerts || alerts.length === 0) {
+                alertsRow.style.display = 'none';
+            } else {
+                alertsList.innerHTML = '';
+                const maxShow = 2;
+                const shown = alerts.slice(0, maxShow);
+                for (const a of shown) {
+                    const div = document.createElement('div');
+                    div.className = 'wx-alert-item';
+                    const pub = a.publishTime ? new Date(a.publishTime) : null;
+                    const timeStr = pub ? pub.toLocaleString('zh', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+                    div.innerHTML = `<span class="alert-type">${a.eventType || ''}</span><span class="alert-headline">${escapeHtml(a.headline || '')}</span>${a.description ? '<br><span class="alert-desc">' + escapeHtml(a.description) + '</span>' : ''}${timeStr ? '<br><span class="alert-time">发布于 ' + timeStr + '</span>' : ''}`;
+                    div.style.borderLeftColor = a.colorCode ? `rgb(${a.colorR},${a.colorG},${a.colorB})` : '';
+                    alertsList.appendChild(div);
+                }
+                if (alerts.length > maxShow) {
+                    const more = document.createElement('div');
+                    more.className = 'wx-alert-more';
+                    more.textContent = `还有 ${alerts.length - maxShow} 个预警...`;
+                    alertsList.appendChild(more);
+                }
+                alertsRow.style.display = '';
+            }
+        }
+    } catch (e) { console.warn('refreshWeatherCard:', e); }
+}
+
 /* System info */
 async function refreshSysinfo() {
     try {
@@ -2330,7 +2442,7 @@ let _featureToggles = {};
  * must stay hidden even when their feature toggle is later re-applied. */
 function _sectionVisible(id) {
     if (_normLayout(id).hidden) return false;
-    const key = { 'fps-section': 'fps', 'music-section': 'music', 'proc-section': 'top_process' }[id];
+    const key = { 'fps-section': 'fps', 'music-section': 'music', 'proc-section': 'top_process', 'weather-section': 'weather' }[id];
     return key ? _featureToggles[key] !== false : true;
 }
 
@@ -2346,6 +2458,8 @@ function applyFeatureToggles(toggles) {
     if (calPopup) calPopup.style.display = ft.calendar !== false ? '' : 'none';
     const procSection = document.getElementById('proc-section');
     if (procSection) procSection.style.display = _sectionVisible('proc-section') ? '' : 'none';
+    const weatherSection = document.getElementById('weather-section');
+    if (weatherSection) weatherSection.style.display = _sectionVisible('weather-section') ? '' : 'none';
     document.querySelectorAll('.net-host-row').forEach(el => {
         el.style.display = ft.sysinfo !== false ? '' : 'none';
     });
@@ -2366,8 +2480,8 @@ function applyFeatureToggles(toggles) {
 }
 
 /* ===== Layout Adjustment ===== */
-const LAYOUT_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'disk-section', 'proc-section', 'music-section'];
-const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'music-section'];
+const LAYOUT_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'disk-section', 'proc-section', 'music-section', 'weather-section'];
+const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'music-section', 'weather-section'];
 
 const DEFAULT_LAYOUT = {
     'cpu-section':    { col: 2, row: 2, span: 2, hidden: false },
@@ -2378,6 +2492,7 @@ const DEFAULT_LAYOUT = {
     'fps-section':    { col: 3, row: 4, span: 1, hidden: false },
     'proc-section':   { col: 3, row: 5, span: 1, hidden: false },
     'music-section':  { col: 2, row: 5, span: 1, hidden: false },
+    'weather-section': { col: 2, row: 1, span: 1, hidden: true },
 };
 
 let _layout = {};
@@ -2682,6 +2797,7 @@ const CARD_META = {
     },
     'proc-section': { name: 'Process', color: 'var(--text-dim)', type: 'proc' },
     'music-section': { name: 'Music', color: 'var(--accent)', type: 'music' },
+    'weather-section': { name: 'Weather', color: 'var(--orange)', type: 'weather' },
 };
 
 function _cardPreviewHTML(id) {
@@ -2698,6 +2814,11 @@ function _cardPreviewHTML(id) {
         return '<div class="clp-music"><span class="clp-cover"></span>'
             + '<div class="clp-music-meta"><div class="clp-title">Title</div>'
             + '<div class="clp-artist">Artist</div></div></div>';
+    }
+    if (m.type === 'weather') {
+        return '<div class="clp-weather"><span class="clp-weather-icon">&#xF0590;</span>'
+            + '<div class="clp-weather-main"><div class="clp-title">23&deg;C</div>'
+            + '<div class="clp-artist">Sunny</div></div></div>';
     }
     if (m.type === 'duo') {
         return m.duo.map(r =>
@@ -4022,6 +4143,7 @@ window.addEventListener('pywebviewready', async () => {
     _startInterval(weatherOn, refreshWeatherDetail, 600000);
     _startInterval(weatherOn, refreshAirQuality, 1800000);
     _startInterval(weatherOn, refreshAlerts, 600000);
+    _startInterval(weatherOn, refreshWeatherCard, 600000);
     _startInterval(ft.music !== false, refreshMusic, 3000);
     _startInterval(ft.fps !== false, refreshFps, 1000);
     _startInterval(ft.sysinfo !== false, refreshSysinfo, 60000);

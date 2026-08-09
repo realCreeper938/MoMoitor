@@ -343,6 +343,40 @@
                 </div>
             </div>
 
+            <!-- Weather -->
+            <div class="term-box" id="weather-section" style="display:none">
+                <div class="layout-drag-handle">⠿</div>
+                <div class="corner-label">Weather</div>
+                <div class="box-header">Weather</div>
+                <div class="box-content weather-content">
+                    <div class="wx-card-main">
+                        <span class="wx-card-icon" id="wx-card-icon">&#xF0590;</span>
+                        <div class="wx-card-temp-row">
+                            <span class="metric-value big mono" id="wx-card-temp">--</span><span class="wx-card-unit">&deg;C</span>
+                        </div>
+                        <div class="wx-card-meta">
+                            <span class="wx-card-text" id="wx-card-text">--</span>
+                            <span class="wx-card-city"><span class="nf-icon">&#xF034E;</span><span class="mono" id="wx-card-city">--</span></span>
+                        </div>
+                    </div>
+                    <div class="wx-card-details">
+                        <div class="wx-card-detail"><span class="nf-icon">&#xF050F;</span><span class="mono" id="wx-card-feels">--</span><span class="wx-detail-unit">&deg;</span></div>
+                        <div class="wx-card-detail"><span class="nf-icon">&#xF058E;</span><span class="mono" id="wx-card-humidity">--</span><span class="wx-detail-unit">%</span></div>
+                        <div class="wx-card-detail"><span class="nf-icon">&#xF059D;</span><span class="mono" id="wx-card-wind">--</span></div>
+                        <div class="wx-card-detail" id="wx-card-aqi-row" style="display:none"><span class="nf-icon">&#xF032A;</span><span class="mono" id="wx-card-aqi-val">--</span></div>
+                    </div>
+                    <div class="wx-card-precip" id="wx-card-precip-row" style="display:none">
+                        <div class="wx-card-precip-title"><span class="nf-icon">&#xF0597;</span> <span data-i18n="wx-precip">Precipitation</span></div>
+                        <div class="wx-card-precip-text" id="wx-card-precip-text">--</div>
+                        <div class="wx-card-precip-chart" id="wx-card-precip-chart"></div>
+                    </div>
+                    <div class="wx-card-alerts" id="wx-card-alerts-row" style="display:none">
+                        <div class="wx-card-alerts-title"><span class="nf-icon">&#xF05D6;</span> <span data-i18n="wx-alerts">Alerts</span></div>
+                        <div id="wx-card-alerts-list"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Top process (horizontal mode only, beside FPS) -->
             <div class="term-box" id="proc-section">
                 <div class="layout-drag-handle">⠿</div>
