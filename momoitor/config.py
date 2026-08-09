@@ -174,7 +174,6 @@ DEFAULT_SETTINGS = {
             "bg_grad": False,
             "bg_grad_c1": "",
             "bg_grad_c2": "",
-            "bg_grad_angle": 135,
             "bg_grad_size": 100,
         },
     },
