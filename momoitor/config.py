@@ -183,6 +183,9 @@ DEFAULT_SETTINGS = {
         "font_size": 100,
         "fullscreen": False,
         "colorscheme": "gruvbox",
+        "colorscheme_dark": "gruvbox",  # 跟随系统主题时使用的暗色主题
+        "colorscheme_light": "gruvbox-light",  # 跟随系统主题时使用的亮色主题
+        "follow_system_theme": False,  # 是否跟随 Windows 亮/暗模式自动切换主题
         "data_source": "lhm",
         "autostart": False,
         "hover_highlight": True,  # 鼠标悬停监控项时高亮该项、其余降低透明度

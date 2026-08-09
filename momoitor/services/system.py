@@ -23,6 +23,20 @@ def get_time() -> str:
     return time.strftime("%H:%M:%S")
 
 
+def get_system_theme_mode() -> str:
+    """返回 Windows 当前亮/暗模式（'light'/'dark'），读取注册表，失败按暗色处理。"""
+    try:
+        import winreg
+        with winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+        ) as key:
+            value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+            return "light" if value else "dark"
+    except (OSError, ImportError):
+        return "dark"
+
+
 def clean_memory(deep: bool = False) -> dict:
     """回收每个进程的工作集（EmptyWorkingSet）——经典的 Windows 内存清理技巧：
     页面移入备用列表并按需复用，报告的使用量下降而不影响运行中的进程。

@@ -69,6 +69,28 @@ function initSettings() {
 
     // Theme
     const colorschemeSel = document.getElementById('opt-colorscheme');
+    const followThemeChk = document.getElementById('opt-follow-theme');
+    let colorschemeDark = 'gruvbox';
+    let colorschemeLight = 'gruvbox-light';
+
+    function renderThemePicker() {
+        if (followThemeChk.checked) {
+            renderThemeCards(colorschemeDark || 'gruvbox', colorschemeLight || 'gruvbox-light',
+                (v) => { colorschemeDark = v; if (_sysThemeMode !== 'light') applyColorscheme(v); renderThemePicker(); },
+                (v) => { colorschemeLight = v; if (_sysThemeMode === 'light') applyColorscheme(v); renderThemePicker(); });
+        } else {
+            renderThemeCards(colorschemeSel.value || 'gruvbox', colorschemeSel.value || 'gruvbox',
+                (v) => { colorschemeSel.value = v; applyColorscheme(v); renderThemePicker(); },
+                (v) => { colorschemeSel.value = v; applyColorscheme(v); renderThemePicker(); });
+        }
+    }
+
+    followThemeChk.addEventListener('change', () => {
+        setFollowSystemTheme(followThemeChk.checked);
+        if (followThemeChk.checked) _checkSystemTheme(true);
+        else applyColorscheme(colorschemeSel.value || 'gruvbox');
+        renderThemePicker();
+    });
 
     // Clock (personalization > Time subtab)
     const clockFormatSel = document.getElementById('opt-clockformat');
@@ -303,10 +325,12 @@ function initSettings() {
 
         // Theme
         colorschemeSel.value = g.colorscheme || 'gruvbox';
-        renderThemeCards(g.colorscheme || 'gruvbox', (scheme) => {
-            colorschemeSel.value = scheme;
-            applyColorscheme(scheme);
-        });
+        colorschemeDark = g.colorscheme_dark || 'gruvbox';
+        colorschemeLight = g.colorscheme_light || 'gruvbox-light';
+        followThemeChk.checked = g.follow_system_theme === true;
+        setFollowSystemTheme(followThemeChk.checked);
+        if (followThemeChk.checked) _checkSystemTheme(true);
+        renderThemePicker();
         // Fonts
         fontUiValue = f.ui || 'JetBrains Maple Mono';
         fontDataValue = f.data || 'IoskeleyMono';
@@ -415,6 +439,9 @@ function initSettings() {
                 refresh_interval: parseInt(intervalSel.value),
                 data_source: datasourceSel.value,
                 colorscheme: colorschemeSel.value,
+                colorscheme_dark: colorschemeDark || 'gruvbox',
+                colorscheme_light: colorschemeLight || 'gruvbox-light',
+                follow_system_theme: followThemeChk.checked,
                 debug_logs: debugLogsChk.checked,
                 debug: debugChk ? debugChk.checked : false,
             },
@@ -504,7 +531,13 @@ function initSettings() {
         startPolling((s.general || {}).refresh_interval);
         applyLang((s.general || {}).language || 'en');
         applyFontSize((s.general || {}).font_size);
-        applyColorscheme((s.general || {}).colorscheme || 'gruvbox');
+        if ((s.general || {}).follow_system_theme) {
+            setFollowSystemTheme(true);
+            _checkSystemTheme(true);
+        } else {
+            setFollowSystemTheme(false);
+            applyColorscheme((s.general || {}).colorscheme || 'gruvbox');
+        }
         applyHoverHighlight((s.general || {}).hover_highlight !== false);
         applyHoverAnim((s.general || {}).hover_animation !== false);
         applyLyricAutoTranslate((s.lyrics || {}).auto_translate === true);

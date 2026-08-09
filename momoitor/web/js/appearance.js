@@ -3,6 +3,40 @@ function applyColorscheme(scheme) {
     document.documentElement.setAttribute('data-colorscheme', scheme);
 }
 
+// Follow system light/dark mode
+let _followSystemTheme = false;
+let _sysThemeMode = 'dark';
+let _sysThemeTimer = null;
+
+function _applyFollowScheme(grp) {
+    const g = grp || (window._appSettings && window._appSettings.general) || {};
+    applyColorscheme(_sysThemeMode === 'light'
+        ? (g.colorscheme_light || 'gruvbox-light')
+        : (g.colorscheme_dark || 'gruvbox'));
+}
+
+async function _checkSystemTheme(force) {
+    try {
+        const mode = await pywebview.api.get_system_theme_mode();
+        if (mode !== _sysThemeMode || force) {
+            _sysThemeMode = mode;
+            if (_followSystemTheme) _applyFollowScheme();
+        }
+    } catch (e) {
+        console.warn('system theme:', e);
+    }
+}
+
+function setFollowSystemTheme(enabled) {
+    _followSystemTheme = !!enabled;
+    if (_followSystemTheme) {
+        if (!_sysThemeTimer) _sysThemeTimer = setInterval(() => _checkSystemTheme(false), 5000);
+    } else if (_sysThemeTimer) {
+        clearInterval(_sysThemeTimer);
+        _sysThemeTimer = null;
+    }
+}
+
 // Clock sidebar background (horizontal mode)
 let lastResolvedClockBg = { image: '', path: '' };
 let clockBgState = { url: '', topColor: '', gradient: true, opacity: 0, blur: 0 };
@@ -181,18 +215,18 @@ function getThemeColors(scheme) {
     return colors;
 }
 
-function renderThemeCards(selectedScheme, onSelect) {
+function renderThemeCards(darkSel, lightSel, onSelectDark, onSelectLight) {
     const darkGrid = document.getElementById('theme-grid-dark');
     const lightGrid = document.getElementById('theme-grid-light');
     if (!darkGrid || !lightGrid) return;
     darkGrid.innerHTML = '';
     lightGrid.innerHTML = '';
 
-    const makeCard = (theme) => {
+    const makeCard = (theme, activeSel, onSelect) => {
         const c = getThemeColors(theme.value);
         const card = document.createElement('button');
         card.type = 'button';
-        card.className = 'theme-card' + (theme.value === selectedScheme ? ' active' : '');
+        card.className = 'theme-card' + (theme.value === activeSel ? ' active' : '');
         card.dataset.scheme = theme.value;
         card.innerHTML =
             `<div class="theme-swatches">` +
@@ -202,16 +236,12 @@ function renderThemeCards(selectedScheme, onSelect) {
             `<span class="swatch" style="background:${c.text}"></span>` +
             `</div>` +
             `<span class="theme-name">${theme.name}</span>`;
-        card.addEventListener('click', () => {
-            document.querySelectorAll('.theme-card').forEach(el => el.classList.remove('active'));
-            card.classList.add('active');
-            onSelect(theme.value);
-        });
+        card.addEventListener('click', () => onSelect(theme.value));
         return card;
     };
 
-    THEME_LIST.dark.forEach(t => darkGrid.appendChild(makeCard(t)));
-    THEME_LIST.light.forEach(t => lightGrid.appendChild(makeCard(t)));
+    THEME_LIST.dark.forEach(t => darkGrid.appendChild(makeCard(t, darkSel, onSelectDark)));
+    THEME_LIST.light.forEach(t => lightGrid.appendChild(makeCard(t, lightSel, onSelectLight)));
 }
 
 // Font picker

@@ -10,7 +10,8 @@ import ctypes
 from loguru import logger
 
 from momoitor.services import window as win_svc
-from momoitor.services.system import (clean_memory, get_sysinfo, get_time,
+from momoitor.services.system import (clean_memory, get_sysinfo,
+                                      get_system_theme_mode, get_time,
                                       get_top_processes, kill_process,
                                       scan_listening_ports)
 
@@ -37,6 +38,9 @@ class HardwareMixin:
 
     def get_time(self):
         return get_time()
+
+    def get_system_theme_mode(self):
+        return get_system_theme_mode()
 
     def get_sysinfo(self):
         if not self._feature_on("sysinfo"):

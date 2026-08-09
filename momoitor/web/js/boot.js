@@ -75,7 +75,12 @@ window.addEventListener('pywebviewready', async () => {
     const dsp = s.display || {};
 
     applyLang(g.language || 'en');
-    applyColorscheme(g.colorscheme || 'gruvbox');
+    if (g.follow_system_theme) {
+        setFollowSystemTheme(true);
+        await _checkSystemTheme(true);
+    } else {
+        applyColorscheme(g.colorscheme || 'gruvbox');
+    }
     applyFonts(f.ui, f.data, f.clock);
     await applyClockBackgroundSetting(ck.bg_image, ck.bg_opacity, ck.bg_blur, ck.bg_gradient !== false, ck.bg_fit || 'fit', ck.bg_offset_x ?? 50, ck.bg_offset_y ?? 50);
     applyFontSize(g.font_size || 100);
