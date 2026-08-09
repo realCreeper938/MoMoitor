@@ -1466,13 +1466,19 @@ html, body {
     padding-bottom: 28px;
 }
 
+/* No precipitation forecast and no alerts: the info row collapses, leaving the
+   hero pinned to the top by the growing empty row — push it down a bit. */
+#weather-section[data-span="2"]:not(.wx-info) > .box-content {
+    padding-top: 6vh;
+}
+
 #weather-section[data-span="2"] .wx-card-hero {
     gap: 18px;
     align-items: center;
 }
 
 #weather-section[data-span="2"] .wx-card-icon {
-    font-size: calc((clamp(56px, 6vw, 92px) + clamp(24px, 2.8vw, 42px) * 0.35 + 2px) * var(--font-scale));
+    font-size: calc((clamp(62px, 6.6vw, 102px) + clamp(26px, 3vw, 46px) * 0.4 + 2px) * var(--font-scale));
 }
 
 #weather-section[data-span="2"] .metric-value.big {
@@ -1528,7 +1534,8 @@ html, body {
 }
 
 /* Weather big card hover: shrink the content above the divider line so the
-   precip/alerts area below gets a bit more room */
+   precip/alerts area below gets a bit more room. Only when precip/alerts are
+   shown (.wx-info); with no info the content stays its full size on hover. */
 #weather-section[data-span="2"] > .box-content,
 #weather-section[data-span="2"] .wx-card-hero,
 #weather-section[data-span="2"] .wx-card-icon,
@@ -1540,42 +1547,24 @@ html, body {
     transition: font-size 0.25s ease, gap 0.25s ease, max-height 0.25s ease;
 }
 
-#weather-section[data-span="2"]:hover > .box-content {
+#weather-section[data-span="2"].wx-info:hover > .box-content {
     gap: 8px;
 }
 
-#weather-section[data-span="2"]:hover .wx-card-hero,
 #weather-section[data-span="2"].wx-info:hover .wx-card-hero {
     gap: 10px;
-}
-
-#weather-section[data-span="2"]:hover .wx-card-icon {
-    font-size: calc((clamp(40px, 4.4vw, 66px) + clamp(16px, 1.8vw, 24px) * 0.35 + 2px) * var(--font-scale));
 }
 
 #weather-section[data-span="2"].wx-info:hover .wx-card-icon {
     font-size: calc((clamp(28px, 3vw, 44px) + clamp(13px, 1.4vw, 16px) * 1.1 + 2px) * var(--font-scale));
 }
 
-#weather-section[data-span="2"]:hover .metric-value.big {
-    font-size: calc(clamp(40px, 4.4vw, 66px) * var(--font-scale));
-}
-
 #weather-section[data-span="2"].wx-info:hover .metric-value.big {
     font-size: calc(clamp(28px, 3vw, 44px) * var(--font-scale));
 }
 
-#weather-section[data-span="2"]:hover .wx-card-unit {
-    font-size: calc(15px * var(--font-scale));
-}
-
 #weather-section[data-span="2"].wx-info:hover .wx-card-unit {
     font-size: calc(13px * var(--font-scale));
-}
-
-#weather-section[data-span="2"]:hover .wx-card-text {
-    font-size: calc(clamp(16px, 1.8vw, 24px) * var(--font-scale));
-    max-width: none;
 }
 
 #weather-section[data-span="2"].wx-info:hover .wx-card-text {
@@ -1583,12 +1572,10 @@ html, body {
     max-width: calc(clamp(56px, 6vw, 88px) * var(--font-scale));
 }
 
-#weather-section[data-span="2"]:hover .wx-card-details,
 #weather-section[data-span="2"].wx-info:hover .wx-card-details {
     gap: 5px;
 }
 
-#weather-section[data-span="2"]:hover .wx-card-detail,
 #weather-section[data-span="2"].wx-info:hover .wx-card-detail {
     font-size: calc(12px * var(--font-scale));
     padding: 4px 9px;
