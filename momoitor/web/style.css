@@ -1041,6 +1041,7 @@ html, body {
     gap: 9px;
     width: 100%;
     min-width: 0;
+    min-height: 0;
 }
 
 /* Hero: icon + temperature on one line */
@@ -1175,6 +1176,7 @@ html, body {
     gap: 12px;
     width: 100%;
     min-width: 0;
+    min-height: 0;
 }
 
 /* Precipitation forecast �?big card only */
@@ -1234,6 +1236,8 @@ html, body {
     min-height: 0;
     border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
     padding-top: 8px;
+    display: flex;
+    flex-direction: column;
 }
 
 #weather-section.has-precip .wx-card-alerts {
@@ -1258,16 +1262,33 @@ html, body {
 }
 
 .wx-card-alerts-list {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    align-items: center;
-    gap: 4px 8px;
+    flex: 1 1 auto;
+    min-height: 0;
     max-height: 100px;
     overflow-y: auto;
     overflow-x: hidden;
-    min-height: 0;
+    display: block;
+}
+
+.wx-card-alerts-list .wx-alert-chip {
+    display: inline-flex;
+    vertical-align: top;
+    margin: 2px 4px;
+}
+
+.wx-card-alerts-list .wx-alert-more {
+    display: inline-block;
+    margin: 2px 4px;
+}
+
+.wx-card-alerts-list::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+.wx-card-alerts.wx-alerts-fade .wx-card-alerts-list {
+    -webkit-mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
 }
 
 /* Compact alert chip: name only, hover shows a tooltip with the details */
@@ -1301,8 +1322,9 @@ html, body {
 .wx-tip {
     position: fixed;
     z-index: 1000;
+    width: max-content;
+    max-width: min(440px, calc(100vw - 16px));
     min-width: 190px;
-    max-width: 300px;
     padding: 10px 12px 8px;
     border-radius: 10px;
     background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 95%, var(--tip-color, var(--red)) 5%));
@@ -1510,6 +1532,73 @@ html, body {
 #weather-section[data-span="2"].wx-info .wx-card-text {
     font-size: calc(clamp(15px, 1.7vw, 20px) * var(--font-scale));
     max-width: calc(clamp(72px, 8vw, 120px) * var(--font-scale));
+}
+
+/* Weather big card hover: shrink the content above the divider line so the
+   precip/alerts area below gets a bit more room */
+#weather-section[data-span="2"] > .box-content,
+#weather-section[data-span="2"] .wx-card-hero,
+#weather-section[data-span="2"] .wx-card-icon,
+#weather-section[data-span="2"] .metric-value.big,
+#weather-section[data-span="2"] .wx-card-unit,
+#weather-section[data-span="2"] .wx-card-text,
+#weather-section[data-span="2"] .wx-card-details,
+#weather-section[data-span="2"] .wx-card-detail {
+    transition: font-size 0.25s ease, gap 0.25s ease, max-height 0.25s ease;
+}
+
+#weather-section[data-span="2"]:hover > .box-content {
+    gap: 8px;
+}
+
+#weather-section[data-span="2"]:hover .wx-card-hero,
+#weather-section[data-span="2"].wx-info:hover .wx-card-hero {
+    gap: 10px;
+}
+
+#weather-section[data-span="2"]:hover .wx-card-icon {
+    font-size: calc((clamp(40px, 4.4vw, 66px) + clamp(16px, 1.8vw, 24px) * 0.35 + 2px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info:hover .wx-card-icon {
+    font-size: calc((clamp(28px, 3vw, 44px) + clamp(13px, 1.4vw, 16px) * 1.1 + 2px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"]:hover .metric-value.big {
+    font-size: calc(clamp(40px, 4.4vw, 66px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info:hover .metric-value.big {
+    font-size: calc(clamp(28px, 3vw, 44px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"]:hover .wx-card-unit {
+    font-size: calc(15px * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info:hover .wx-card-unit {
+    font-size: calc(13px * var(--font-scale));
+}
+
+#weather-section[data-span="2"]:hover .wx-card-text {
+    font-size: calc(clamp(16px, 1.8vw, 24px) * var(--font-scale));
+    max-width: none;
+}
+
+#weather-section[data-span="2"].wx-info:hover .wx-card-text {
+    font-size: calc(clamp(13px, 1.4vw, 16px) * var(--font-scale));
+    max-width: calc(clamp(56px, 6vw, 88px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"]:hover .wx-card-details,
+#weather-section[data-span="2"].wx-info:hover .wx-card-details {
+    gap: 5px;
+}
+
+#weather-section[data-span="2"]:hover .wx-card-detail,
+#weather-section[data-span="2"].wx-info:hover .wx-card-detail {
+    font-size: calc(12px * var(--font-scale));
+    padding: 4px 9px;
 }
 
 /* Grid */

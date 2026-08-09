@@ -1813,9 +1813,14 @@ async function refreshWeatherCard() {
             precipRow.style.display = hasPrecip ? '' : 'none';
             if (section) section.classList.toggle('has-precip', hasPrecip);
 
-            // Small card: merge precipitation summary into the condition line
-            if (section && section.dataset.span === '1' && cardText && hasPrecip && w && !w.error && w.text && precipText.textContent) {
-                cardText.textContent = w.text + ' · ' + precipText.textContent;
+            // Big card: description keeps only the pure condition. Small card:
+            // merge the precipitation summary into the condition line.
+            if (cardText && w && !w.error && w.text) {
+                if (section && section.dataset.span === '1' && hasPrecip && precipText.textContent) {
+                    cardText.textContent = w.text + ' · ' + precipText.textContent;
+                } else {
+                    cardText.textContent = w.text;
+                }
             }
         }
 
@@ -1829,7 +1834,7 @@ async function refreshWeatherCard() {
             } else {
                 hideWxTip();
                 alertsList.innerHTML = '';
-                const maxShow = 6;
+                const maxShow = 30;
                 for (const a of alerts.slice(0, maxShow)) {
                     const chip = document.createElement('div');
                     chip.className = 'wx-alert-chip';
@@ -1846,6 +1851,15 @@ async function refreshWeatherCard() {
                     more.textContent = `还有 ${alerts.length - maxShow} 个预警...`;
                     alertsList.appendChild(more);
                 }
+                const updateAlertsFade = () => {
+                    const canScroll = alertsList.scrollHeight > alertsList.clientHeight + 1;
+                    const atBottom = alertsList.scrollHeight - alertsList.scrollTop - alertsList.clientHeight < 8;
+                    alertsRow.classList.toggle('wx-alerts-fade', canScroll && !atBottom);
+                };
+                if (alertsList._wxMaskUpdate) alertsList.removeEventListener('scroll', alertsList._wxMaskUpdate);
+                alertsList._wxMaskUpdate = updateAlertsFade;
+                alertsList.addEventListener('scroll', alertsList._wxMaskUpdate);
+                updateAlertsFade();
                 alertsRow.style.display = '';
             }
             if (section) section.classList.toggle('has-alerts', hasAlerts);
@@ -3035,9 +3049,10 @@ function _placeCard(id, col, row, span) {
         el.dataset.span = String(s);
         if (id === 'fps-section') {
             const pct = el.querySelector('.pct');
-            if (pct) pct.style.display = s === 2 ? 'none' : '';
+            if (pct) pct.style.display = pos.span === 2 ? 'none' : '';
             _applyFpsFontSize();
         }
+        if (id === 'weather-section') refreshWeatherCard();
     }
     _repackColumn(col, id, row);
     _rebalanceOverflow();
