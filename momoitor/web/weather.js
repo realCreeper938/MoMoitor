@@ -382,11 +382,15 @@ async function refreshWeatherCard() {
                     const atBottom = alertsList.scrollHeight - alertsList.scrollTop - alertsList.clientHeight < 8;
                     alertsRow.classList.toggle('wx-alerts-fade', canScroll && !atBottom);
                 };
-                if (alertsList._wxMaskUpdate) alertsList.removeEventListener('scroll', alertsList._wxMaskUpdate);
+                if (alertsList._wxMaskUpdate) {
+                    alertsList.removeEventListener('scroll', alertsList._wxMaskUpdate);
+                    window.removeEventListener('resize', alertsList._wxMaskUpdate);
+                }
                 alertsList._wxMaskUpdate = updateAlertsFade;
                 alertsList.addEventListener('scroll', alertsList._wxMaskUpdate);
-                updateAlertsFade();
+                window.addEventListener('resize', alertsList._wxMaskUpdate);
                 alertsRow.style.display = '';
+                updateAlertsFade();
             }
             if (section) section.classList.toggle('has-alerts', hasAlerts);
         }
