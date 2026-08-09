@@ -185,6 +185,8 @@ def get_alerts(lat: str, lon: str, key_id: str, project_id: str, private_key: st
             "colorG": color.get("green", 0),
             "colorB": color.get("blue", 0),
             "publishTime": a.get("effectiveTime", ""),
+            "initialPublishTime": a.get("issuedTime", ""),
+            "messageTypeCode": a.get("messageType", {}).get("code", ""),
             "expireTime": a.get("expireTime", ""),
         })
     return result

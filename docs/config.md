@@ -57,3 +57,5 @@
 ## DEFAULT_SETTINGS.feature_toggles
 
 `calendar, weather, top_process, sysinfo, traffic, clock_bg, top_control`（默认全开）
+
+`weather` 开关仅控制左侧时钟侧栏的天气显示；天气卡片的显示/隐藏由布局系统（Layout 模式添加/删除卡片）管理，不受此开关影响，天气数据始终可获取。

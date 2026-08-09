@@ -13,30 +13,20 @@ class WeatherMixin:
     # ── 天气（委托给服务）────────────────────────────────────
 
     def get_weather(self):
-        if not self._feature_on("weather"):
-            return {"error": "disabled"}
         return self._weather.get_now()
 
     def get_weather_detail(self):
-        if not self._feature_on("weather"):
-            return {"error": "disabled"}
         return self._weather.get_detail()
 
     def get_airquality(self):
-        if not self._feature_on("weather"):
-            return {"error": "disabled"}
         return self._weather.get_airquality()
 
     def get_weather_info(self):
-        if not self._feature_on("weather"):
-            return {"weather": {"error": "disabled"}, "air_quality": {"error": "disabled"}}
         weather = self._weather.get_now()
         air = self._weather.get_airquality()
         return {"weather": weather, "air_quality": air}
 
     def get_alerts(self):
-        if not self._feature_on("weather"):
-            return []
         return self._weather.get_alerts()
 
     def get_lunar_time(self, timezone="Asia/Shanghai"):

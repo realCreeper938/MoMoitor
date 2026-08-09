@@ -228,6 +228,9 @@ function updateChart(key, dynamicMax) {
                         const u = formatNet(upd && upd[idx] ? upd[idx].v : 0);
                         const dn = formatNet(downd && downd[idx] ? downd[idx].v : 0);
                         label = timeStr + ' ↑ ' + u.val + ' ' + u.unit + ' ↓ ' + dn.val + ' ' + dn.unit;
+                    } else if (section.id === 'fps-section') {
+                        // fps: show the FPS value at this instant (dynamic max → no %)
+                        label = timeStr + ' ' + Math.round(val) + ' FPS';
                     } else {
                         label = timeStr + ' ' + (dynamicMax ? '' : Math.round(val) + '%');
                     }
@@ -517,13 +520,25 @@ function renderDiskPartitions() {
 /* FPS */
 let _lastFpsColorCls = '__init__';
 let _lastFpsScale = 1; // font-size multiplier for the FPS big value (fewer for more digits)
-// More digits -> smaller font, so high FPS / high refresh values fit the box
+// More digits -> smaller font, so high FPS / high refresh values fit the box.
+// The big card keeps the full size — only the small card shrinks long numbers.
 function fpsShrinkScale(str) {
     const digits = String(str || '').replace(/\D/g, '').length;
     if (digits <= 2) return 1;     // 0-99
     if (digits === 3) return 0.7;  // 100-999
     if (digits === 4) return 0.55; // 1000-9999
     return 0.45;                   // 10000+
+}
+
+/* Re-apply the FPS big-value font size for the current card size:
+   span 2 (big) always uses full size; span 1 uses the digit-based shrink. */
+function _applyFpsFontSize() {
+    const fpsEl = document.getElementById('fps-val');
+    if (!fpsEl) return;
+    const section = document.getElementById('fps-section');
+    const big = section && section.dataset.span === '2';
+    const scale = big ? 1 : (_lastFpsScale || 1);
+    fpsEl.style.fontSize = `calc(${scale} * clamp(72px, 8vw, 120px) * var(--font-scale))`;
 }
 
 async function refreshFps() {
@@ -537,10 +552,12 @@ async function refreshFps() {
             if (fpsEl.textContent !== fpsStr) {
                 fpsEl.textContent = fpsStr;
             }
-            const scale = fpsShrinkScale(fpsStr);
+            const fpsSection = document.getElementById('fps-section');
+            const big = fpsSection && fpsSection.dataset.span === '2';
+            const scale = big ? 1 : fpsShrinkScale(fpsStr);
             if (_lastFpsScale !== scale) {
                 _lastFpsScale = scale;
-                fpsEl.style.fontSize = `calc(${scale} * clamp(72px, 8vw, 120px) * var(--font-scale))`;
+                _applyFpsFontSize();
             }
             const colorCls = hasFps ? fpsColorClass(f.fps) : '';
             if (_lastFpsColorCls !== colorCls) {
@@ -1469,6 +1486,54 @@ function wxIcon(iconCode) {
     return WX_ICONS[iconCode] || '\u{F0590}';
 }
 
+function wxCategory(iconCode) {
+    const c = String(iconCode);
+    if (c === '100' || c === '150') return 'sun';
+    if (c === '900' || c === '901') return 'storm';
+    if (c.startsWith('4')) return 'snow';
+    if (c.startsWith('3')) return 'rain';
+    if (c.startsWith('5')) return 'fog';
+    if (c === '104' || c === '153') return 'overcast';
+    return 'cloud';
+}
+
+function wxGradFactor(temp, category, detail) {
+    if (category === 'rain' || category === 'storm') {
+        let peak = 0;
+        if (detail && detail.minutely && Array.isArray(detail.minutely.minutely)) {
+            for (const m of detail.minutely.minutely) {
+                const p = parseFloat(m.precip);
+                if (p > peak) peak = p;
+            }
+        }
+        return Math.max(0.15, Math.min(1, peak / 3));
+    }
+    const t = parseFloat(temp);
+    if (isNaN(t)) return 0.5;
+    return Math.max(0.15, Math.min(1, (t + 10) / 45));
+}
+
+function wxAlertTimeStr(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    return `${mm}/${dd} ${hh}:${mi}`;
+}
+
+function wxAlertPublishHTML(a) {
+    const latest = wxAlertTimeStr(a.publishTime);
+    if (!latest) return '';
+    let out = `发布于 ${latest}`;
+    const isUpdate = (a.messageTypeCode || '') === 'update';
+    const orig = wxAlertTimeStr(a.initialPublishTime);
+    if (isUpdate && orig && orig !== latest) out += ` - 初始发布于 ${orig}`;
+    return out;
+}
+
 async function refreshWeather() {
     try {
         const w = await pywebview.api.get_weather();
@@ -1592,9 +1657,8 @@ async function refreshAlerts() {
         for (const a of shown) {
             const div = document.createElement('div');
             div.className = 'wx-alert-item';
-            const pub = a.publishTime ? new Date(a.publishTime) : null;
-            const timeStr = pub ? pub.toLocaleString('zh', {month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : '';
-            div.innerHTML = `<span class="alert-type">${a.eventType || ''}</span><span class="alert-headline">${escapeHtml(a.headline || '')}</span>${a.description ? '<br><span class="alert-desc">' + escapeHtml(a.description) + '</span>' : ''}${timeStr ? '<br><span class="alert-time">发布于 ' + timeStr + '</span>' : ''}`;
+            const pubLine = wxAlertPublishHTML(a);
+            div.innerHTML = `<span class="alert-type">${a.eventType || ''}</span><span class="alert-headline">${escapeHtml(a.headline || '')}</span>${a.description ? '<br><span class="alert-desc">' + escapeHtml(a.description) + '</span>' : ''}${pubLine ? '<br><span class="alert-time">' + pubLine + '</span>' : ''}`;
             div.style.borderLeftColor = a.colorCode ? `rgb(${a.colorR},${a.colorG},${a.colorB})` : '';
             list.appendChild(div);
         }
@@ -1610,6 +1674,39 @@ async function refreshAlerts() {
 
 /* Weather card — dedicated grid card with big/small variants. The small card
    hides the precipitation forecast and alerts sections via CSS. */
+
+/* Floating alert tooltip — lives on <body> so it is never clipped by the card */
+let _wxTipEl = null;
+
+function hideWxTip() {
+    if (_wxTipEl) { _wxTipEl.remove(); _wxTipEl = null; }
+}
+
+function showWxTip(chip, a) {
+    hideWxTip();
+    const tip = document.createElement('div');
+    tip.className = 'wx-tip';
+    tip.style.setProperty('--tip-color', a.colorCode ? `rgb(${a.colorR},${a.colorG},${a.colorB})` : 'var(--red)');
+    const pubLine = wxAlertPublishHTML(a);
+    let html = `<div class="wx-tip-head"><span class="nf-icon">&#xF05D6;</span><span class="wx-tip-type">${escapeHtml(a.eventType || 'Warning')}</span></div>`;
+    if (a.headline) html += `<div class="wx-tip-headline">${escapeHtml(a.headline)}</div>`;
+    if (a.description) html += `<div class="wx-tip-desc">${escapeHtml(a.description)}</div>`;
+    if (pubLine) html += `<div class="wx-tip-foot"><span class="nf-icon">&#xF0150;</span><span>${pubLine}</span></div>`;
+    tip.innerHTML = html;
+    document.body.appendChild(tip);
+    _wxTipEl = tip;
+
+    const rect = chip.getBoundingClientRect();
+    const tw = tip.offsetWidth;
+    const th = tip.offsetHeight;
+    let left = Math.max(8, Math.min(rect.left, window.innerWidth - tw - 8));
+    let top = rect.top - th - 8;
+    if (top < 8) top = rect.bottom + 8;
+    if (top + th > window.innerHeight - 8) top = Math.max(8, window.innerHeight - th - 8);
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+}
+
 async function refreshWeatherCard() {
     try {
         const section = document.getElementById('weather-section');
@@ -1626,16 +1723,28 @@ async function refreshWeatherCard() {
         const cardTemp = document.getElementById('wx-card-temp');
         const cardText = document.getElementById('wx-card-text');
         const cardCity = document.getElementById('wx-card-city');
+        const cardUpdated = document.getElementById('wx-card-updated');
         if (w && !w.error) {
+            if (section) {
+                const cat = wxCategory(w.icon);
+                section.dataset.wx = cat;
+                section.style.setProperty('--wx-bg-opacity', String(wxGradFactor(w.temp, cat, d)));
+            }
             if (cardIcon) cardIcon.textContent = wxIcon(w.icon);
             if (cardTemp) cardTemp.textContent = fmt(w.temp, 0);
             if (cardText) cardText.textContent = w.text || '--';
             if (cardCity) cardCity.textContent = w.city || '--';
+            if (cardUpdated) cardUpdated.textContent = formatWxUpdateTime(w.updateTime);
         } else {
+            if (section) {
+                section.dataset.wx = '';
+                section.style.setProperty('--wx-bg-opacity', '0.5');
+            }
             if (cardIcon) cardIcon.textContent = wxIcon('999');
             if (cardTemp) cardTemp.textContent = '--';
             if (cardText) cardText.textContent = '--';
             if (cardCity) cardCity.textContent = '--';
+            if (cardUpdated) cardUpdated.textContent = '--';
         }
 
         // Details: feels-like / humidity / wind / AQI
@@ -1667,25 +1776,39 @@ async function refreshWeatherCard() {
         const precipRow = document.getElementById('wx-card-precip-row');
         const precipText = document.getElementById('wx-card-precip-text');
         const precipChart = document.getElementById('wx-card-precip-chart');
+        let hasPrecip = false;
         if (precipRow && precipText && precipChart) {
             if (d && d.minutely && d.minutely.minutely && d.minutely.minutely.length > 0) {
                 const items = d.minutely.minutely;
-                const hasPrecip = items.some(m => m.precip > 0);
+                hasPrecip = items.some(m => m.precip > 0);
                 if (hasPrecip) {
                     precipText.textContent = d.minutely.summary || '--';
-                    const bars = items.map(m => {
-                        const p = m.precip;
-                        if (p <= 0) return '▁';
-                        if (p < 0.5) return '▃';
-                        if (p < 1) return '▅';
-                        if (p < 2) return '▇';
-                        return '█';
-                    });
-                    precipChart.textContent = bars.join('');
-                    precipRow.style.display = '';
-                } else {
-                    precipRow.style.display = 'none';
+                    precipChart.innerHTML = '';
+                    const N = items.length;
+                    const cw = precipChart.clientWidth || 320;
+                    const maxBars = Math.max(8, Math.min(96, Math.floor(cw / 5)));
+                    const bucket = Math.max(1, Math.ceil(N / maxBars));
+                    const vals = [];
+                    for (let i = 0; i < N; i += bucket) {
+                        let mx = 0;
+                        for (let j = i; j < Math.min(i + bucket, N); j++) mx = Math.max(mx, items[j].precip);
+                        vals.push(mx);
+                    }
+                    const maxV = Math.max(...vals, 1);
+                    for (const v of vals) {
+                        const bar = document.createElement('span');
+                        bar.className = 'wx-precip-bar';
+                        bar.style.height = (v > 0 ? Math.max(18, Math.round((v / maxV) * 100)) : 0) + '%';
+                        precipChart.appendChild(bar);
+                    }
                 }
+            }
+            precipRow.style.display = hasPrecip ? '' : 'none';
+            if (section) section.classList.toggle('has-precip', hasPrecip);
+
+            // Small card: merge precipitation summary into the condition line
+            if (section && section.dataset.span === '1' && cardText && hasPrecip && w && !w.error && w.text && precipText.textContent) {
+                cardText.textContent = w.text + ' · ' + precipText.textContent;
             }
         }
 
@@ -1693,20 +1816,22 @@ async function refreshWeatherCard() {
         const alertsRow = document.getElementById('wx-card-alerts-row');
         const alertsList = document.getElementById('wx-card-alerts-list');
         if (alertsRow && alertsList) {
-            if (!alerts || alerts.length === 0) {
+            const hasAlerts = !!(alerts && alerts.length > 0);
+            if (!hasAlerts) {
                 alertsRow.style.display = 'none';
             } else {
+                hideWxTip();
                 alertsList.innerHTML = '';
-                const maxShow = 2;
-                const shown = alerts.slice(0, maxShow);
-                for (const a of shown) {
-                    const div = document.createElement('div');
-                    div.className = 'wx-alert-item';
-                    const pub = a.publishTime ? new Date(a.publishTime) : null;
-                    const timeStr = pub ? pub.toLocaleString('zh', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-                    div.innerHTML = `<span class="alert-type">${a.eventType || ''}</span><span class="alert-headline">${escapeHtml(a.headline || '')}</span>${a.description ? '<br><span class="alert-desc">' + escapeHtml(a.description) + '</span>' : ''}${timeStr ? '<br><span class="alert-time">发布于 ' + timeStr + '</span>' : ''}`;
-                    div.style.borderLeftColor = a.colorCode ? `rgb(${a.colorR},${a.colorG},${a.colorB})` : '';
-                    alertsList.appendChild(div);
+                const maxShow = 6;
+                for (const a of alerts.slice(0, maxShow)) {
+                    const chip = document.createElement('div');
+                    chip.className = 'wx-alert-chip';
+                    chip.style.setProperty('--alert-color', a.colorCode ? `rgb(${a.colorR},${a.colorG},${a.colorB})` : 'var(--red)');
+                    chip.innerHTML = '<span class="nf-icon">&#xF05D6;</span><span class="wx-alert-chip-name"></span>';
+                    chip.querySelector('.wx-alert-chip-name').textContent = a.eventType || a.headline || 'Warning';
+                    chip.addEventListener('mouseenter', () => showWxTip(chip, a));
+                    chip.addEventListener('mouseleave', hideWxTip);
+                    alertsList.appendChild(chip);
                 }
                 if (alerts.length > maxShow) {
                     const more = document.createElement('div');
@@ -1716,6 +1841,11 @@ async function refreshWeatherCard() {
                 }
                 alertsRow.style.display = '';
             }
+            if (section) section.classList.toggle('has-alerts', hasAlerts);
+        }
+
+        if (section) {
+            section.classList.toggle('wx-info', section.classList.contains('has-precip') || section.classList.contains('has-alerts'));
         }
     } catch (e) { console.warn('refreshWeatherCard:', e); }
 }
@@ -2442,7 +2572,7 @@ let _featureToggles = {};
  * must stay hidden even when their feature toggle is later re-applied. */
 function _sectionVisible(id) {
     if (_normLayout(id).hidden) return false;
-    const key = { 'fps-section': 'fps', 'music-section': 'music', 'proc-section': 'top_process', 'weather-section': 'weather' }[id];
+    const key = { 'fps-section': 'fps', 'music-section': 'music', 'proc-section': 'top_process' }[id];
     return key ? _featureToggles[key] !== false : true;
 }
 
@@ -2458,8 +2588,6 @@ function applyFeatureToggles(toggles) {
     if (calPopup) calPopup.style.display = ft.calendar !== false ? '' : 'none';
     const procSection = document.getElementById('proc-section');
     if (procSection) procSection.style.display = _sectionVisible('proc-section') ? '' : 'none';
-    const weatherSection = document.getElementById('weather-section');
-    if (weatherSection) weatherSection.style.display = _sectionVisible('weather-section') ? '' : 'none';
     document.querySelectorAll('.net-host-row').forEach(el => {
         el.style.display = ft.sysinfo !== false ? '' : 'none';
     });
@@ -2525,6 +2653,7 @@ function applyLayout(layout) {
         if (id === 'fps-section') {
             const pct = el.querySelector('.pct');
             if (pct) pct.style.display = pos.span === 2 ? 'none' : '';
+            _applyFpsFontSize();
         }
     });
     applyLyricView();
@@ -2671,6 +2800,7 @@ function _toggleCardSize(id) {
         if (id === 'fps-section') {
             const pct = el.querySelector('.pct');
             if (pct) pct.style.display = pos.span === 2 ? 'none' : '';
+            _applyFpsFontSize();
         }
     }
     _repackColumn(curCol, id, curRow);
@@ -2899,6 +3029,7 @@ function _placeCard(id, col, row, span) {
         if (id === 'fps-section') {
             const pct = el.querySelector('.pct');
             if (pct) pct.style.display = s === 2 ? 'none' : '';
+            _applyFpsFontSize();
         }
     }
     _repackColumn(col, id, row);
@@ -3521,6 +3652,7 @@ function initSettings() {
             refreshWeatherDetail();
             refreshAirQuality();
             refreshAlerts();
+            refreshWeatherCard();
             refreshMusic();
             poll();
         }
@@ -3808,6 +3940,13 @@ function initSettings() {
         applyHwNames(true);
         applyFeatureToggles(s.feature_toggles || {});
 
+        // Restart sidebar weather intervals to match the Show Weather toggle
+        const wxSidebarOn = (s.feature_toggles || {}).weather !== false;
+        _startInterval(wxSidebarOn, refreshWeather, 600000);
+        _startInterval(wxSidebarOn, refreshWeatherDetail, 600000);
+        _startInterval(wxSidebarOn, refreshAirQuality, 1800000);
+        _startInterval(wxSidebarOn, refreshAlerts, 600000);
+
         const wxChanged = s.weather_lat !== oldWeatherLat || s.weather_lon !== oldWeatherLon ||
             s.weather_key_id !== oldWeatherKid || s.weather_project_id !== oldWeatherSub ||
             s.weather_private_key !== oldWeatherKey;
@@ -3819,6 +3958,9 @@ function initSettings() {
             oldWeatherKey = s.weather_private_key;
             refreshWeather();
             refreshWeatherDetail();
+            refreshAirQuality();
+            refreshAlerts();
+            refreshWeatherCard();
         }
 
         // If server mode is on, tell the user it runs headless and how to disable it
@@ -4143,7 +4285,7 @@ window.addEventListener('pywebviewready', async () => {
     _startInterval(weatherOn, refreshWeatherDetail, 600000);
     _startInterval(weatherOn, refreshAirQuality, 1800000);
     _startInterval(weatherOn, refreshAlerts, 600000);
-    _startInterval(weatherOn, refreshWeatherCard, 600000);
+    _startInterval(true, refreshWeatherCard, 600000);
     _startInterval(ft.music !== false, refreshMusic, 3000);
     _startInterval(ft.fps !== false, refreshFps, 1000);
     _startInterval(ft.sysinfo !== false, refreshSysinfo, 60000);

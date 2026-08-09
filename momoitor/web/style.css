@@ -91,7 +91,7 @@
     --orange: var(--nord11);
     --magenta: var(--nord14);
     --bg-rgb: 40, 40, 40;
-    /* Corner radii — sm: controls/chips, md: panels/cards, lg: popups/modals */
+    /* Corner radii �?sm: controls/chips, md: panels/cards, lg: popups/modals */
     --radius-sm: 6px;
     --radius-md: 8px;
     --radius-lg: 12px;
@@ -101,7 +101,7 @@
     --metric-mem: #e3a7bb;
     --metric-fps: #c8d66b;
 
-    /* Font slots — overridden by user settings via applyFonts() */
+    /* Font slots �?overridden by user settings via applyFonts() */
     --font-ui: "JetBrains Maple Mono", "Symbols Nerd Font Mono", "Consolas", "Monaco", monospace;
     --font-data: "IoskeleyMono", "JetBrains Maple Mono", monospace;
     --font-clock: "Departure Mono", "IoskeleyMono", monospace;
@@ -633,7 +633,7 @@ html, body {
     visibility: hidden;
 }
 
-/* 启动加载动画：程序完全加载完成前显示（body 隐藏时也可见） */
+/* 启动加载动画：程序完全加载完成前显示（body 隐藏时也可见�?*/
 .boot-loading {
     position: fixed;
     inset: 0;
@@ -693,7 +693,7 @@ html, body {
     gap: 1px;
 }
 
-/* Shortcuts list — shown in the settings General tab */
+/* Shortcuts list �?shown in the settings General tab */
 .shortcuts-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -1005,18 +1005,49 @@ html, body {
 }
 
 /* ---- Weather card (grid) ---- */
-#weather-section .box-content {
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
+#weather-section {
+    --wx-accent: var(--orange);
+    --wx-accent-soft: var(--orange);
 }
 
-/* Main row: icon + temperature + condition */
-.wx-card-main {
-    display: flex;
-    align-items: center;
+/* Weather-condition accent palette (set by JS via data-wx on the section) */
+#weather-section[data-wx="sun"]      { --wx-accent: #fabd2f; --wx-accent-soft: #fe8019; }
+#weather-section[data-wx="cloud"]    { --wx-accent: #f2b05e; --wx-accent-soft: #e8893f; }
+#weather-section[data-wx="overcast"] { --wx-accent: #8a939c; --wx-accent-soft: #757f88; }
+#weather-section[data-wx="rain"]     { --wx-accent: #6cb3d9; --wx-accent-soft: #4592bd; }
+#weather-section[data-wx="snow"]     { --wx-accent: #b7d8ea; --wx-accent-soft: #8cc3e0; }
+#weather-section[data-wx="fog"]      { --wx-accent: #9b9489; --wx-accent-soft: #82796c; }
+#weather-section[data-wx="storm"]    { --wx-accent: #b48ead; --wx-accent-soft: #8f6f9e; }
+
+/* Ambient background tint keyed to the current weather condition */
+.wx-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background:
+        radial-gradient(150% 110% at 10% -12%, color-mix(in srgb, var(--wx-accent) 26%, transparent), transparent 60%),
+        radial-gradient(130% 100% at 105% 115%, color-mix(in srgb, var(--wx-accent-soft) 16%, transparent), transparent 55%);
+    opacity: var(--wx-bg-opacity, 0.5);
+    transition: opacity 0.8s ease;
+}
+
+#weather-section .box-content {
+    position: relative;
+    z-index: 1;
+    align-items: flex-start;
     justify-content: center;
-    gap: 12px;
+    gap: 9px;
+    width: 100%;
+    min-width: 0;
+}
+
+/* Hero: icon + temperature on one line */
+.wx-card-hero {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
     width: 100%;
     min-width: 0;
 }
@@ -1024,64 +1055,87 @@ html, body {
 .wx-card-icon {
     font-size: calc(40px * var(--font-scale));
     line-height: 1;
-    color: var(--orange);
-    text-shadow: 0 4px 18px color-mix(in srgb, var(--orange) 35%, transparent);
+    color: var(--wx-accent);
+    text-shadow: 0 4px 20px color-mix(in srgb, var(--wx-accent) 45%, transparent);
     flex-shrink: 0;
 }
 
 .wx-card-temp-row {
     display: flex;
     align-items: baseline;
-    gap: 3px;
+    gap: 4px;
+    min-width: 0;
 }
 
 #weather-section .metric-value.big {
-    font-size: calc(clamp(36px, 4.2vw, 68px) * var(--font-scale));
+    font-size: calc(clamp(38px, 4.4vw, 70px) * var(--font-scale));
     color: var(--text);
 }
 
 .wx-card-unit {
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(14px * var(--font-scale));
+    font-weight: 600;
     color: var(--text-dim);
 }
 
-.wx-card-meta {
+/* Condition text, below the temperature */
+.wx-card-temp-col {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 2px;
     min-width: 0;
 }
 
 .wx-card-text {
-    font-size: calc(13px * var(--font-scale));
-    color: var(--text);
+    font-size: calc(16px * var(--font-scale));
+    font-weight: 600;
+    color: var(--wx-accent);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
 }
 
-.wx-card-city {
+.wx-card-sub {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 70%;
+    min-width: 0;
+    opacity: 0;
+    text-align: right;
+    pointer-events: none;
+    user-select: none;
+    transition: opacity 0.2s ease;
+}
+
+#weather-section:hover .wx-card-sub {
+    opacity: 0.85;
+}
+
+.wx-card-city,
+.wx-card-updated {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     font-size: calc(11px * var(--font-scale));
     color: var(--text-dim);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%;
 }
 
-.wx-card-city .nf-icon {
-    margin-right: 3px;
-}
-
-/* Details row */
+/* Details: pill chips */
 .wx-card-details {
     display: flex;
     align-items: center;
-    justify-content: center;
     flex-wrap: wrap;
-    gap: 4px 14px;
+    gap: 6px;
     width: 100%;
     min-width: 0;
 }
@@ -1089,105 +1143,373 @@ html, body {
 .wx-card-detail {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
     font-size: calc(12px * var(--font-scale));
     color: var(--text-dim);
     white-space: nowrap;
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
 }
 
 .wx-card-detail .nf-icon {
     font-size: calc(13px * var(--font-scale));
-    color: var(--text-dim);
+    color: var(--wx-accent);
 }
 
 .wx-card-detail .mono {
     color: var(--text);
+    font-weight: 600;
 }
 
-/* Precipitation forecast — big card only */
-.wx-card-precip {
+.wx-detail-unit {
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+/* Precipitation + alerts share a row when both present; alerts fill the row when no precip */
+.wx-card-info {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
     width: 100%;
     min-width: 0;
-    border-top: 1px solid var(--border);
-    padding-top: 6px;
+}
+
+/* Precipitation forecast �?big card only */
+.wx-card-precip {
+    flex: 1 1 0;
+    min-width: 0;
+    border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+    padding-top: 8px;
 }
 
 .wx-card-precip-title {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     font-size: calc(11px * var(--font-scale));
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     color: var(--text-dim);
-    margin-bottom: 3px;
+    margin-bottom: 4px;
 }
 
 .wx-card-precip-title .nf-icon {
-    color: var(--blue);
+    color: var(--wx-accent);
 }
 
 .wx-card-precip-text {
     font-size: calc(12px * var(--font-scale));
     color: var(--text);
-    margin-bottom: 2px;
+    margin-bottom: 6px;
 }
 
 .wx-card-precip-chart {
-    font-family: var(--font-data);
-    font-size: calc(16px * var(--font-scale));
-    letter-spacing: 1px;
-    color: var(--blue);
-    white-space: nowrap;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: calc(32px * var(--font-scale));
+    width: 100%;
     overflow: hidden;
-    text-overflow: ellipsis;
+    padding: 0 1px;
 }
 
-/* Alerts — big card only */
+.wx-precip-bar {
+    flex: 1 1 0;
+    min-width: 2px;
+    max-width: 8px;
+    border-radius: 2px 2px 0 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--wx-accent) 92%, white 8%), var(--wx-accent));
+    opacity: 0.85;
+    transition: height 0.3s ease;
+}
+
+/* Alerts �?big card only */
 .wx-card-alerts {
-    width: 100%;
+    flex: 1 1 0;
     min-width: 0;
-    border-top: 1px solid var(--border);
-    padding-top: 6px;
-    max-height: 100px;
-    overflow-y: auto;
+    min-height: 0;
+    border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+    padding-top: 8px;
+}
+
+#weather-section.has-precip .wx-card-alerts {
+    border-left: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+    padding-left: 12px;
 }
 
 .wx-card-alerts-title {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     font-size: calc(11px * var(--font-scale));
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
     color: var(--text-dim);
-    margin-bottom: 3px;
+    margin-bottom: 4px;
 }
 
 .wx-card-alerts-title .nf-icon {
-    color: var(--orange);
+    color: var(--red);
 }
 
-#weather-section:not([data-span="2"]) .wx-card-precip,
+.wx-card-alerts-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: center;
+    gap: 4px 8px;
+    max-height: 100px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+}
+
+/* Compact alert chip: name only, hover shows a tooltip with the details */
+.wx-alert-chip {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--alert-color, var(--red)) 14%, transparent);
+    border-left: 3px solid var(--alert-color, var(--red));
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text);
+    cursor: help;
+    min-width: 0;
+}
+
+.wx-alert-chip .nf-icon {
+    color: var(--alert-color, var(--red));
+    flex-shrink: 0;
+}
+
+.wx-alert-chip-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Floating alert tooltip �?appended to <body>, never clipped by the card */
+.wx-tip {
+    position: fixed;
+    z-index: 1000;
+    min-width: 190px;
+    max-width: 300px;
+    padding: 10px 12px 8px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 95%, var(--tip-color, var(--red)) 5%));
+    border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+    border-left: 3px solid var(--tip-color, var(--red));
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+    color: var(--text);
+    font-size: calc(12px * var(--font-scale));
+    animation: wxTipIn 0.15s ease;
+    pointer-events: none;
+}
+
+@keyframes wxTipIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.wx-tip-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: calc(13px * var(--font-scale));
+    color: var(--tip-color, var(--red));
+    margin-bottom: 4px;
+}
+
+.wx-tip-headline {
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.wx-tip-desc {
+    margin-top: 4px;
+    color: var(--text-dim);
+    line-height: 1.55;
+}
+
+.wx-tip-foot {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+    font-size: calc(11px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+/* Small card (span 1): one stat row + a summary line; alerts hidden, no precip chart */
 #weather-section:not([data-span="2"]) .wx-card-alerts {
     display: none !important;
 }
 
-/* Small card: more compact main row */
-#weather-section:not([data-span="2"]) .wx-card-main {
-    gap: 8px;
+#weather-section:not([data-span="2"]) > .box-content {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 4px 12px;
+    padding: 4px 14px;
+}
+
+/* Flatten nested wrappers so every stat flows in one row */
+#weather-section:not([data-span="2"]) .wx-card-hero,
+#weather-section:not([data-span="2"]) .wx-card-info,
+#weather-section:not([data-span="2"]) .wx-card-precip {
+    display: contents;
 }
 
 #weather-section:not([data-span="2"]) .wx-card-icon {
-    font-size: calc(24px * var(--font-scale));
+    order: 0;
+    font-size: calc(48px * var(--font-scale));
+}
+
+/* Temp + description stay grouped as a column (description below temperature) */
+#weather-section:not([data-span="2"]) .wx-card-temp-col {
+    order: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
 }
 
 #weather-section:not([data-span="2"]) .metric-value.big {
-    font-size: calc(22px * var(--font-scale));
+    font-size: calc(26px * var(--font-scale));
 }
 
-#weather-section:not([data-span="2"]) .wx-card-text {
+#weather-section:not([data-span="2"]) .wx-card-unit {
     font-size: calc(12px * var(--font-scale));
 }
 
-#weather-section:not([data-span="2"]) .wx-card-city {
-    font-size: calc(10px * var(--font-scale));
+/* Details: compact pill chips, forced below the temperature row by default */
+#weather-section:not([data-span="2"]) .wx-card-details {
+    order: 2;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 4px;
+}
+
+#weather-section:not([data-span="2"]) .wx-card-detail {
+    padding: 3px 9px;
+    font-size: calc(11px * var(--font-scale));
+    gap: 5px;
+}
+
+#weather-section:not([data-span="2"]) .wx-card-detail .nf-icon {
+    font-size: calc(12px * var(--font-scale));
+}
+
+/* Condition + precipitation summary shown under the temperature */
+#weather-section:not([data-span="2"]) .wx-card-text {
+    font-size: calc(13px * var(--font-scale));
+    white-space: normal;
+    overflow: visible;
+    max-width: 100%;
+}
+
+/* Precipitation summary text is merged into .wx-card-text on the small card */
+#weather-section:not([data-span="2"]) .wx-card-precip-text {
+    display: none;
+}
+
+#weather-section:not([data-span="2"]) .wx-card-precip-text {
+    order: 4;
+    font-size: calc(12px * var(--font-scale));
+    color: var(--text-dim);
+    margin-bottom: 0;
+}
+
+#weather-section:not([data-span="2"]) .wx-card-precip-title,
+#weather-section:not([data-span="2"]) .wx-card-precip-chart {
+    display: none;
+}
+
+/* City/updated not shown on small card */
+#weather-section:not([data-span="2"]) .wx-card-sub {
+    display: none !important;
+}
+
+/* Weather big card (span 2): bottom-pinned hero, details below */
+#weather-section[data-span="2"] > .box-content {
+    justify-content: flex-end;
+    gap: 10px;
+    padding-bottom: 28px;
+}
+
+#weather-section[data-span="2"] .wx-card-hero {
+    gap: 18px;
+    align-items: center;
+}
+
+#weather-section[data-span="2"] .wx-card-icon {
+    font-size: calc((clamp(56px, 6vw, 92px) + clamp(24px, 2.8vw, 42px) * 0.35 + 2px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"] .metric-value.big {
+    font-size: calc(clamp(56px, 6vw, 92px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"] .wx-card-unit {
+    font-size: calc(22px * var(--font-scale));
+}
+
+#weather-section[data-span="2"] .wx-card-text {
+    font-size: calc(clamp(24px, 2.8vw, 42px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"] .wx-card-city,
+#weather-section[data-span="2"] .wx-card-updated {
+    font-size: calc(12px * var(--font-scale));
+}
+
+#weather-section[data-span="2"] .wx-card-details {
+    gap: 6px;
+}
+
+#weather-section[data-span="2"] .wx-card-detail {
+    font-size: calc(13px * var(--font-scale));
+    padding: 5px 11px;
+}
+
+/* Weather big card compact mode when precipitation forecast is present:
+   smaller hero, description below the temperature and within the icon's width */
+#weather-section[data-span="2"].wx-info > .box-content {
+    gap: 8px;
+}
+
+#weather-section[data-span="2"].wx-info .wx-card-hero {
+    gap: 12px;
+}
+
+#weather-section[data-span="2"].wx-info .wx-card-icon {
+    font-size: calc((clamp(34px, 3.6vw, 56px) + clamp(15px, 1.7vw, 20px) * 1.1 + 2px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info .metric-value.big {
+    font-size: calc(clamp(34px, 3.6vw, 56px) * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info .wx-card-unit {
+    font-size: calc(15px * var(--font-scale));
+}
+
+#weather-section[data-span="2"].wx-info .wx-card-text {
+    font-size: calc(clamp(15px, 1.7vw, 20px) * var(--font-scale));
+    max-width: calc(clamp(72px, 8vw, 120px) * var(--font-scale));
 }
 
 /* Grid */
@@ -1217,7 +1539,7 @@ body.layout-mode .drop-slot.hide {
     display: none;
 }
 
-/* Box — subtle vertical gradient border: base color on top, accent-tinted at bottom */
+/* Box �?subtle vertical gradient border: base color on top, accent-tinted at bottom */
 .term-box {
     position: relative;
     border: 0 solid transparent;
@@ -1231,7 +1553,7 @@ body.layout-mode .drop-slot.hide {
     transition: opacity 0.15s ease, border-width 0.15s ease;
 }
 
-/* Focus dim — hovered box stays full, all others drop to 50% */
+/* Focus dim �?hovered box stays full, all others drop to 50% */
 .term-box.dimmed {
     opacity: 0.5;
 }
@@ -1301,7 +1623,7 @@ body.layout-mode .drop-slot.hide {
     border-radius: var(--radius-sm);
 }
 
-/* Sparkline hover cursor — dashed vertical line + dot at the pointed data point.
+/* Sparkline hover cursor �?dashed vertical line + dot at the pointed data point.
    Positioned in JS in viewBox 0..100 coords; hidden by default (opacity 0). */
 .sparkline-bg .spark-cursor {
     opacity: 0;
@@ -1333,7 +1655,7 @@ body.layout-mode .drop-slot.hide {
 #mem-section .spark-area { fill: var(--magenta); }
 #fps-section .spark-area { fill: var(--metric-fps); }
 
-/* Network sparklines — two overlapping layers (download + upload), more faded */
+/* Network sparklines �?two overlapping layers (download + upload), more faded */
 #net-section .sparkline-bg { z-index: 0; }
 #net-section .sparkline-bg-over { z-index: 0; }
 #net-section .spark-line { stroke-width: 0.5; opacity: 0.14; }
@@ -1349,7 +1671,7 @@ body.layout-mode .drop-slot.hide {
 }
 
 /* ===== Grid Layout ===== */
-/* Fixed card positions — Clock in col 1 (all rows), main cards in col 2,
+/* Fixed card positions �?Clock in col 1 (all rows), main cards in col 2,
    side cards (disk/proc) in col 3. */
 #clock-section {
     grid-column: 1;
@@ -1428,19 +1750,19 @@ body.layout-mode .drop-slot.hide {
     font-variant-numeric: tabular-nums;
 }
 
-/* 12 小时制的时段词（凌晨/早上/...），显示在时钟上方 */
+/* 12 小时制的时段词（凌晨/早上/...），显示在时钟上�?*/
 .h-period {
     font-size: calc(20px * var(--font-scale));
     font-weight: 700;
     color: var(--text-dim);
     text-align: center;
     letter-spacing: 0.5em;
-    margin-right: -0.5em; /* 抵消 letter-spacing 造成的右侧偏移 */
+    margin-right: -0.5em; /* 抵消 letter-spacing 造成的右侧偏�?*/
     min-height: 24px;
     line-height: 24px;
 }
 
-/* 24 小时制时隐藏时段词，不预留额外空间 */
+/* 24 小时制时隐藏时段词，不预留额外空�?*/
 .h-time-block.is-24h .h-period {
     min-height: 0;
     line-height: 0;
@@ -1469,7 +1791,7 @@ body.layout-mode .drop-slot.hide {
     font-size: calc(18px * var(--font-scale));
 }
 
-/* Music — sits left of the process list, bottom-right of the grid */
+/* Music �?sits left of the process list, bottom-right of the grid */
 #music-section {
     display: flex;
     flex-direction: column;
@@ -1550,7 +1872,7 @@ body.layout-mode .drop-slot.hide {
     gap: 16px;
 }
 
-/* 进度条与剩余时间：默认隐藏，鼠标悬停大卡片时才显示 */
+/* 进度条与剩余时间：默认隐藏，鼠标悬停大卡片时才显�?*/
 #music-section .music-progress {
     display: none;
     position: relative;
@@ -1595,7 +1917,7 @@ body.layout-mode .drop-slot.hide {
     transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-/* 悬浮在进度条上时显示的播放时间气泡（跟随拖动位置） */
+/* 悬浮在进度条上时显示的播放时间气泡（跟随拖动位置�?*/
 #music-section .music-seek-tip {
     position: absolute;
     bottom: calc(100% + 6px);
@@ -1673,7 +1995,7 @@ body.layout-mode .drop-slot.hide {
     height: 44px;
 }
 
-/* 播放控件与歌词的容器：内部二选一显示，hover 容器可切换 */
+/* 播放控件与歌词的容器：内部二选一显示，hover 容器可切�?*/
 #music-section .music-player-zone {
     display: flex;
     align-items: center;
@@ -1681,7 +2003,7 @@ body.layout-mode .drop-slot.hide {
     min-width: 0;
 }
 
-/* 播放中显示的歌词（当前句 + 下一句），替换播放控件 */
+/* 播放中显示的歌词（当前句 + 下一句），替换播放控�?*/
 #music-section .music-lyrics {
     display: flex;
     flex-direction: column;
@@ -1695,7 +2017,7 @@ body.layout-mode .drop-slot.hide {
     font-weight: 600;
     color: var(--text);
     white-space: nowrap;
-    overflow: hidden;      /* 长句用 scrollLeft 水平滚动，不用省略号 */
+    overflow: hidden;      /* 长句�?scrollLeft 水平滚动，不用省略号 */
     line-height: 1.2;
 }
 
@@ -1721,7 +2043,7 @@ body.layout-mode .drop-slot.hide {
 }
 
 /* ── 音乐大卡片（span 2）：封面在左上角，歌词在封面下方左对齐（2行），控件居中，
-      进度条固定在卡片最底部、与边界几乎重叠（不占文档流，不影响其他内容大小） ── */
+      进度条固定在卡片最底部、与边界几乎重叠（不占文档流，不影响其他内容大小�?── */
 #music-section[data-span="2"] .music-content {
     flex-direction: column;
     align-items: flex-start;
@@ -1764,7 +2086,7 @@ body.layout-mode .drop-slot.hide {
 
 #music-section[data-span="2"] .music-lyrics {
     gap: 2px;
-    order: -1;                 /* 歌词放在控件上方、紧贴封面下方 */
+    order: -1;                 /* 歌词放在控件上方、紧贴封面下�?*/
 }
 
 #music-section[data-span="2"] .h-lyric-prev {
@@ -1792,7 +2114,7 @@ body.layout-mode .drop-slot.hide {
     height: 46px;
 }
 
-/* 进度条固定在卡片底部略抬一点，不占文档流高度，因此不影响封面/歌词/控件的大小 */
+/* 进度条固定在卡片底部略抬一点，不占文档流高度，因此不影响封�?歌词/控件的大�?*/
 #music-section[data-span="2"] .music-progress {
     position: absolute;
     left: 0;
@@ -1811,7 +2133,7 @@ body.layout-mode .drop-slot.hide {
     height: 3px;
 }
 
-/* 鼠标悬停大卡片时缩小封面与信息的字号，给底部进度条让出空间 */
+/* 鼠标悬停大卡片时缩小封面与信息的字号，给底部进度条让出空�?*/
 #music-section[data-span="2"] .h-music-cover,
 #music-section[data-span="2"] .h-music-title,
 #music-section[data-span="2"] .h-music-artist,
@@ -1847,7 +2169,7 @@ body.layout-mode .drop-slot.hide {
     padding: 10px 18px 22px;
 }
 
-/* 未在播放：将“未在播放”文案与播放控件水平、垂直居中到卡片正中心 */
+/* 未在播放：将“未在播放”文案与播放控件水平、垂直居中到卡片正中�?*/
 #music-section[data-span="2"].not-playing .music-content {
     align-items: center;
     justify-content: center;
@@ -1991,7 +2313,7 @@ body.layout-mode .drop-slot.hide {
     grid-row: 1 / -1;
 }
 
-/* 1st info-line: right column, top row — push to bottom so it meets the 2nd line in the center */
+/* 1st info-line: right column, top row �?push to bottom so it meets the 2nd line in the center */
 #cpu-section .info-line:nth-of-type(2),
 #gpu-section .info-line:nth-of-type(2),
 #mem-section .info-line:nth-of-type(2),
@@ -2001,7 +2323,7 @@ body.layout-mode .drop-slot.hide {
     align-self: end;
 }
 
-/* 2nd info-line: right column, bottom row — push to top so it meets the 1st line in the center */
+/* 2nd info-line: right column, bottom row �?push to top so it meets the 1st line in the center */
 #cpu-section .info-line:nth-of-type(3),
 #gpu-section .info-line:nth-of-type(3),
 #mem-section .info-line:nth-of-type(3),
@@ -2077,7 +2399,7 @@ body.layout-mode .drop-slot.hide {
     text-align: right;
 }
 
-/* Disk section — net-style card beside Memory (grid row 3) */
+/* Disk section �?net-style card beside Memory (grid row 3) */
 #disk-section {
     grid-column: 3;
     grid-row: 3;
@@ -2177,7 +2499,7 @@ body.layout-mode .drop-slot.hide {
     pointer-events: none;
 }
 
-/* Disk partition details — fades in over the main view on hover */
+/* Disk partition details �?fades in over the main view on hover */
 .disk-partitions {
     position: absolute;
     left: 14px;
@@ -2245,7 +2567,7 @@ body.layout-mode .drop-slot.hide {
     transition: width 0.3s ease;
 }
 
-/* Usage thresholds — turn amber as the drive fills, red when nearly full */
+/* Usage thresholds �?turn amber as the drive fills, red when nearly full */
 .disk-part-fill.fill-warn {
     background: var(--yellow);
 }
@@ -2386,7 +2708,7 @@ body.layout-mode .drop-slot.hide {
     font-size: calc(13px * var(--font-scale));
 }
 
-/* Hardware name badge — hidden by default, shown on section hover */
+/* Hardware name badge �?hidden by default, shown on section hover */
 .hw-name {
     position: absolute;
     top: 10px;
@@ -2448,7 +2770,7 @@ body.layout-mode .drop-slot.hide {
     padding-bottom: 12px;
 }
 
-/* CPU/GPU: usage on TOP, info-lines BELOW — a left-aligned vertical stack
+/* CPU/GPU: usage on TOP, info-lines BELOW �?a left-aligned vertical stack
    anchored to the bottom of the tall card. box-content / split-row are
    row-direction flex, so the vertical pin lives on `align-items`. */
 #cpu-section[data-span="2"] > .box-content,
@@ -2461,7 +2783,7 @@ body.layout-mode .drop-slot.hide {
 }
 
 /* CPU/GPU name label in the top-left corner, aligned with the value /
-   info-lines (left:20px matches the box-content padding) — hidden while
+   info-lines (left:20px matches the box-content padding) �?hidden while
    hovering so it doesn't sit over the sparkline hover info. */
 .corner-label {
     position: absolute;
@@ -2484,17 +2806,15 @@ body.layout-mode .drop-slot.hide {
 #gpu-section[data-span="2"]:hover .corner-label,
 #mem-section[data-span="2"]:hover .corner-label,
 #net-section[data-span="2"]:hover .corner-label,
-#fps-section[data-span="2"]:hover .corner-label,
-#weather-section[data-span="2"]:hover .corner-label {
+#fps-section[data-span="2"]:hover .corner-label {
     opacity: 0;
 }
 
-/* CPU/GPU/MEM small card (span 1): hide the corner label — it only fits the tall form */
+/* CPU/GPU/MEM small card (span 1): hide the corner label �?it only fits the tall form */
 #cpu-section:not([data-span="2"]) .corner-label,
 #gpu-section:not([data-span="2"]) .corner-label,
 #mem-section:not([data-span="2"]) .corner-label,
-#net-section:not([data-span="2"]) .corner-label,
-#weather-section:not([data-span="2"]) .corner-label {
+#net-section:not([data-span="2"]) .corner-label {
     display: none;
 }
 
@@ -2523,7 +2843,7 @@ body.layout-mode .drop-slot.hide {
 }
 
 /* CPU/GPU/MEM (and FPS large) info-lines: all left-aligned. In the old 2-col
-   grid these used align-self: end/start to meet in the middle — in the flex
+   grid these used align-self: end/start to meet in the middle �?in the flex
    column that now pushes them right, so force them back to the left. */
 #cpu-section[data-span="2"] .info-line,
 #gpu-section[data-span="2"] .info-line,
@@ -2758,7 +3078,7 @@ body.layout-mode .drop-slot.hide {
 }
 
 /* Settings panel - extends modal-panel */
-/* 提高特异性以覆盖 .modal-panel 的 max-width: 500px（定义顺序在后） */
+/* 提高特异性以覆盖 .modal-panel �?max-width: 500px（定义顺序在后） */
 .modal-panel.settings-panel {
     max-width: 860px;
     height: 82vh;   /* 固定高度，切换标签时不随内容伸缩 */
@@ -2791,7 +3111,7 @@ body.layout-mode .drop-slot.hide {
     flex-direction: column;
     gap: 2px;
     padding: 8px 6px;
-    overflow-y: auto;   /* 屏幕较矮、标签多时允许滚动 */
+    overflow-y: auto;   /* 屏幕较矮、标签多时允许滚�?*/
 }
 
 .nav-btn {
@@ -2843,7 +3163,7 @@ body.layout-mode .drop-slot.hide {
     overflow-y: auto;
 }
 
-/* About 固定在侧边栏底部，与设置项视觉分隔 */
+/* About 固定在侧边栏底部，与设置项视觉分�?*/
 .nav-btn[data-tab="about"] {
     margin-top: auto;
     border-top: 1px solid var(--border);
@@ -2859,7 +3179,7 @@ body.layout-mode .drop-slot.hide {
     animation: fadeIn 0.15s ease;
 }
 
-/* Setting group — 卡片式分组 */
+/* Setting group �?卡片式分�?*/
 .setting-group {
     margin-bottom: 14px;
     background: color-mix(in srgb, var(--surface) 45%, transparent);
@@ -3267,7 +3587,7 @@ body.layout-mode .drop-slot.hide {
     font-weight: 600;
 }
 
-/* 用户壁纸删除角标（仅 wp/ 卡片显示） */
+/* 用户壁纸删除角标（仅 wp/ 卡片显示�?*/
 .img-pick-del {
     position: absolute;
     top: 2px;
@@ -3513,8 +3833,8 @@ body.layout-mode .drop-slot.hide {
     animation: fadeIn 0.2s ease;
 }
 
-/* 确认弹窗需浮在设置弹窗之上（二者同为 .modal-overlay / z-index:3000，
-   但确认弹窗在 DOM 中位于设置之前，若不抬高会被设置覆盖） */
+/* 确认弹窗需浮在设置弹窗之上（二者同�?.modal-overlay / z-index:3000�?
+   但确认弹窗在 DOM 中位于设置之前，若不抬高会被设置覆盖�?*/
 #app-confirm-overlay,
 #kill-confirm-overlay {
     z-index: 4000;
@@ -4408,7 +4728,7 @@ body.layout-mode .drop-slot.hide {
 
 /* ── Micro-animations ──
    Transforms/opacity only (GPU-composited). Deliberately nothing on .term-box
-   or sparkline charts — they repaint every poll and must not animate. */
+   or sparkline charts �?they repaint every poll and must not animate. */
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -4427,7 +4747,7 @@ body.layout-mode .drop-slot.hide {
     }
 }
 
-/* ── Click-to-clean memory (MEM %) — one-shot sweep beam + glow + pulse ── */
+/* ── Click-to-clean memory (MEM %) �?one-shot sweep beam + glow + pulse ── */
 #mem-pct {
     cursor: pointer;
 }
@@ -4463,13 +4783,13 @@ body.layout-mode .drop-slot.hide {
     animation: memPulse 0.65s ease;
 }
 
-/* "已清理 / <amount>" status lines after a click-clean */
+/* "已清�?/ <amount>" status lines after a click-clean */
 .mem-clean-status {
     color: var(--magenta);
     font-weight: 700;
 }
 
-/* Info-line swap animation (normal ↔ 已清理) */
+/* Info-line swap animation (normal �?已清�? */
 .info-swap {
     animation: infoSwapIn 0.3s ease;
 }
@@ -4528,7 +4848,7 @@ body.layout-mode .drop-slot.hide {
     filter: brightness(1.15);
 }
 
-/* 首次启动右上角提示 */
+/* 首次启动右上角提�?*/
 .first-launch-hint {
     position: fixed;
     top: 16px;
@@ -4647,7 +4967,7 @@ body.layout-mode .layout-toolbar {
     display: flex;
 }
 
-/* Resize handle — bottom-right corner of resizable cards, visible only in layout mode */
+/* Resize handle �?bottom-right corner of resizable cards, visible only in layout mode */
 .layout-resize-handle {
     display: none;
     position: absolute;
@@ -4737,7 +5057,7 @@ body.layout-mode .layout-control-group .layout-del-btn {
     display: none;
 }
 
-/* Card list panel — pick a removed/hidden card to add back to the layout */
+/* Card list panel �?pick a removed/hidden card to add back to the layout */
 .card-list-panel {
     display: none;
     position: fixed;
@@ -4823,7 +5143,7 @@ body.layout-mode .layout-control-group .layout-del-btn {
     color: var(--text-dim);
     margin-left: 6px;
 }
-/* Mini card preview — echoes the real card's small (memory-style) look */
+/* Mini card preview �?echoes the real card's small (memory-style) look */
 .card-list-preview {
     position: relative;
     display: flex;

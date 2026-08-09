@@ -49,9 +49,9 @@
 
 | 方法 | 开关 | 说明 |
 |---|---|---|
-| `get_weather()` / `get_weather_detail()` / `get_airquality()` / `get_alerts()` | `weather` | 见 `services.weather.WeatherService`；关闭返回 `{"error":"disabled"}`（alerts 返回 `[]`） |
-| `get_weather_info()` | `weather` | `{weather, air_quality}` 合并 |
-| `get_lunar_time(timezone="Asia/Shanghai")` | `weather` | 农历时间 |
+| `get_weather()` / `get_weather_detail()` / `get_airquality()` / `get_alerts()` | — | 见 `services.weather.WeatherService`；始终可获取（未配置凭证时返回 `{"error":"not_configured"}`，alerts 返回 `[]`） |
+| `get_weather_info()` | — | `{weather, air_quality}` 合并；始终可获取 |
+| `get_lunar_time(timezone="Asia/Shanghai")` | `weather` | 农历时间；关闭返回 `{"error":"disabled"}` |
 | `get_huangli(year, month, day)` | `calendar` | 黄历；关闭返回 `{"error":"disabled"}` |
 | `get_holiday(year)` | `calendar` | 全年节假日；关闭返回 `{}` |
 
