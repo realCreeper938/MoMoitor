@@ -1659,6 +1659,29 @@ body.layout-mode .drop-slot.hide {
     padding: 10px 18px 22px;
 }
 
+/* 未在播放：将“未在播放”文案与播放控件水平、垂直居中到卡片正中心 */
+#music-section[data-span="2"].not-playing .music-content {
+    align-items: center;
+    justify-content: center;
+}
+
+#music-section[data-span="2"].not-playing .music-main {
+    align-items: center;
+    gap: 14px;
+}
+
+#music-section[data-span="2"].not-playing .h-music-meta {
+    align-items: center;
+}
+
+#music-section[data-span="2"].not-playing .h-music-title {
+    text-align: center;
+}
+
+#music-section[data-span="2"].not-playing .music-player-zone {
+    align-items: center;
+}
+
 /* Click ripple spawned from the pointer position */
 .ctrl-ripple {
     position: absolute;

@@ -1039,6 +1039,7 @@ async function refreshMusic() {
             if (section) {
                 section.style.display = _sectionVisible('music-section') ? 'flex' : 'none';
                 section.classList.toggle('paused', !m.playing);
+                section.classList.remove('not-playing');
             }
         } else {
             // No music playing: keep the section visible (visibility is controlled
@@ -1049,7 +1050,10 @@ async function refreshMusic() {
             setText('h-music-artist', '');
             const procEl = document.getElementById('h-music-process');
             if (procEl) procEl.textContent = '';
-            if (section) section.classList.add('paused');
+            if (section) {
+                section.classList.add('paused');
+                section.classList.add('not-playing');
+            }
             if (_progressTimer) { clearInterval(_progressTimer); _progressTimer = null; }
             _musicDur = 0;
             _musicPlaying = false;
