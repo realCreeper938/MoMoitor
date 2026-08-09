@@ -2633,8 +2633,11 @@ function applyFeatureToggles(toggles) {
 /* ===== Layout Adjustment ===== */
 const LAYOUT_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'disk-section', 'proc-section', 'music-section', 'weather-section'];
 const RESIZABLE_IDS = ['cpu-section', 'gpu-section', 'mem-section', 'net-section', 'fps-section', 'music-section', 'weather-section'];
+/* Everything draggable during layout mode — cards plus the full-height clock. */
+const DRAG_IDS = LAYOUT_IDS.concat(['clock-section']);
 
 const DEFAULT_LAYOUT = {
+    'clock-section':  { side: 'left' },
     'cpu-section':    { col: 2, row: 2, span: 2, hidden: false },
     'gpu-section':    { col: 3, row: 2, span: 2, hidden: false },
     'mem-section':    { col: 2, row: 4, span: 1, hidden: false },
@@ -2663,13 +2666,38 @@ function getLayoutSpan(id) {
     return _normLayout(id).span;
 }
 
+/* Which side the clock column sits on (cards use abstract cols 2/3; the clock
+   is always full-height). 'right' flips the grid so the clock is at col 3. */
+function _clockSide() {
+    const c = _layout['clock-section'];
+    return c && c.side === 'right' ? 'right' : 'left';
+}
+
+/* Abstract layout col (1=clock, 2=left cards, 3=right cards) → actual grid col. */
+function _gridColFor(col) {
+    if (_clockSide() === 'right') {
+        if (col === 2) return 1;
+        if (col === 3) return 2;
+    }
+    return col;
+}
+
+/* Actual grid col → abstract layout col. */
+function _layoutColFor(col) {
+    if (_clockSide() === 'right') {
+        if (col === 1) return 2;
+        if (col === 2) return 3;
+    }
+    return col;
+}
+
 function applyLayout(layout) {
     _layout = layout && typeof layout === 'object' ? layout : {};
     LAYOUT_IDS.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         const pos = _normLayout(id);
-        el.style.gridColumn = String(pos.col);
+        el.style.gridColumn = String(_gridColFor(pos.col));
         el.style.gridRow = pos.row + ' / span ' + pos.span;
         el.style.display = _sectionVisible(id) ? '' : 'none';
         el.dataset.span = String(pos.span);
@@ -2679,6 +2707,11 @@ function applyLayout(layout) {
             _applyFpsFontSize();
         }
     });
+    const grid = document.querySelector('.term-grid');
+    if (grid) grid.classList.toggle('clock-right', _clockSide() === 'right');
+    const clockEl = document.getElementById('clock-section');
+    if (clockEl) clockEl.style.gridColumn = _clockSide() === 'right' ? '3' : '1';
+    if (_layoutMode) _positionClockHint();
     applyLyricView();
 }
 
@@ -2688,19 +2721,20 @@ function readLayout() {
         const el = document.getElementById(id);
         const pos = _normLayout(id);
         layout[id] = {
-            col: el && el.style.gridColumn ? parseInt(el.style.gridColumn) || pos.col : pos.col,
+            col: el && el.style.gridColumn ? _layoutColFor(parseInt(el.style.gridColumn) || pos.col) : pos.col,
             row: el && el.style.gridRow ? parseInt(el.style.gridRow) || pos.row : pos.row,
             span: pos.span,
             hidden: pos.hidden,
         };
     });
+    layout['clock-section'] = { side: _clockSide() };
     return layout;
 }
 
 function _colCards(col) {
     return LAYOUT_IDS
         .map(id => document.getElementById(id))
-        .filter(el => el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === col)
+        .filter(el => el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === _gridColFor(col))
         .sort((a, b) => parseInt(a.style.gridRow) - parseInt(b.style.gridRow));
 }
 
@@ -2714,7 +2748,7 @@ function enterLayoutMode() {
     _layoutSaved = readLayout();
     document.body.classList.add('layout-mode');
     _addLayoutControls();
-    LAYOUT_IDS.forEach(id => {
+    DRAG_IDS.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         el.setAttribute('draggable', 'true');
@@ -2730,14 +2764,16 @@ function enterLayoutMode() {
         grid.addEventListener('dragleave', onGridDragLeave);
         grid.addEventListener('drop', onGridDrop);
     }
+    _positionClockHint();
 }
 
 function exitLayoutMode() {
     if (!_layoutMode) return;
     _layoutMode = false;
+    _hideClockHint();
     document.body.classList.remove('layout-mode');
     _removeLayoutControls();
-    LAYOUT_IDS.forEach(id => {
+    DRAG_IDS.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         el.removeAttribute('draggable');
@@ -2801,7 +2837,7 @@ function _toggleCardSize(id) {
     const el = document.getElementById(id);
     const first = el ? el.getBoundingClientRect() : null;
     const curRow = el && el.style.gridRow ? (parseInt(el.style.gridRow) || pos.row) : pos.row;
-    const curCol = el && el.style.gridColumn ? (parseInt(el.style.gridColumn) || pos.col) : pos.col;
+    const curCol = el && el.style.gridColumn ? _layoutColFor(parseInt(el.style.gridColumn) || pos.col) : pos.col;
     if (pos.span === 1) {
         const colHeight = _columnHeight(curCol);
         const otherCol = curCol === 2 ? 3 : 2;
@@ -2863,7 +2899,7 @@ function _flipCard(el, first) {
 function _deleteCard(id) {
     const pos = _normLayout(id);
     const el = document.getElementById(id);
-    const col = el && el.style.gridColumn ? (parseInt(el.style.gridColumn) || pos.col) : pos.col;
+    const col = el && el.style.gridColumn ? _layoutColFor(parseInt(el.style.gridColumn) || pos.col) : pos.col;
     pos.hidden = true;
     _layout[id] = { col: col, row: pos.row, span: pos.span, hidden: true };
     if (el) el.style.display = 'none';
@@ -3046,7 +3082,7 @@ function _placeCard(id, col, row, span) {
     const el = document.getElementById(id);
     if (el) {
         el.style.display = _sectionVisible(id) ? '' : 'none';
-        el.style.gridColumn = String(col);
+        el.style.gridColumn = String(_gridColFor(col));
         el.style.gridRow = row + ' / span ' + s;
         el.dataset.span = String(s);
         if (id === 'fps-section') {
@@ -3130,7 +3166,7 @@ function onLayoutDragLeave(e) {
 
 function onLayoutDragEnd(e) {
     e.currentTarget.classList.remove('dragging', 'drag-over');
-    LAYOUT_IDS.forEach(id => {
+    DRAG_IDS.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('drag-over');
     });
@@ -3145,9 +3181,10 @@ function onLayoutDrop(e) {
     const fromId = _dragId;
     const toId = target.id;
     if (!fromId || fromId === toId) return;
+    if (fromId === 'clock-section' || toId === 'clock-section') { _handleClockDrop(e); return; }
     if (_dragFromList) {
         // Adding a removed card from the card list: insert at the drop slot.
-        const toCol = parseInt(target.style.gridColumn);
+        const toCol = _layoutColFor(parseInt(target.style.gridColumn));
         const toRow = parseInt(target.style.gridRow);
         let span = getLayoutSpan(fromId);
         const colHeight = _columnHeight(toCol);
@@ -3185,8 +3222,8 @@ function onLayoutDrop(e) {
     fromEl.style.gridRow = toRow + ' / span ' + getLayoutSpan(fromId);
     toEl.style.gridColumn = fromCol;
     toEl.style.gridRow = fromRow + ' / span ' + getLayoutSpan(toId);
-    _repackColumn(parseInt(fromEl.style.gridColumn), fromId, toRow);
-    _repackColumn(parseInt(toEl.style.gridColumn), null, null);
+    _repackColumn(_layoutColFor(parseInt(fromEl.style.gridColumn)), fromId, toRow);
+    _repackColumn(_layoutColFor(parseInt(toEl.style.gridColumn)), null, null);
     // If the swap would overflow either column, revert it instead of shuffling
     // cards across columns (which displaces the other column's cards).
     if (_columnHeight(2) > 6 || _columnHeight(3) > 6) {
@@ -3194,8 +3231,8 @@ function onLayoutDrop(e) {
         fromEl.style.gridRow = fromOrigRow;
         toEl.style.gridColumn = toCol;
         toEl.style.gridRow = toOrigRow;
-        _repackColumn(parseInt(fromCol), null, null);
-        _repackColumn(parseInt(toCol), null, null);
+        _repackColumn(_layoutColFor(parseInt(fromCol)), null, null);
+        _repackColumn(_layoutColFor(parseInt(toCol)), null, null);
         showToast('空间不足');
     }
 }
@@ -3215,13 +3252,16 @@ function _gridSlotFromEvent(e) {
     const innerH = rect.height - pad * 2;
     const colW = (innerW - clockW - gap * 2) / 2;
     if (colW <= 0) return null;
-    // Column 2 left edge; column 3 right after it (plus one gap).
-    const c2Left = rect.left + pad + clockW + gap;
+    // The two card columns sit on the opposite side of the clock. When the
+    // clock is on the right, the card area starts at the grid's left edge.
+    const right = _clockSide() === 'right';
+    const cardLeft = right ? rect.left + pad : rect.left + pad + clockW + gap;
+    const cardRight = right ? rect.right - pad - clockW - gap : rect.right - pad;
+    const c2Left = cardLeft;
     const c2Right = c2Left + colW;
-    const c3Right = rect.right - pad;
     let col = null;
     if (e.clientX >= c2Left && e.clientX < c2Right) col = 2;
-    else if (e.clientX >= c2Right + gap && e.clientX <= c3Right) col = 3;
+    else if (e.clientX >= c2Right + gap && e.clientX <= cardRight) col = 3;
     if (!col) return null;
     // 5 equal rows with 4 gaps inside the padded area.
     const rowH = (innerH - gap * 4) / 5;
@@ -3247,7 +3287,9 @@ function _showDropSlot(slot, span) {
     const el = _ensureDropSlot();
     if (!slot) { el.classList.add('hide'); return; }
     const top = slot.pad + (slot.row - 1) * (slot.rowH + slot.gap);
-    const left = slot.col === 2 ? slot.pad + 150 + slot.gap : slot.pad + 150 + slot.gap + slot.colW + slot.gap;
+    const left = _clockSide() === 'right'
+        ? (slot.col === 2 ? slot.pad : slot.pad + slot.colW + slot.gap)
+        : (slot.col === 2 ? slot.pad + 150 + slot.gap : slot.pad + 150 + slot.gap + slot.colW + slot.gap);
     const height = slot.rowH * span + slot.gap * (span - 1);
     el.style.left = left + 'px';
     el.style.top = top + 'px';
@@ -3260,10 +3302,49 @@ function _hideDropSlot() {
     if (_dropSlotEl) _dropSlotEl.classList.add('hide');
 }
 
+let _clockHintEl = null;
+
+function _ensureClockHint() {
+    if (!_clockHintEl || !_clockHintEl.isConnected) {
+        _clockHintEl = document.createElement('div');
+        _clockHintEl.className = 'clock-drag-hint';
+        _clockHintEl.id = 'clock-drag-hint';
+        const grid = document.querySelector('.term-grid');
+        if (grid) grid.appendChild(_clockHintEl);
+    }
+    return _clockHintEl;
+}
+
+/* Layout-mode bubble above the clock's date line: "拖曳时钟可调整位置".
+   Kept inside the window (grid starts at the window top, so a bubble floating
+   above the whole clock would overflow). Anchors to the date and clamps. */
+function _positionClockHint() {
+    const el = _ensureClockHint();
+    const grid = document.querySelector('.term-grid');
+    const clockEl = document.getElementById('clock-section');
+    const dateEl = document.getElementById('h-clock-date');
+    if (!grid || !clockEl || !dateEl) return;
+    el.textContent = t('layout-hint-clock');
+    el.classList.add('show');
+    const gRect = grid.getBoundingClientRect();
+    const cRect = clockEl.getBoundingClientRect();
+    const dRect = dateEl.getBoundingClientRect();
+    const left = Math.max(gRect.width / 2, Math.min(gRect.width - el.offsetWidth / 2, cRect.left - gRect.left + cRect.width / 2));
+    const desiredBottom = dRect.top - gRect.top - 5;
+    const visualTop = Math.max(4, desiredBottom - el.offsetHeight);
+    el.style.left = left + 'px';
+    el.style.top = (visualTop + el.offsetHeight) + 'px';
+}
+
+function _hideClockHint() {
+    if (_clockHintEl) _clockHintEl.classList.remove('show');
+}
+
 function onGridDragOver(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     if (!_dragId) return;
+    if (_dragId === 'clock-section') { _hideDropSlot(); return; }
     const slot = _gridSlotFromEvent(e);
     _showDropSlot(slot, getLayoutSpan(_dragId));
 }
@@ -3280,12 +3361,13 @@ function onGridDrop(e) {
     _hideDropSlot();
     const fromId = _dragId;
     if (!fromId) return;
+    if (fromId === 'clock-section') { _handleClockDrop(e); return; }
     const slot = _gridSlotFromEvent(e);
     if (!slot) return;
     const fromEl = document.getElementById(fromId);
     // Only a card actually visible on the grid occupies space in a column; cards
     // dragged from the list are hidden and must be counted as a fresh addition.
-    const fromCol = fromEl && fromEl.style.display !== 'none' && fromEl.style.gridColumn ? parseInt(fromEl.style.gridColumn) : null;
+    const fromCol = fromEl && fromEl.style.display !== 'none' && fromEl.style.gridColumn ? _layoutColFor(parseInt(fromEl.style.gridColumn)) : null;
     // Try to place at the slot with the card's preferred span; fall back to a
     // smaller span for resizable cards when the space won't fit, else abort.
     let span = getLayoutSpan(fromId);
@@ -3312,11 +3394,22 @@ function onGridDrop(e) {
     }
 }
 
+/* Dropping the clock (either on the empty grid or onto another card): move the
+   whole clock column to whichever half of the grid the pointer is over. */
+function _handleClockDrop(e) {
+    const grid = document.querySelector('.term-grid');
+    if (!grid) return;
+    const rect = grid.getBoundingClientRect();
+    const side = (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right';
+    _layout['clock-section'] = { side: side };
+    applyLayout(_layout);
+}
+
 function _repackColumn(col, fixedId, fixedRow) {
     const els = _colCards(col);
     if (fixedId) {
         const fixedEl = document.getElementById(fixedId);
-        if (fixedEl && fixedEl.style.display !== 'none' && parseInt(fixedEl.style.gridColumn) === col) {
+        if (fixedEl && fixedEl.style.display !== 'none' && parseInt(fixedEl.style.gridColumn) === _gridColFor(col)) {
             fixedEl.style.gridRow = fixedRow + ' / span ' + getLayoutSpan(fixedId);
         }
     }
@@ -3346,7 +3439,7 @@ function _columnHeight(col) {
     let maxEnd = 0;
     LAYOUT_IDS.forEach(function(id) {
         const el = document.getElementById(id);
-        if (el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === col) {
+        if (el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === _gridColFor(col)) {
             const end = parseInt(el.style.gridRow) + getLayoutSpan(id);
             if (end > maxEnd) maxEnd = end;
         }
@@ -3360,7 +3453,7 @@ function _bottomCardId(col) {
     let bottomRow = -1;
     LAYOUT_IDS.forEach(function(id) {
         const el = document.getElementById(id);
-        if (el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === col) {
+        if (el && el.style.display !== 'none' && parseInt(el.style.gridColumn) === _gridColFor(col)) {
             const row = parseInt(el.style.gridRow);
             if (row > bottomRow) {
                 bottomRow = row;
@@ -3387,6 +3480,15 @@ function _snapshotLayout() {
             layout: Object.assign({}, _layout[id] || {}),
         });
     });
+    const clockEl = document.getElementById('clock-section');
+    snap.push({
+        id: 'clock-section',
+        col: clockEl ? clockEl.style.gridColumn || '' : '',
+        row: '',
+        display: '',
+        span: '',
+        layout: Object.assign({}, _layout['clock-section'] || {}),
+    });
     return snap;
 }
 
@@ -3394,6 +3496,14 @@ function _restoreLayout(snap) {
     snap.forEach(function(s) {
         const el = document.getElementById(s.id);
         if (!el) return;
+        if (s.id === 'clock-section') {
+            el.style.gridColumn = s.col;
+            if (s.layout && Object.keys(s.layout).length) _layout[s.id] = s.layout;
+            else delete _layout[s.id];
+            const grid = document.querySelector('.term-grid');
+            if (grid) grid.classList.toggle('clock-right', _clockSide() === 'right');
+            return;
+        }
         el.style.gridColumn = s.col;
         el.style.gridRow = s.row;
         el.style.display = s.display;
@@ -3415,7 +3525,7 @@ function _moveCardToBottom(fromCol, toCol) {
     // Only move if the target column can actually fit it; otherwise leave it
     // in place so the caller can decide (usually: revert + "空间不足").
     if (toHeight + span > 6) return false;
-    el.style.gridColumn = String(toCol);
+    el.style.gridColumn = String(_gridColFor(toCol));
     el.style.gridRow = '99 / span ' + span;  // sentinel; _packColumn sorts last → bottom
     _packColumn(toCol);
     return true;
@@ -3513,12 +3623,14 @@ function initLayoutControls() {
 function _layoutChanged() {
     if (!_layoutSaved) return false;
     const cur = readLayout();
-    return LAYOUT_IDS.some(id => {
+    if (LAYOUT_IDS.some(id => {
         const a = cur[id], b = _layoutSaved[id];
         return !a || !b
             || a.col !== b.col || a.row !== b.row
             || a.span !== b.span || a.hidden !== b.hidden;
-    });
+    })) return true;
+    const a = cur['clock-section'], b = _layoutSaved['clock-section'];
+    return !a || !b || a.side !== b.side;
 }
 
 function initSettings() {
