@@ -506,6 +506,21 @@ function _customTextCfg(id) {
 /* 文字卡片背景光晕：与音乐/天气大卡片一致的柔和径向渐变。启用时给
    #text-section 加上 has-text-grad 类，并把两个颜色/大小写入 CSS 变量，
    CSS 侧用 ::before 在卡片背景上绘制光晕。 */
+/* 提亮光晕颜色：深色（如 nord0/nord1）直接使用会与卡片背景融为一体而不可见，
+   与音乐卡片封面主色一样按亮度抬升，让光晕在深色背景上清晰可见。 */
+function _brightenGlowColor(hex, fallback) {
+    let s = (hex || '').trim();
+    if (s[0] !== '#') s = fallback;
+    const r = parseInt(s.slice(1, 3), 16);
+    const g = parseInt(s.slice(3, 5), 16);
+    const b = parseInt(s.slice(5, 7), 16);
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return fallback;
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    const mix = lum < 90 ? 0.45 : 0.25;
+    const lift = (c) => Math.round(c + (255 - c) * mix);
+    return 'rgb(' + lift(r) + ', ' + lift(g) + ', ' + lift(b) + ')';
+}
+
 function _applyTextBgGrad(cfg) {
     const section = document.getElementById('text-section');
     if (!section) return;
@@ -518,8 +533,8 @@ function _applyTextBgGrad(cfg) {
     }
     const size = Math.max(20, Math.min(300, parseInt(cfg.bg_grad_size, 10) || 100));
     section.classList.add('has-text-grad');
-    section.style.setProperty('--text-grad-c1', cfg.bg_grad_c1 || '#2e3440');
-    section.style.setProperty('--text-grad-c2', cfg.bg_grad_c2 || '#3b4252');
+    section.style.setProperty('--text-grad-c1', _brightenGlowColor(cfg.bg_grad_c1, '#2e3440'));
+    section.style.setProperty('--text-grad-c2', _brightenGlowColor(cfg.bg_grad_c2, '#3b4252'));
     section.style.setProperty('--text-grad-scale', (size / 100).toFixed(2));
 }
 
