@@ -61,7 +61,7 @@ function _layoutColFor(col) {
 }
 
 function applyLayout(layout) {
-    _layout = layout && typeof layout === 'object' ? layout : {};
+    _layout = Object.assign({}, layout && typeof layout === 'object' ? layout : {});
     LAYOUT_IDS.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -711,6 +711,7 @@ function onLayoutDrop(e) {
             _restoreLayout(snap);
             showToast('空间不足');
         }
+        _syncLayoutFromDom();
         return;
     }
     const fromEl = document.getElementById(fromId);
@@ -738,6 +739,7 @@ function onLayoutDrop(e) {
         _repackColumn(_layoutColFor(parseInt(toCol)), null, null);
         showToast('空间不足');
     }
+    _syncLayoutFromDom();
 }
 
 /* ---- Dropping onto empty grid space (not over another card) ---- */
@@ -893,6 +895,7 @@ function onGridDrop(e) {
         _restoreLayout(snap);
         showToast('空间不足');
     }
+    _syncLayoutFromDom();
 }
 
 /* Dropping the clock (either on the empty grid or onto another card): move the
@@ -902,8 +905,26 @@ function _handleClockDrop(e) {
     if (!grid) return;
     const rect = grid.getBoundingClientRect();
     const side = (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right';
+    _syncLayoutFromDom();
     _layout['clock-section'] = { side: side };
     applyLayout(_layout);
+}
+
+/* Rebuild _layout from the current DOM (gridColumn/gridRow set by swaps,
+   rebalances and repacks). Keeps _layout in sync so applyLayout() (e.g. the
+   clock flip) does not revert prior drag/rebalance moves. */
+function _syncLayoutFromDom() {
+    LAYOUT_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const pos = _normLayout(id);
+        _layout[id] = {
+            col: el.style.gridColumn ? _layoutColFor(parseInt(el.style.gridColumn) || pos.col) : pos.col,
+            row: el.style.gridRow ? parseInt(el.style.gridRow) || pos.row : pos.row,
+            span: pos.span,
+            hidden: pos.hidden,
+        };
+    });
 }
 
 function _repackColumn(col, fixedId, fixedRow) {
@@ -1029,6 +1050,10 @@ function _moveCardToBottom(fromCol, toCol) {
     el.style.gridColumn = String(_gridColFor(toCol));
     el.style.gridRow = '99 / span ' + span;  // sentinel; _packColumn sorts last → bottom
     _packColumn(toCol);
+    // Keep _layout in sync so a later applyLayout (e.g. clock flip) doesn't
+    // revert this cross-column move.
+    const pos = _normLayout(bottomId);
+    _layout[bottomId] = { col: toCol, row: parseInt(el.style.gridRow) || pos.row, span, hidden: pos.hidden };
     return true;
 }
 
