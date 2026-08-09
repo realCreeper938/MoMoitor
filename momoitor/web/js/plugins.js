@@ -294,7 +294,6 @@
             return;
         }
         list.innerHTML = plugins.map(p => {
-            const typeLabel = t('plugin-type-' + p.type) || p.type;
             const rowClass = p.valid ? 'plugin-row' : 'plugin-row plugin-invalid';
             const err = p.valid ? '' : '<div class="plugin-error">' + escapeHtml(p.error || '') + '</div>';
             const homepage = (p.homepage && /^https?:\/\//i.test(p.homepage))
@@ -308,7 +307,6 @@
                 + '<div class="plugin-info">'
                 + '<div class="plugin-name">' + escapeHtml(p.name) + ' <span class="plugin-ver">v' + escapeHtml(p.version) + '</span></div>'
                 + '<div class="plugin-meta">'
-                + '<span class="plugin-tag plugin-tag-' + p.type + '">' + escapeHtml(typeLabel) + '</span>'
                 + (p.author ? '<span class="plugin-author">' + escapeHtml(p.author) + '</span>' : '')
                 + '</div>'
                 + (p.description ? '<div class="plugin-desc">' + escapeHtml(p.description) + '</div>' : '')

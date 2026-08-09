@@ -209,7 +209,6 @@ const LANGS = {
         "nav-plugins": "Plugins",
         "settings-plugins": "Plugins",
         "plugins-empty": "No plugins found. Place plugins into the ./plugins directory and restart.",
-        "plugin-type-plugin": "Plugin",
         "plugin-restart-hint": "Plugin changes take effect after restart",
         "plugin-invalid": "Invalid plugin",
         // Behavior
@@ -431,7 +430,6 @@ const LANGS = {
         "nav-plugins": "插件",
         "settings-plugins": "插件",
         "plugins-empty": "未找到插件。将插件放入 ./plugins 目录后重启。",
-        "plugin-type-plugin": "插件",
         "plugin-restart-hint": "插件改动将在重启后生效",
         "plugin-invalid": "无效插件",
         // Behavior

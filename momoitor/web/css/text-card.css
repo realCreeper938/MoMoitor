@@ -379,18 +379,6 @@
     gap: 6px;
     margin-top: 4px;
 }
-.plugin-tag {
-    font-size: calc(10px * var(--font-scale));
-    padding: 1px 8px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    background: var(--surface);
-}
-.plugin-tag-plugin {
-    color: var(--cyan);
-    border-color: var(--cyan);
-}
 .plugin-author {
     color: var(--text-dim);
     font-size: calc(11px * var(--font-scale));
