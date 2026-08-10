@@ -45,6 +45,22 @@
                     <label class="welcome-check"><input type="checkbox" id="welcome-on-top" checked><span data-i18n="wizard-on-top">Keep window on top</span></label>
                     <label class="welcome-check"><input type="checkbox" id="welcome-hide-missing"><span data-i18n="wizard-hide-missing">Hide when monitor is disconnected</span></label>
                 </div>
+                <div class="welcome-step" data-step="size">
+                    <div class="welcome-title" data-i18n="wizard-size-title">Adjust font sizes</div>
+                    <div class="welcome-desc" data-i18n="wizard-size-desc">Choose suitable sizes for the best look on your display</div>
+                    <div class="welcome-size-grid">
+                        <label class="welcome-size-item">
+                            <span data-i18n="wizard-size-ui">Interface size</span>
+                            <input type="range" class="welcome-size-range" id="welcome-size-ui" min="60" max="200" value="100">
+                            <span class="welcome-size-val" id="welcome-size-ui-val">100%</span>
+                        </label>
+                        <label class="welcome-size-item">
+                            <span data-i18n="wizard-size-card">Card size</span>
+                            <input type="range" class="welcome-size-range" id="welcome-size-card" min="60" max="200" value="100">
+                            <span class="welcome-size-val" id="welcome-size-card-val">100%</span>
+                        </label>
+                    </div>
+                </div>
                 <div class="welcome-step" data-step="theme">
                     <div class="welcome-title" data-i18n="wizard-theme-title">Pick a color scheme you like</div>
                     <div class="welcome-theme-group">

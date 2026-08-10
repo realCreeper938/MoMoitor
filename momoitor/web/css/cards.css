@@ -12,6 +12,13 @@
     padding: 2px 20px;
 }
 
+/* 微调 CPU/GPU/内存 卡片内容整体往左 */
+#cpu-section > .box-content,
+#gpu-section > .box-content,
+#mem-section > .box-content {
+    padding-left: 12px;
+}
+
 /* Pull the FPS value further left for better balance (small form only) */
 #fps-section:not([data-span="2"]) > .box-content {
     padding-left: 5px;

@@ -20,7 +20,7 @@ async function showWelcomeWizard(s) {
     _wizardSteps = ['welcome'];
     _wizardHasMonitorStep = _wizardMonitors.length > 1;
     if (_wizardHasMonitorStep) _wizardSteps.push('monitor');
-    _wizardSteps.push('theme', 'done');
+    _wizardSteps.push('size', 'theme', 'done');
     _wizardIndex = 0;
 
     if (_wizardHasMonitorStep) {
@@ -29,11 +29,31 @@ async function showWelcomeWizard(s) {
         document.getElementById('welcome-hide-missing').checked = dsp.hide_when_monitor_missing === true;
     }
     _wizardRenderThemeCards();
+    _wizardInitSizeControls(g);
 
     document.getElementById('welcome-next').addEventListener('click', _wizardNext);
     document.getElementById('welcome-back').addEventListener('click', _wizardBack);
     _wizardRenderStep();
     document.getElementById('welcome-overlay').style.display = 'flex';
+}
+
+function _wizardInitSizeControls(g) {
+    const ui = document.getElementById('welcome-size-ui');
+    const uiVal = document.getElementById('welcome-size-ui-val');
+    const card = document.getElementById('welcome-size-card');
+    const cardVal = document.getElementById('welcome-size-card-val');
+    ui.value = g.font_size_ui || 100;
+    uiVal.textContent = ui.value + '%';
+    card.value = g.font_size || 100;
+    cardVal.textContent = card.value + '%';
+    ui.addEventListener('input', () => {
+        uiVal.textContent = ui.value + '%';
+        applyUiFontSize(parseInt(ui.value));
+    });
+    card.addEventListener('input', () => {
+        cardVal.textContent = card.value + '%';
+        applyFontSize(parseInt(card.value));
+    });
 }
 
 function _wizardRenderStep() {
@@ -131,6 +151,8 @@ async function _wizardFinish() {
     g.colorscheme = _wizardColorDark;
     g.colorscheme_dark = _wizardColorDark;
     g.colorscheme_light = _wizardColorLight;
+    g.font_size = parseInt(document.getElementById('welcome-size-card').value) || 100;
+    g.font_size_ui = parseInt(document.getElementById('welcome-size-ui').value) || 100;
     g.hint_dismissed = true;
     g.force_welcome = false;
     if (_wizardHasMonitorStep) {
