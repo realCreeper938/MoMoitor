@@ -29,15 +29,11 @@
     display: flex;
 }
 
-.welcome-art {
-    margin: 0;
-    font-family: var(--font-data);
-    font-size: calc(11px * var(--font-scale));
-    line-height: 1.15;
-    color: var(--accent);
-    letter-spacing: 0;
-    text-align: center;
-    user-select: none;
+.welcome-icon {
+    width: 72px;
+    height: 72px;
+    margin: 4px 0 2px;
+    image-rendering: pixelated;
 }
 
 .welcome-title {

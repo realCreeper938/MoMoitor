@@ -35,21 +35,17 @@
         <div class="modal-panel welcome-panel">
             <div class="modal-body welcome-body">
                 <div class="welcome-step active" data-step="welcome">
-                    <pre class="welcome-art">__  __ ___  __  __ ___ _____ ___ ____ _____ ___
-|  \/  / _ \|  \/  |_ _|_   _|_ _|  _ \_   _|  _ \
-| |\/| | | | | |\/| || |  | |  | || |_) || | | |_) |
-| |  | | |_| | |  | || |  | |  | ||  _ < | | |  _ <
-|_|  |_|\___/|_|  |_|___| |_| |___|_| \_\|_| |_| \_\</pre>
+                    <img class="welcome-icon" src="assets/app.ico" alt="MoMoitor">
                     <div class="welcome-title" data-i18n="wizard-welcome-title">Welcome to</div>
                 </div>
-                <div class="welcome-step" data-step="monitor" style="display:none">
+                <div class="welcome-step" data-step="monitor">
                     <div class="welcome-title" data-i18n="wizard-monitor-title">Multiple monitors detected</div>
                     <div class="welcome-desc" data-i18n="wizard-monitor-desc">Which monitor should MoMoitor display on?</div>
                     <div class="welcome-monitors" id="welcome-monitor-cards"></div>
                     <label class="welcome-check"><input type="checkbox" id="welcome-on-top" checked><span data-i18n="wizard-on-top">Keep window on top</span></label>
                     <label class="welcome-check"><input type="checkbox" id="welcome-hide-missing"><span data-i18n="wizard-hide-missing">Hide when monitor is disconnected</span></label>
                 </div>
-                <div class="welcome-step" data-step="theme" style="display:none">
+                <div class="welcome-step" data-step="theme">
                     <div class="welcome-title" data-i18n="wizard-theme-title">Pick a color scheme you like</div>
                     <div class="welcome-theme-group">
                         <div class="theme-picker-label" data-i18n="theme-group-dark">Dark</div>
@@ -60,12 +56,8 @@
                         <div class="theme-card-grid welcome-theme-grid" id="welcome-theme-light"></div>
                     </div>
                 </div>
-                <div class="welcome-step" data-step="done" style="display:none">
-                    <pre class="welcome-art">__  __ ___  __  __ ___ _____ ___ ____ _____ ___
-|  \/  / _ \|  \/  |_ _|_   _|_ _|  _ \_   _|  _ \
-| |\/| | | | | |\/| || |  | |  | || |_) || | | |_) |
-| |  | | |_| | |  | || |  | |  | ||  _ < | | |  _ <
-|_|  |_|\___/|_|  |_|___| |_| |___|_| \_\|_| |_| \_\</pre>
+                <div class="welcome-step" data-step="done">
+                    <img class="welcome-icon" src="assets/app.ico" alt="MoMoitor">
                     <div class="welcome-title" data-i18n="wizard-done-title">Setup complete</div>
                     <div class="welcome-desc" data-i18n="wizard-done-desc">Later you can press S to open settings and configure more, including layout adjustments.</div>
                 </div>
