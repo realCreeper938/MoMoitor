@@ -259,8 +259,8 @@
 }
 
 #music-section[data-span="2"] .h-music-cover {
-    width: calc(84px * var(--font-scale));
-    height: calc(84px * var(--font-scale));
+    width: calc(clamp(84px, 7.8vw, 168px) * var(--font-scale));
+    height: calc(clamp(84px, 7.8vw, 168px) * var(--font-scale));
     border-radius: var(--radius-md);
 }
 
@@ -341,41 +341,6 @@
     height: 3px;
 }
 
-/* 鼠标悬停大卡片时缩小封面与信息的字号，给底部进度条让出空�?*/
-#music-section[data-span="2"] .h-music-cover,
-#music-section[data-span="2"] .h-music-title,
-#music-section[data-span="2"] .h-music-artist,
-#music-section[data-span="2"] .h-lyric-current,
-#music-section[data-span="2"] .h-lyric-next,
-#music-section[data-span="2"] .music-content {
-    transition: width 0.2s ease, height 0.2s ease, font-size 0.2s ease, gap 0.2s ease, padding 0.2s ease;
-}
-
-#music-section[data-span="2"]:hover .h-music-cover {
-    width: calc(68px * var(--font-scale));
-    height: calc(68px * var(--font-scale));
-}
-
-#music-section[data-span="2"]:hover .h-music-title {
-    font-size: calc(19px * var(--font-scale));
-}
-
-#music-section[data-span="2"]:hover .h-music-artist {
-    font-size: calc(13px * var(--font-scale));
-}
-
-#music-section[data-span="2"]:hover .h-lyric-current {
-    font-size: calc(19px * var(--font-scale));
-}
-
-#music-section[data-span="2"]:hover .h-lyric-next {
-    font-size: calc(13px * var(--font-scale));
-}
-
-#music-section[data-span="2"]:hover .music-content {
-    gap: calc(10px * var(--density));
-    padding: calc(10px * var(--density)) calc(18px * var(--density)) calc(22px * var(--density));
-}
 
 /* 未在播放：将“未在播放”文案与播放控件水平、垂直居中到卡片正中�?*/
 #music-section[data-span="2"].not-playing .music-content {
