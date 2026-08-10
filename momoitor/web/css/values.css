@@ -2,7 +2,7 @@
 .split-row {
     flex: 1;
     display: flex;
-    gap: 8px;
+    gap: calc(8px * var(--density));
     min-height: 0;
 }
 
@@ -10,9 +10,9 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 2px;
+    gap: calc(2px * var(--density));
     flex-shrink: 0;
-    min-width: clamp(120px, 17vw, 220px);
+    min-width: calc(clamp(120px, 17vw, 220px) * var(--density));
 }
 
 #cpu-section .data-col,
@@ -24,8 +24,8 @@
 #cpu-section .box-content,
 #mem-section .box-content,
 #gpu-section .box-content {
-    padding-top: 12px;
-    padding-bottom: 12px;
+    padding-top: calc(12px * var(--density));
+    padding-bottom: calc(12px * var(--density));
 }
 
 /* CPU/GPU: usage on TOP, info-lines BELOW �?a left-aligned vertical stack
@@ -44,12 +44,12 @@
 #gpu-section[data-span="2"] > .box-content,
 #mem-section[data-span="2"] > .box-content,
 #fps-section[data-span="2"] > .box-content {
-    padding-bottom: 12px;
+    padding-bottom: calc(12px * var(--density));
 }
 
 /* 网络卡片左侧 20px，下方边距与之相同 */
 #net-section[data-span="2"] > .box-content {
-    padding-bottom: 20px;
+    padding-bottom: calc(20px * var(--density));
 }
 
 /* CPU/GPU name label in the top-left corner, aligned with the value /
@@ -57,8 +57,8 @@
    hovering so it doesn't sit over the sparkline hover info. */
 .corner-label {
     position: absolute;
-    top: 12px;
-    left: 20px;
+    top: calc(12px * var(--density));
+    left: calc(20px * var(--density));
     z-index: 2;
     font-family: var(--font-data);
     font-size: calc(12px * var(--font-scale));
@@ -137,7 +137,7 @@
 #net-section .arrow {
     color: var(--green);
     font-size: calc(18px * var(--font-scale));
-    margin-right: 4px;
+    margin-right: calc(4px * var(--density));
 }
 
 #net-section .box-header { color: var(--green); border-bottom-color: var(--green); }
@@ -151,9 +151,9 @@
 
 #net-section .value-row {
     display: grid;
-    grid-template-columns: 22px minmax(42px, max-content) max-content;
+    grid-template-columns: calc(22px * var(--density)) minmax(calc(42px * var(--density)), max-content) max-content;
     align-items: baseline;
-    column-gap: 5px;
+    column-gap: calc(5px * var(--density));
 }
 
 #net-section .unit {
@@ -167,7 +167,7 @@
 
 #net-section[data-span="2"] .arrow {
     font-size: calc(clamp(28px, 3.2vw, 46px) * var(--font-scale));
-    margin-right: 8px;
+    margin-right: calc(8px * var(--density));
 }
 
 #net-section[data-span="2"] .unit {
@@ -175,20 +175,20 @@
 }
 
 #net-section[data-span="2"] .value-row {
-    grid-template-columns: clamp(26px, 2.6vw, 40px) minmax(42px, max-content) max-content;
-    column-gap: 6px;
+    grid-template-columns: calc(clamp(26px, 2.6vw, 40px) * var(--density)) minmax(calc(42px * var(--density)), max-content) max-content;
+    column-gap: calc(6px * var(--density));
 }
 
 #net-section[data-span="2"] .net-host-row {
-    gap: 4px;
-    margin-top: 6px;
+    gap: calc(4px * var(--density));
+    margin-top: calc(6px * var(--density));
 }
 
 #net-section .net-host-row {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: calc(8px * var(--density));
 }
 
 #net-section .net-host-row #sysinfo-ip {

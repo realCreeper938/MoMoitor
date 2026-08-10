@@ -1,7 +1,9 @@
 // Layout Adjustment — grid geometry, layout mode, drag & drop, card list, text card editor.
 
 function applyLayout(layout) {
-    setLayout(Object.assign({}, DEFAULT_GRID, layout && typeof layout === 'object' ? layout : {}));
+    // Store only what the caller provided; rows/cols left undefined fall back to
+    // viewport-adaptive defaults via _gridRows()/_gridCols().
+    setLayout(layout && typeof layout === 'object' ? Object.assign({}, layout) : {});
     const rows = _gridRows();
     const cols = _gridCols();
     layoutCards().forEach(card => {
@@ -724,7 +726,8 @@ function _gridSlotFromEvent(e) {
     const grid = document.querySelector('.term-grid');
     if (!grid) return null;
     const rect = grid.getBoundingClientRect();
-    const pad = 8, gap = 8;
+    const density = (typeof currentDensity === 'function' ? currentDensity() : 1);
+    const pad = 8 * density, gap = 8 * density;
     const cols = _gridCols();
     const rows = _gridRows();
     const innerW = rect.width - pad * 2;

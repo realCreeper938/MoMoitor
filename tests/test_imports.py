@@ -42,5 +42,6 @@ def test_data_dir_resolved():
 def test_layout_grid_defaults():
     from momoitor.config import DEFAULT_SETTINGS
 
-    assert DEFAULT_SETTINGS["layout"]["rows"] == 5
-    assert DEFAULT_SETTINGS["layout"]["cols"] == 2
+    # 首次运行的布局不写死 rows/cols，交给前端按视口自适应默认网格
+    assert "rows" not in DEFAULT_SETTINGS["layout"]
+    assert "cols" not in DEFAULT_SETTINGS["layout"]

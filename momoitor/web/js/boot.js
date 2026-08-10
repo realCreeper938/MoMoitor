@@ -44,6 +44,10 @@ async function initDisplay(s, g, f, ck, ly) {
         // 非全屏时恢复原生标题栏（右上角最小化/最大化/关闭三键）
         pywebview.api.set_caption(true);
     }
+
+    // Compute density AFTER the window landed on the target monitor so the
+    // viewport dimensions reflect the real screen size.
+    if (typeof applyDensity === 'function') applyDensity();
 }
 
 function initClockBgHover() {

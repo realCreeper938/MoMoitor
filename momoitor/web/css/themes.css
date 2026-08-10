@@ -60,6 +60,11 @@
     /* Global UI font-size multiplier (settings panel, popups/modals). The "UI
        Font Size" setting writes this var; independent from --font-scale. */
     --ui-scale: 1;
+    /* Global density multiplier (1 = baseline 1920x1080-class layout). Auto-set
+       by JS from the viewport area; scales spacing/gaps/paddings/clock width so
+       large monitors grow the layout proportionally instead of leaving
+       whitespace. Multiplies both --font-scale and --ui-scale. */
+    --density: 1;
     /* Gruvbox Dark Palette (default) */
     --nord0: #282828;
     --nord1: #3c3836;

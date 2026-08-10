@@ -169,6 +169,14 @@ async function applyClockBackgroundSetting(image, opacity, blur, gradient, fit, 
 }
 
 window.addEventListener('resize', () => {
+    // Recompute the auto density for the new viewport, then re-apply layout
+    // geometry (grid columns/clock width/gaps depend on density).
+    if (typeof getDensityMode === 'function' && getDensityMode() === 'auto') {
+        applyDensity();
+        if (typeof getLayout === 'function' && typeof applyLayout === 'function') {
+            applyLayout(getLayout());
+        }
+    }
     if (!clockBgState.url) return;
     if (_clockBgResizeTimer) clearTimeout(_clockBgResizeTimer);
     _clockBgResizeTimer = setTimeout(applyClockBackgroundGradient, 200);
@@ -591,19 +599,73 @@ function openClockBgOffsetModal(url, offsetX, offsetY, onChange) {
     });
 }
 
+// Density auto-scale: grows spacing/layout/clock width proportionally to the
+// viewport area so large monitors don't end up with huge whitespace. Density 1
+// = a 1920x1080-class panel (the original design target); both 1080p landscape
+// and 1080x1920 portrait normalize to ~1.0.
+const DENSITY_REF_W = 1920;
+const DENSITY_REF_H = 1080;
+const DENSITY_MIN = 0.72;
+const DENSITY_MAX = 1.6;
+let _density = 1;
+let _densityMode = 'auto';
+
+/** Current computed density multiplier (1 = baseline design size). */
+function currentDensity() { return _density; }
+/** Density mode currently in effect: 'auto' or 'manual'. */
+function getDensityMode() { return _densityMode; }
+/** Clock column width in px, scaled by the current density. */
+function densityClockWidth() { return Math.round(150 * _density); }
+
+function computeDensity() {
+    const g = (window._appSettings && window._appSettings.general) || {};
+    _densityMode = g.density_mode === 'manual' ? 'manual' : 'auto';
+    let d;
+    if (_densityMode === 'manual') {
+        // Manual override: user picks a fixed percentage.
+        d = (parseFloat(g.density) || 100) / 100;
+    } else {
+        // Area-based: sqrt of viewport px area vs the 1080p baseline, so large
+        // screens scale up and very small ones scale down, in any orientation.
+        const w = window.innerWidth || DENSITY_REF_W;
+        const h = window.innerHeight || DENSITY_REF_H;
+        d = Math.sqrt((w * h) / (DENSITY_REF_W * DENSITY_REF_H));
+    }
+    return Math.min(Math.max(d, DENSITY_MIN), DENSITY_MAX);
+}
+
+/** Recompute density from the current viewport/settings and apply it to the
+ *  :root vars. Safe to call any number of times (e.g. on window resize). */
+function applyDensity() {
+    _density = computeDensity();
+    document.documentElement.style.setProperty('--density', String(_density));
+    // Re-apply the two font scales so they fold the density in.
+    const g = (window._appSettings && window._appSettings.general) || {};
+    applyFontSize(g.font_size || 100);
+    applyUiFontSize(g.font_size_ui || 100);
+    // Keep the layout geometry (clock width, grid, drag slots) density-correct.
+    if (typeof setClockWidth === 'function') setClockWidth(densityClockWidth());
+    if (typeof getLayout === 'function' && typeof applyLayout === 'function') {
+        applyLayout(getLayout());
+    }
+    setTimeout(recalcProcLimit, 0);
+}
+
 function applyFontSize(pct) {
     // Scale only font sizes (via --font-scale), leaving the layout's px
     // dimensions untouched. Previously this used body zoom, which resized
-    // the whole layout along with the text.
-    document.documentElement.style.setProperty('--font-scale', pct / 100);
+    // the whole layout along with the text. The density multiplier is folded
+    // in so fonts grow together with spacing on large monitors.
+    document.documentElement.style.setProperty('--font-scale', (pct / 100) * _density);
     // Fit the process list to the new font size (defer one frame so heights settle).
     setTimeout(recalcProcLimit, 0);
 }
 
 function applyUiFontSize(pct) {
     // UI font scale (settings panel, popups/modals) is independent from the
-    // card font scale, driven by its own --ui-scale variable.
-    document.documentElement.style.setProperty('--ui-scale', pct / 100);
+    // card font scale, driven by its own --ui-scale variable. Also folds in
+    // the density so UI stays proportional on large screens.
+    document.documentElement.style.setProperty('--ui-scale', (pct / 100) * _density);
 }
 
 let _featureToggles = {};

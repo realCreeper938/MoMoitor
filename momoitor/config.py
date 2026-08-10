@@ -177,6 +177,8 @@ DEFAULT_SETTINGS = {
         "refresh_interval": 1000,
         "font_size": 100,  # 卡片字体大小（含悬浮窗）
         "font_size_ui": 100,  # 界面字体大小（设置/弹窗等）
+        "density_mode": "auto",  # 密度模式：auto=按分辨率自动缩放（含间距/留白），manual=手动指定百分比
+        "density": 100,  # 手动密度百分比（density_mode=manual 时生效）
         "fullscreen": False,
         "colorscheme": "gruvbox",
         "colorscheme_dark": "gruvbox",  # 跟随系统主题时使用的暗色主题
@@ -248,10 +250,10 @@ DEFAULT_SETTINGS = {
     # 布局：各监控卡片在网格中的位置（col 列 / row 行 / span 行跨度 / hidden 是否隐藏）。
     # span=2 为大卡片（CPU/GPU 风格），span=1 为小卡片（内存风格）。CPU/GPU 固定大卡片。
     "layout": {
-        # 网格行列数：rows/cols 为卡片区域的网格尺寸（时钟始终占一列），
-        # 布局编辑器里可以随时调整；缺失时前端回退到 5 行 2 列。
-        "rows": 5,
-        "cols": 2,
+        # 网格行列数：首次运行时（设置里无 rows/cols）由前端按视口尺寸自适应
+        # 决定（宽屏更多列、高屏更多行）；用户一旦在布局编辑器保存即会写入。
+        # 刻意不在默认值里写死 5/2，否则首次运行拿到的 layout 永远带 rows/cols，
+        # 前端的视口自适应默认网格就永远不生效。
         "cpu-section": {"col": 2, "row": 1, "span": 2, "hidden": False},
         "gpu-section": {"col": 3, "row": 1, "span": 2, "hidden": False},
         "mem-section": {"col": 2, "row": 4, "span": 1, "hidden": False},
