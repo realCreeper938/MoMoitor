@@ -181,7 +181,6 @@ registerCard('disk-section', {
 registerCard('proc-section', {
     def: { col: 3, row: 5, span: 1, hidden: true },
     resizable: false,
-    feature: 'top_process',
     meta: { name: 'Process', color: 'var(--text-dim)', type: 'proc' },
 });
 registerCard('music-section', {

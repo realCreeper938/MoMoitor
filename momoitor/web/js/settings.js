@@ -492,7 +492,7 @@ function initSettings() {
 
         // Feature toggles
         const ft = s.feature_toggles || {};
-        ['top_control','calendar','weather','top_process','sysinfo','traffic','background'].forEach(key => {
+        ['top_control','calendar','weather','traffic','background'].forEach(key => {
             const cb = document.getElementById('ft-' + key);
             if (cb) cb.checked = ft[key] !== false;
         });
@@ -592,7 +592,7 @@ function initSettings() {
 
         // Feature toggles
         s.feature_toggles = {};
-        ['top_control','calendar','weather','top_process','sysinfo','traffic','background'].forEach(key => {
+        ['top_control','calendar','weather','traffic','background'].forEach(key => {
             const cb = document.getElementById('ft-' + key);
             s.feature_toggles[key] = cb ? cb.checked : true;
         });

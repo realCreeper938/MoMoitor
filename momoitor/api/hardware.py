@@ -43,21 +43,15 @@ class HardwareMixin:
         return get_system_theme_mode()
 
     def get_sysinfo(self):
-        if not self._feature_on("sysinfo"):
-            return {}
         return get_sysinfo()
 
     def get_idle_time(self):
         return win_svc.get_idle_time()
 
     def get_top_processes(self, sort_by="cpu", limit=1):
-        if not self._feature_on("top_process"):
-            return []
         return get_top_processes(sort_by, limit)
 
     def kill_process(self, pid):
-        if not self._feature_on("top_process"):
-            return {"error": "disabled"}
         return kill_process(int(pid))
 
     def get_listening_ports(self):

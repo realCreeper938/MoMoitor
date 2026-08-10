@@ -36,10 +36,10 @@
 | `get_hardware_info()` | — | 快照+详情拼成的多行文本 `{success, info}` |
 | `change_backend(source)` | — | 切换后端 |
 | `get_time()` | — | 服务器时间字符串 |
-| `get_sysinfo()` | `sysinfo` | 系统信息；关闭返回 `{}` |
+| `get_sysinfo()` | — | 系统信息 |
 | `get_idle_time()` | — | 系统空闲秒数 |
-| `get_top_processes(sort_by, limit)` | `top_process` | 进程排序（默认 cpu，limit=1）；关闭返回 `[]` |
-| `kill_process(pid)` | `top_process` | 结束进程；关闭返回 `{"error":"disabled"}` |
+| `get_top_processes(sort_by, limit)` | — | 进程排序（默认 cpu，limit=1） |
+| `kill_process(pid)` | — | 结束进程 |
 | `get_listening_ports()` | — | 监听端口列表 |
 | `clean_memory(deep)` | — | 回收工作集 |
 | `open_taskmgr()` | — | 启动任务管理器 |
@@ -88,4 +88,4 @@
 
 ## feature_toggles 键
 
-`_feature_on(name)` 未配置时默认开启。实际使用键：`sysinfo, top_process, weather, calendar, traffic, music, fps, clock_bg`。
+`_feature_on(name)` 未配置时默认开启。实际使用键：`weather, calendar, traffic, music, fps, clock_bg`。

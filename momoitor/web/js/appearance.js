@@ -605,9 +605,6 @@ function applyFeatureToggles(toggles) {
     if (calPopup) calPopup.style.display = ft.calendar !== false ? '' : 'none';
     const procSection = document.getElementById('proc-section');
     if (procSection) procSection.style.display = _sectionVisible('proc-section') ? '' : 'none';
-    document.querySelectorAll('.net-host-row').forEach(el => {
-        el.style.display = ft.sysinfo !== false ? '' : 'none';
-    });
     const clockBg = document.getElementById('clock-bg-image');
     if (clockBg) clockBg.style.display = ft.clock_bg !== false ? '' : 'none';
     const weatherEl = document.getElementById('h-weather-compact');
