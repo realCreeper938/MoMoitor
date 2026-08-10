@@ -130,7 +130,10 @@ def get_image_top_color(image: str) -> str:
         return ""
     try:
         from PIL import Image
-        img = Image.open(img_path).convert("RGB")
+        img = Image.open(img_path)
+        # draft 让解码器按需求尺寸降采样（仅部分格式支持，不支持时是空操作）
+        img.draft("RGB", (32, 32))
+        img = img.convert("RGB")
         # 缩放到较小的宽度并保持宽高比，再对顶部若干行采样
         target_width = 32
         ratio = target_width / img.width
