@@ -292,6 +292,12 @@ function initSettings() {
         try {
             info = await pywebview.api.get_app_info();
         } catch (e) { console.warn('get_app_info:', e); }
+        // 版本更新检测：存在新版本时在程序版本下方显示提示，点击版本号跳转更新链接
+        let updateInfo = null;
+        try {
+            updateInfo = await pywebview.api.check_for_updates();
+        } catch (e) { console.warn('check_for_updates:', e); }
+        const hasUpdate = !!(updateInfo && updateInfo.has_update);
         // Browser engine version from the user agent (WebView2 in desktop mode)
         const ua = navigator.userAgent || '';
         const chrome = ua.match(/Chrome\/([\d.]+)/);
@@ -302,20 +308,29 @@ function initSettings() {
         else browser = ua || '--';
         const backend = info.backend || {};
         const rows = [
-            { key: 'about-program', value: info.program || '--' },
+            { key: 'about-program', value: info.program || '--', update: hasUpdate },
+            { key: 'about-python', value: info.python || '--' },
             { key: 'about-author', value: info.author || '--' },
             { key: 'about-project', value: info.homepage || '--', link: info.homepage || '' },
-            { key: 'about-python', value: info.python || '--' },
-            { key: 'about-pywebview', value: info.pywebview || '--' },
-            { key: 'about-browser', value: browser },
             { key: 'about-backend', value: (backend.name || '--') + (backend.version ? ' ' + backend.version : '') },
+            { key: 'about-browser', value: browser },
+            { key: 'about-pywebview', value: info.pywebview || '--' },
         ];
         list.innerHTML = rows.map(r => {
             // 项目地址渲染为可点击链接（复用 i18n-link 委托打开系统浏览器）
-            const valueHtml = (r.link && /^https?:\/\//i.test(r.link))
-                ? '<a class="i18n-link about-row-link" href="' + escapeHtml(r.link) + '" target="_blank" rel="noopener">' + escapeHtml(r.link) + '</a>'
-                : '<span class="about-row-value mono">' + escapeHtml(r.value) + '</span>';
-            return '<div class="about-row">'
+            let valueHtml;
+            if (r.link && /^https?:\/\//i.test(r.link)) {
+                valueHtml = '<a class="i18n-link about-row-link" href="' + escapeHtml(r.link) + '" target="_blank" rel="noopener">' + escapeHtml(r.link) + '</a>';
+            } else if (r.update && updateInfo && updateInfo.release_url) {
+                const badge = (t('about-new-version') || '').replace('{v}', escapeHtml(updateInfo.latest_version || ''));
+                valueHtml = '<a class="i18n-link about-update-link" href="' + escapeHtml(updateInfo.release_url) + '" target="_blank" rel="noopener">'
+                    + '<span class="about-row-value mono">' + escapeHtml(r.value) + '</span>'
+                    + '<span class="about-update-badge">' + badge + '</span>'
+                    + '</a>';
+            } else {
+                valueHtml = '<span class="about-row-value mono">' + escapeHtml(r.value) + '</span>';
+            }
+            return '<div class="about-card">'
                 + '<span class="about-row-label" data-i18n="' + r.key + '">' + t(r.key) + '</span>'
                 + valueHtml
                 + '</div>';

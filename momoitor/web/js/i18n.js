@@ -227,6 +227,7 @@ const LANGS = {
         "about-pywebview": "pywebview",
         "about-browser": "Browser",
         "about-backend": "HW Monitor Backend",
+        "about-new-version": "New version {v} available",
         // Task Manager
         "taskmgr-btn": "Task Manager",
     },
@@ -449,6 +450,7 @@ const LANGS = {
         "about-pywebview": "PyWebView 版本",
         "about-browser": "浏览器版本",
         "about-backend": "硬件监控后端",
+        "about-new-version": "有新版本 {v}",
         // Task Manager
         "taskmgr-btn": "启动任务管理器",
     },
