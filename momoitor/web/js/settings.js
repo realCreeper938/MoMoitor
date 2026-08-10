@@ -691,13 +691,9 @@ let _cursorOverTopControl = false;
 const _brightnessSetTimer = {};
 const _volumeSetTimer = {};
 
-function updateTopControlGlow(level) {
-    const glow = document.getElementById('top-control-glow');
-    if (!glow) return;
-    const lv = parseInt(level, 10);
-    if (isNaN(lv)) return;
-    const opacity = 0.5 * (1 - lv / 100) + 0.03;
-    glow.style.setProperty('--top-control-glow-opacity', opacity.toFixed(3));
+function setTopSliderFill(slider) {
+    if (!slider) return;
+    slider.style.setProperty('--top-slider-fill', slider.value + '%');
 }
 
 function showTopControlPopup() {
@@ -705,8 +701,6 @@ function showTopControlPopup() {
     if (!popup) return;
     const wasVisible = _topControlVisible;
     popup.classList.add('visible');
-    const glow = document.getElementById('top-control-glow');
-    if (glow) glow.classList.add('visible');
     _topControlVisible = true;
     if (_topControlHideTimer) { clearTimeout(_topControlHideTimer); _topControlHideTimer = null; }
     // Only refresh values once when the popup first appears — not on every mousemove
@@ -720,8 +714,6 @@ function hideTopControlPopup() {
     _topControlHideTimer = setTimeout(() => {
         const popup = document.getElementById('top-control-popup');
         if (popup) popup.classList.remove('visible');
-        const glow = document.getElementById('top-control-glow');
-        if (glow) glow.classList.remove('visible');
         _topControlVisible = false;
     }, 400);
 }
@@ -733,7 +725,7 @@ async function readTopControlValue(slider, valEl, apiMethod) {
         if (r && r.success) {
             slider.value = r.level;
             if (valEl) valEl.textContent = r.level + '%';
-            if (slider.id === 'brightness-slider') updateTopControlGlow(r.level);
+            setTopSliderFill(slider);
         } else if (valEl) {
             valEl.textContent = '--';
         }
@@ -745,7 +737,7 @@ function bindTopSlider(slider, valEl, apiMethod, timerObj, delay) {
     slider.addEventListener('input', () => {
         slider.dataset.active = '1';
         if (valEl) valEl.textContent = slider.value + '%';
-        if (slider.id === 'brightness-slider') updateTopControlGlow(slider.value);
+        setTopSliderFill(slider);
         if (timerObj.t) clearTimeout(timerObj.t);
         timerObj.t = setTimeout(() => {
             pywebview.api[apiMethod]('set', parseInt(slider.value, 10));

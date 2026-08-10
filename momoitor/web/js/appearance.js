@@ -616,8 +616,6 @@ function applyFeatureToggles(toggles) {
     if (!_topControlEnabled) {
         // ensure it isn't left visible when the feature is turned off
         if (topControlPopup) topControlPopup.classList.remove('visible');
-        const topGlow = document.getElementById('top-control-glow');
-        if (topGlow) topGlow.classList.remove('visible');
         _topControlVisible = false;
         _cursorOverTopControl = false;
         if (_topControlHideTimer) { clearTimeout(_topControlHideTimer); _topControlHideTimer = null; }
