@@ -468,6 +468,24 @@
     pointer-events: auto;
 }
 
+/* 顶部渐变光晕 —— 位于弹窗上方，透明度随显示器亮度反向变化 */
+.top-control-glow {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 48px;
+    z-index: 249;
+    pointer-events: none;
+    background: linear-gradient(180deg, #ffffff 0%, #f6eed9 100%);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.top-control-glow.visible {
+    opacity: var(--top-control-glow-opacity, 0.35);
+}
+
 .top-control-item {
     display: flex;
     flex-direction: row;
