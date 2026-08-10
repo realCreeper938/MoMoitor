@@ -39,14 +39,19 @@ For deeper architectural detail, consult `docs/` (backends, config, services, js
 - Check `requirements.txt` before reaching for a new dependency. Adding a new dependency is a decision that needs user confirmation first.
 - For frontend, the project is intentionally framework-free vanilla JS. Do not introduce a frontend framework or build toolchain without explicit user approval.
 
-## 3. Reuse Code, Do Not Duplicate It
+## 3. Search GitHub Before Finding Solutions
+
+- Before looking for a solution, or whenever unsure what to do, first call the `gh_grep` MCP server to search GitHub for similar code (existing open-source implementations, patterns, and proven approaches).
+- Use what you find as reference or build on it instead of inventing from scratch.
+
+## 4. Reuse Code, Do Not Duplicate It
 
 - Before writing anything new, search for existing functions, modules, and APIs that already do the job (e.g. `momoitor.common.http_get`, `run_hidden`, service functions, frontend global helpers like `t()`, `escapeHtml`).
 - Cross-module reuse: `common.py` exists precisely to host shared utilities; add shared logic there rather than copying it into multiple modules.
 - If code is already available in a third-party library, use the library.
 - Refactor to eliminate duplication, but only when it does not expand scope beyond the task at hand.
 
-## 4. Review Your Own Work After Every Task
+## 5. Review Your Own Work After Every Task
 
 - After completing any task (implementation, fix, refactor), re-read your own changes and review them for:
   - Bugs and logic errors.
@@ -56,7 +61,7 @@ For deeper architectural detail, consult `docs/` (backends, config, services, js
   - Compliance with this file.
 - Do not claim a task is complete until this review is done.
 
-## 5. Do Not Act on Your Own — Get User Decisions First
+## 6. Do Not Act on Your Own — Get User Decisions First
 
 - Do not make assumptions about requirements, scope, or design choices. When in doubt, ask.
 - Before starting anything with material consequences, show the user your plan and get approval. Examples:
@@ -67,27 +72,20 @@ For deeper architectural detail, consult `docs/` (backends, config, services, js
   - Design decisions with multiple viable options.
 - When proposing options, present a recommendation along with alternatives, and let the user decide.
 
-## 6. No Emojis in Code
+## 7. No Emojis in Code
 
 - Do not use emojis anywhere in code, comments, or documentation, unless the user explicitly asks for them.
 
-## 7. Do Not Deviate from User Goals and Constraints
+## 8. Do Not Deviate from User Goals and Constraints
 
 - Follow the user's stated goal and constraints exactly. Do not silently expand, shrink, or reinterpret scope.
 - If a task would require deviating from an explicit constraint, stop and ask first.
 - Keep changes minimal and focused on what was requested.
 
-## 8. File Size Limit: 800 Lines Maximum
+## 9. File Size Limit: 800 Lines Maximum
 
 - No file may exceed 800 lines. If a change would push a file past 800 lines, split it into smaller, well-named modules instead.
 - Prefer splitting proactively when a file is near the limit and new code will be added.
-
-## 9. Comments: Concise, Meaningful, Never Pointless
-
-- Write comments only when they add information the code does not already convey.
-- Keep comments as short as possible while remaining complete and accurate. Do not omit important context (why, not what).
-- Do not repeat the code in prose. No placeholder fluff, no redundant "set x to y" comments, no commented-out dead code.
-- Preserve existing comment style (docstrings at module level and for non-trivial functions/methods, matching the current codebase).
 
 ## 10. Sub-agents: Use Judiciously
 
