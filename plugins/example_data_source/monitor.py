@@ -32,8 +32,11 @@ class Monitor(PluginMonitor):
     def get_gpu_list(self):
         return [{"name": "Demo GPU", "index": 0}]
 
-    def snapshot(self, gpu_index=None):
-        """返回一次硬件快照，结构与内置后端的 snapshot() 保持一致。"""
+    def snapshot(self, gpu_index=None, skip_net=False):
+        """返回一次硬件快照，结构与内置后端的 snapshot() 保持一致。
+
+        skip_net=True 时网络卡片不可见，可跳过网络数据获取。
+        """
         now = time.time()
         dt = max(now - self._last, 0.001)
         self._last = now
@@ -88,9 +91,13 @@ class Monitor(PluginMonitor):
                 "read": random.uniform(0, 100),
                 "write": random.uniform(0, 60),
             },
-            "net": {
-                "up": random.uniform(0, 4000),
-                "down": random.uniform(0, 8000),
-                "name": "demo",
-            },
+            "net": (
+                {"up": 0, "down": 0, "name": "N/A"}
+                if skip_net
+                else {
+                    "up": random.uniform(0, 4000),
+                    "down": random.uniform(0, 8000),
+                    "name": "demo",
+                }
+            ),
         }

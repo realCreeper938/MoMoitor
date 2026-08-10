@@ -201,6 +201,7 @@ PluginApi.on("my_event", (payload) => {
 | 方法 | 说明 |
 | --- | --- |
 | `registerCard(def)` | 注册一张卡片，自动接入布局系统 |
+| `isCardVisible(id)` | 查询某张卡片当前是否可见（未隐藏且功能开关开启），返回布尔值 |
 | `onReady(fn)` | 所有卡片启动完成后调用 |
 | `onPoll(fn)` | 每个轮询周期调用，`fn(data)` 参数是完整快照 |
 | `on(event, fn)` / `emit(event, data)` | 订阅 / 广播本地事件 |
@@ -238,6 +239,21 @@ PluginApi.registerCard({
 - 刷新由 `PluginApi` 内部的 `setInterval` 驱动，不需要关心布局系统；
 - 复用现有样式类即可保持外观一致：`.split-row`、`.data-col`、`.value-row`、`.metric-value big mono`、`.info-line`、`.hw-name` 等。
 
+### 查询卡片可见性
+
+`PluginApi.isCardVisible(id)` 返回该卡片当前是否可见：
+
+```js
+const visible = PluginApi.isCardVisible("my-card"); // true / false
+```
+
+判断逻辑与内置卡片一致：卡片已注册、未被隐藏（布局 `hidden` 标志）且其功能开关开启时才返回 `true`。典型用途：
+
+- **前端**：在 `getData` / `render` 里根据可见性决定是否取数或渲染，避免在隐藏状态下做无谓工作；
+- **后端插件**：通过 `ctx.call_js('PluginApi.isCardVisible("my-card")')` 查询。注意该调用在窗口创建后才有效，且执行 JS 有一定开销，适合低频使用，不要放在每帧热路径上。
+
+当进程 / 网络 / FPS 卡片不可见时，主程序已经会自动跳过对应的数据采集（`get_data` 的 `skip_net` 等），插件无需额外处理内置卡片。对插件自己的卡片，建议在 `getData` 开头自行检查可见性。
+
 ### registerSettingsGroup
 
 ```js
@@ -261,7 +277,7 @@ PluginApi.registerSettingsGroup({
 
 | 方法 | 默认实现 | 说明 |
 | --- | --- | --- |
-| `snapshot(gpu_index=None)` | 抽象方法 | **必须实现**：返回一次硬件快照字典 |
+| `snapshot(gpu_index=None, skip_net=False)` | 抽象方法 | **必须实现**：返回一次硬件快照字典；`skip_net=True` 时网络卡片不可见，可跳过网络数据获取 |
 | `get_backend_info()` | `{name: <类名>, version: None}` | 后端名称与版本 |
 | `get_hw_names()` | `{cpu:'CPU', gpu:'GPU', mem:'Memory', disk:'Disk Status'}` | 硬件显示名 |
 | `get_gpu_list()` | `[]` | GPU 列表 |
@@ -283,6 +299,8 @@ PluginApi.registerSettingsGroup({
 ```
 
 字段缺失时前端会显示为空或默认值；`snapshot()` 内可以做平滑 / 缓存，不必每次真实采集。数值中的 `NaN` / `Inf` 会被后端清理。
+
+`skip_net=True` 表示网络卡片当前不可见，此时不必采集网络数据，`net` 字段返回空值即可（主程序会兜底为 `{"up":0,"down":0,"name":"N/A"}`）。同理，快照钩子 `on_snapshot(data)` 也可以用 `ctx.call_js('PluginApi.isCardVisible("net-section")')` 等查询判断某类数据是否需要采集。
 
 ---
 

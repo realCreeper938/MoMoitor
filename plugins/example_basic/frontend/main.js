@@ -23,8 +23,11 @@
         color: 'var(--orange)',
         interval: 2000,
         getData: async () => {
+            // 卡片不可见时跳过取数，节省开销（isCardVisible 查询接口）
+            const visible = PluginApi.isCardVisible('example-card');
+            if (!visible) return { visible: false };
             const hello = await pywebview.api.example_hello('MoMoitor');
-            return { hello: hello, lang: getCurrentLang() };
+            return { hello: hello, lang: getCurrentLang(), visible: true };
         },
         render(el, data) {
             if (!data) return;
