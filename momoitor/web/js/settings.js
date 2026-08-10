@@ -239,7 +239,6 @@ function initSettings() {
         const isTyping = document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA';
 
         if (e.key === 's' || e.key === 'S') {
-            dismissFirstLaunchHint();   // 按 S 打开设置时关掉首次提示
             if (!isTyping) {
                 if (overlay.style.display === 'none') {
                     openSettings();

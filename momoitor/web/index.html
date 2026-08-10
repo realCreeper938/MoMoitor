@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="css/responsive.css?v=32">
     <link rel="stylesheet" href="css/text-card.css?v=32">
     <link rel="stylesheet" href="css/calendar.css?v=32">
+    <link rel="stylesheet" href="css/welcome.css?v=32">
 </head>
 <body>
     <!-- 启动加载动画：程序未完全加载完成时显示 -->
@@ -29,11 +30,51 @@
         </div>
     </div>
 
-    <!-- 首次启动提示：右上角，15 秒后或按 S 键消失 -->
-    <div id="first-launch-hint" class="first-launch-hint" style="display:none">
-        <span class="first-launch-hint-key">S</span>
-        <span class="first-launch-hint-text" data-i18n="first-launch-hint">Press S to open settings.</span>
-        <button type="button" class="first-launch-hint-close" id="first-launch-hint-close" aria-label="Close">×</button>
+    <!-- 首次使用欢迎向导 -->
+    <div id="welcome-overlay" class="modal-overlay" style="display:none">
+        <div class="modal-panel welcome-panel">
+            <div class="modal-body welcome-body">
+                <div class="welcome-step active" data-step="welcome">
+                    <pre class="welcome-art">__  __ ___  __  __ ___ _____ ___ ____ _____ ___
+|  \/  / _ \|  \/  |_ _|_   _|_ _|  _ \_   _|  _ \
+| |\/| | | | | |\/| || |  | |  | || |_) || | | |_) |
+| |  | | |_| | |  | || |  | |  | ||  _ < | | |  _ <
+|_|  |_|\___/|_|  |_|___| |_| |___|_| \_\|_| |_| \_\</pre>
+                    <div class="welcome-title" data-i18n="wizard-welcome-title">Welcome to</div>
+                </div>
+                <div class="welcome-step" data-step="monitor" style="display:none">
+                    <div class="welcome-title" data-i18n="wizard-monitor-title">Multiple monitors detected</div>
+                    <div class="welcome-desc" data-i18n="wizard-monitor-desc">Which monitor should MoMoitor display on?</div>
+                    <div class="welcome-monitors" id="welcome-monitor-cards"></div>
+                    <label class="welcome-check"><input type="checkbox" id="welcome-on-top" checked><span data-i18n="wizard-on-top">Keep window on top</span></label>
+                    <label class="welcome-check"><input type="checkbox" id="welcome-hide-missing"><span data-i18n="wizard-hide-missing">Hide when monitor is disconnected</span></label>
+                </div>
+                <div class="welcome-step" data-step="theme" style="display:none">
+                    <div class="welcome-title" data-i18n="wizard-theme-title">Pick a color scheme you like</div>
+                    <div class="welcome-theme-group">
+                        <div class="theme-picker-label" data-i18n="theme-group-dark">Dark</div>
+                        <div class="theme-card-grid welcome-theme-grid" id="welcome-theme-dark"></div>
+                    </div>
+                    <div class="welcome-theme-group">
+                        <div class="theme-picker-label" data-i18n="theme-group-light">Light</div>
+                        <div class="theme-card-grid welcome-theme-grid" id="welcome-theme-light"></div>
+                    </div>
+                </div>
+                <div class="welcome-step" data-step="done" style="display:none">
+                    <pre class="welcome-art">__  __ ___  __  __ ___ _____ ___ ____ _____ ___
+|  \/  / _ \|  \/  |_ _|_   _|_ _|  _ \_   _|  _ \
+| |\/| | | | | |\/| || |  | |  | || |_) || | | |_) |
+| |  | | |_| | |  | || |  | |  | ||  _ < | | |  _ <
+|_|  |_|\___/|_|  |_|___| |_| |___|_| \_\|_| |_| \_\</pre>
+                    <div class="welcome-title" data-i18n="wizard-done-title">Setup complete</div>
+                    <div class="welcome-desc" data-i18n="wizard-done-desc">Later you can press S to open settings and configure more, including layout adjustments.</div>
+                </div>
+            </div>
+            <div class="modal-footer welcome-footer">
+                <button type="button" class="text-btn" id="welcome-back" style="display:none" data-i18n="wizard-back">← Back</button>
+                <button type="button" class="primary-btn" id="welcome-next" data-i18n="wizard-next">Continue →</button>
+            </div>
+        </div>
     </div>
 
 <!-- Top-hover Control Popup (brightness & volume) -->
@@ -1156,6 +1197,7 @@
     <script src="js/appearance.js"></script>
     <script src="js/layout.js"></script>
     <script src="js/settings.js"></script>
+    <script src="js/welcome.js"></script>
     <script src="js/boot.js"></script>
     <script src="js/calendar.js"></script>
     <script src="js/traffic.js"></script>

@@ -1,41 +1,3 @@
-// 首次启动右上角提示
-let _hintTimer = null;
-let _hintDismissed = false;
-
-function persistHintDismissed() {
-    if (window.pywebview && window.pywebview.api && window.pywebview.api.dismiss_first_launch_hint) {
-        window.pywebview.api.dismiss_first_launch_hint().catch(() => {});
-    }
-}
-
-function dismissFirstLaunchHint() {
-    if (_hintDismissed) return;
-    _hintDismissed = true;
-    if (_hintTimer) { clearTimeout(_hintTimer); _hintTimer = null; }
-    const el = document.getElementById('first-launch-hint');
-    if (el) {
-        el.classList.remove('hint-show');
-        el.classList.add('hint-hide');
-        setTimeout(() => { el.style.display = 'none'; }, 250);
-    }
-    // 持久化标记，后续启动不再显示
-    persistHintDismissed();
-}
-
-function maybeShowFirstLaunchHint(s) {
-    if (!s || (s.general || {}).hint_dismissed) return;
-    const el = document.getElementById('first-launch-hint');
-    if (!el) return;
-    el.style.display = 'flex';
-    requestAnimationFrame(() => el.classList.add('hint-show'));
-    _hintTimer = setTimeout(dismissFirstLaunchHint, 15000);
-    el.addEventListener('click', dismissFirstLaunchHint);
-    const closeBtn = document.getElementById('first-launch-hint-close');
-    if (closeBtn) closeBtn.addEventListener('click', (e) => { e.stopPropagation(); dismissFirstLaunchHint(); });
-    // 只要显示出了提示，就立即持久化标记；无论用户按 S / 点关闭 / 自动超时，后续启动都不再显示
-    persistHintDismissed();
-}
-
 /* Boot */
 let __bootStarted = false;
 
@@ -81,7 +43,6 @@ async function initDisplay(s, g, f, ck, ly) {
         // 非全屏时恢复原生标题栏（右上角最小化/最大化/关闭三键）
         pywebview.api.set_caption(true);
     }
-    maybeShowFirstLaunchHint(s);
 }
 
 function initClockBgHover() {
@@ -375,6 +336,11 @@ window.addEventListener('pywebviewready', async () => {
     initTaskMgrBtn();
     initMonitorPolling(dsp);
 
-    // 全部初始化完成后，再显示界面并收起加载动画
-    showBody();
+    // 全部初始化完成后，再显示界面并收起加载动画；
+    // 首次启动则先展示欢迎向导，向导完成后再显示界面
+    if ((s.general || {}).hint_dismissed) {
+        showBody();
+    } else {
+        showWelcomeWizard(s);
+    }
 });
