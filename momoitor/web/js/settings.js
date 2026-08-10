@@ -687,6 +687,7 @@ const WHEEL_STEP = 5;
 let _topControlEnabled = true; // 顶部亮度/音量条是否开启（由功能开关控制）
 let _topControlVisible = false;
 let _topControlHideTimer = null;
+let _cursorOverTopControl = false;
 const _brightnessSetTimer = {};
 const _volumeSetTimer = {};
 
@@ -770,15 +771,24 @@ function setupTopControl() {
 
     // Trigger when mouse enters the top edge of the window — only on hidden→visible transition
     document.addEventListener('mousemove', (e) => {
-        if (e.clientY <= TOP_HOVER_THRESHOLD && !_topControlVisible && _topControlEnabled) {
+        if (!_topControlEnabled) return;
+        if (e.clientY <= TOP_HOVER_THRESHOLD && !_topControlVisible) {
             showTopControlPopup();
+        } else if (_topControlVisible && !_cursorOverTopControl && e.clientY > TOP_HOVER_THRESHOLD) {
+            hideTopControlPopup();
         }
     });
+    // Leave the window entirely — never leave the popup stuck open
+    document.addEventListener('mouseleave', hideTopControlPopup);
 
     popup.addEventListener('mouseenter', () => {
+        _cursorOverTopControl = true;
         if (_topControlHideTimer) { clearTimeout(_topControlHideTimer); _topControlHideTimer = null; }
     });
-    popup.addEventListener('mouseleave', hideTopControlPopup);
+    popup.addEventListener('mouseleave', () => {
+        _cursorOverTopControl = false;
+        hideTopControlPopup();
+    });
 
     // Brightness & volume sliders — debounced writes
     bindTopSlider(bSlider, bVal, 'adjust_brightness', _brightnessSetTimer, 150);
