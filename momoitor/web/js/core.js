@@ -66,7 +66,7 @@ let tempWarnTimer = null;
 
 /* Sparkline chart — 90s resource usage rendered as SVG polyline (CPU/GPU/MEM/FPS/Net) */
 const CHART_WINDOW_MS = 90000;
-const chartData = { cpu: [], gpu: [], mem: [], fps: [], net_up: [], net_down: [], disk_read: [], disk_write: [] };
+const chartData = { cpu: [], gpu: [], mem: [], fps: [], fps_low1: [], net_up: [], net_down: [], disk_read: [], disk_write: [] };
 
 function chartPush(key, val, maxVal) {
     const arr = chartData[key];
@@ -171,7 +171,7 @@ function applyLyricAutoTranslate(enabled) {
     if (_lyricActive) renderLyrics();
 }
 
-function updateChart(key, dynamicMax) {
+function updateChart(key, dynamicMax, fixedMax) {
     const svg = document.querySelector('.sparkline-bg[data-spark="' + key + '"]');
     if (!svg) return;
     const line = svg.querySelector('.spark-line');
@@ -184,7 +184,7 @@ function updateChart(key, dynamicMax) {
         return;
     }
     // SVG viewBox 0..100 on both axes: x=time, y=value (flipped, 0=top).
-    const max = chartMax(data, dynamicMax);
+    const max = fixedMax || chartMax(data, dynamicMax);
     const n = data.length;
     const parts = new Array(n);
     for (let i = 0; i < n; i++) {
@@ -234,8 +234,10 @@ function updateChart(key, dynamicMax) {
                         const dn = formatNet(downd && downd[idx] ? downd[idx].v : 0);
                         label = timeStr + ' ↑ ' + u.val + ' ' + u.unit + ' ↓ ' + dn.val + ' ' + dn.unit;
                     } else if (section.id === 'fps-section') {
-                        // fps: show the FPS value at this instant (dynamic max → no %)
-                        label = timeStr + ' ' + Math.round(val) + ' FPS';
+                        // fps: show FPS and 1% low at this instant (dynamic max → no %)
+                        const lowd = chartData['fps_low1'];
+                        const low = lowd && lowd[idx] ? Math.round(lowd[idx].v) : 0;
+                        label = timeStr + ' ' + Math.round(val) + ' FPS · 1% ' + low;
                     } else {
                         label = timeStr + ' ' + (dynamicMax ? '' : Math.round(val) + '%');
                     }
@@ -596,10 +598,15 @@ async function refreshFps() {
         setText('fps-avg', f ? fmt(f.avg_fps, 0) : '--');
         setText('fps-p99', f ? fmt(f.p99_fps, 0) : '--');
 
-        // FPS sparkline (dynamic max — FPS varies by game)
+        // FPS sparkline (dynamic max — FPS varies by game).
+        // 1% low shares the same Y scale so dips are comparable with the FPS line.
         const fpsVal = f && Number(f.fps) > 0 ? Number(f.fps) : 0;
+        const lowVal = f && Number(f.low1pct) > 0 ? Number(f.low1pct) : 0;
         chartPush('fps', fpsVal, 360);
-        updateChart('fps', true);
+        chartPush('fps_low1', lowVal, 360);
+        const fpsMax = chartMax(chartData['fps'], true);
+        updateChart('fps', true, fpsMax);
+        updateChart('fps_low1', true, fpsMax);
 
         // FPS header with process name
         const fpsHeader = document.querySelector('#fps-section .box-header');

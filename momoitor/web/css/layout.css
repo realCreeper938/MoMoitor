@@ -215,6 +215,11 @@ body.no-hover-anim .term-box:hover {
 #mem-section .spark-area { fill: var(--magenta); }
 #fps-section .spark-area { fill: var(--metric-fps); }
 
+/* FPS + 1% low overlay (1% low drawn as a faint second line) */
+#fps-section .sparkline-bg-over { z-index: 0; }
+#fps-section .sparkline-bg[data-spark="fps_low1"] .spark-line { stroke: var(--orange); opacity: 0.28; }
+#fps-section .sparkline-bg[data-spark="fps_low1"] .spark-area { fill: var(--orange); }
+
 /* Network sparklines �?two overlapping layers (download + upload), more faded */
 #net-section .sparkline-bg-over { z-index: 0; }
 #net-section .spark-line,
