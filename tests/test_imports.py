@@ -22,6 +22,7 @@ def test_package_imports():
         "momoitor.services.hardware",
         "momoitor.services.background",
         "momoitor.services.system",
+        "momoitor.services.proclist",
         "momoitor.services.window",
         "momoitor.services.calendar",
         "momoitor.services.weather",

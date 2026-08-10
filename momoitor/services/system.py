@@ -10,6 +10,7 @@ import psutil
 from loguru import logger
 
 from momoitor.common import run_hidden
+from momoitor.services import proclist
 
 # 逻辑核心数不变，启动时缓存一次
 _CPU_COUNT = psutil.cpu_count(logical=True) or 1
@@ -106,7 +107,13 @@ def get_top_processes(sort_by: str = "cpu", limit: int = 1) -> list:
     返回 [{"pid": int, "name": str, "cpu": float, "mem": float, "mem_mb": float}, ...]
     自动排除 System Idle Process / 系统空闲进程。
     CPU 百分比按逻辑核心数归一化，与 Windows 任务管理器一致（单核满载≈100%/N，全核满载可达100%）。
+
+    Windows 下优先走 proclist 的 NtQuerySystemInformation 快速路径（单次快照，
+    避免 psutil 每进程权限回退），失败时回退到 psutil.process_iter。
     """
+    fast = proclist.get_top_processes(sort_by=sort_by, limit=limit)
+    if fast is not None:
+        return fast
     all_procs = _get_all_processes()
     key = "mem" if sort_by == "mem" else "cpu"
     all_procs.sort(key=lambda x: x.get(key, 0.0), reverse=True)
