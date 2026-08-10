@@ -191,6 +191,8 @@ class BaseMonitor(abc.ABC):
         self._prev_net_time = time.monotonic()
         self._net_name = "LAN"
         self._net_name_ts = 0
+        self._disk_cache = []
+        self._disk_cache_ts = 0
 
     def close(self):
         pass
@@ -223,26 +225,6 @@ class BaseMonitor(abc.ABC):
             return r.stdout.strip() if r.returncode == 0 else ""
         except Exception:
             return ""
-
-    @abc.abstractmethod
-    def get_cpu(self) -> dict:
-        """返回 {clock, temp, power, load, voltage}。"""
-
-    @abc.abstractmethod
-    def get_gpu(self, index=None) -> dict:
-        """返回 {temp, power, load, vram_used_gb, vram_total_gb, vram_temp}。"""
-
-    @abc.abstractmethod
-    def get_memory(self) -> dict:
-        """返回 {used_gb, total_gb, percent, temp, volt, clock}。"""
-
-    @abc.abstractmethod
-    def get_disks(self) -> list:
-        """返回 [{letter, used_gb, total_gb, percent}, ...]。"""
-
-    @abc.abstractmethod
-    def get_disk_status(self) -> dict:
-        """返回 {activity, temp, read, write}。"""
 
     @abc.abstractmethod
     def get_hw_names(self) -> dict:
@@ -318,14 +300,24 @@ class BaseMonitor(abc.ABC):
                     return val
         return ""
 
-    def snapshot(self, gpu_index=None, skip_net=False) -> dict:
-        net = self.get_network() if not skip_net else {"up": 0, "down": 0, "name": "N/A"}
-        return {
-            "cpu": self.get_cpu(),
-            "gpu": self.get_gpu(gpu_index),
-            "mem": self.get_memory(),
-            "disks": self.get_disks(),
-            "disk_status": self.get_disk_status(),
-            "net": net,
-        }
+    def _get_disk_partitions(self):
+        """遍历物理分区（10 秒缓存），返回 [{letter, used_gb, total_gb, percent}, ...]。"""
+        now = time.monotonic()
+        if now - self._disk_cache_ts < 10:
+            return self._disk_cache
+        self._disk_cache_ts = now
+        result = []
+        for part in psutil.disk_partitions(all=False):
+            try:
+                usage = psutil.disk_usage(part.mountpoint)
+                result.append({
+                    "letter": part.mountpoint.rstrip("\\"),
+                    "used_gb": round(usage.used / 1073741824, 0),
+                    "total_gb": round(usage.total / 1073741824, 0),
+                    "percent": usage.percent,
+                })
+            except (PermissionError, OSError):
+                continue
+        self._disk_cache = result
+        return result
 

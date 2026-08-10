@@ -92,27 +92,22 @@ def _adjust_brightness_wmi(action: str, level: int = None) -> dict:
             return {"success": False, "error": f"WMI query failed: {r.stderr.strip() or 'empty'}"}
         cur = int(r.stdout.strip())
 
-        if action == "get":
-            return {"success": True, "level": cur}
+        def do_set(target):
+            ps_set = (
+                f"(Get-WmiObject -Namespace root/wmi -Class WmiMonitorBrightnessMethods "
+                f"-ErrorAction Stop).WmiSetBrightness(1,{target})"
+            )
+            r = run_hidden(
+                ["powershell", "-NoProfile", "-Command", ps_set],
+                timeout=5, text=True,
+            )
+            if r.returncode != 0:
+                logger.warning("WMI brightness set failed: rc={} stderr={}", r.returncode, r.stderr.strip())
+                return {"success": False, "error": f"WMI set failed: {r.stderr.strip()}"}
+            logger.info("Brightness (WMI): {}% -> {}%", cur, target)
+            return {"success": True, "level": target}
 
-        target = _compute_brightness_target(action, cur, level)
-        if target is None:
-            return {"success": False, "error": f"Unknown action: {action}"}
-
-        ps_set = (
-            f"(Get-WmiObject -Namespace root/wmi -Class WmiMonitorBrightnessMethods "
-            f"-ErrorAction Stop).WmiSetBrightness(1,{target})"
-        )
-        r = run_hidden(
-            ["powershell", "-NoProfile", "-Command", ps_set],
-            timeout=5, text=True,
-        )
-        if r.returncode != 0:
-            logger.warning("WMI brightness set failed: rc={} stderr={}", r.returncode, r.stderr.strip())
-            return {"success": False, "error": f"WMI set failed: {r.stderr.strip()}"}
-
-        logger.info("Brightness (WMI): {}% -> {}%", cur, target)
-        return {"success": True, "level": target}
+        return _brightness_apply(action, cur, level, do_set)
     except Exception as e:
         logger.error("WMI brightness exception: {}", e)
         return {"success": False, "error": str(e)}
@@ -185,35 +180,42 @@ def _adjust_brightness_ioctl(action: str, level: int = None) -> dict:
 
         cur = db.ucDCBrightness if db.ucDCBrightness else db.ucACBrightness
 
-        if action == "get":
-            logger.debug("IOCTL brightness get: {}%", cur)
-            return {"success": True, "level": int(cur)}
+        def do_set(target):
+            db_set = _DISPLAY_BRIGHTNESS()
+            db_set.ucDisplayPolicy = 0
+            db_set.ucACBrightness = target
+            db_set.ucDCBrightness = target
 
-        target = _compute_brightness_target(action, int(cur), level)
-        if target is None:
-            return {"success": False, "error": f"Unknown action: {action}"}
+            ok = ctypes.windll.kernel32.DeviceIoControl(
+                handle,
+                _IOCTL_VIDEO_SET_DISPLAY_BRIGHTNESS,
+                ctypes.byref(db_set), ctypes.sizeof(db_set),
+                None, 0,
+                ctypes.byref(bytes_returned), None,
+            )
+            if not ok:
+                err = ctypes.windll.kernel32.GetLastError()
+                logger.warning("IOCTL set brightness failed (err={})", err)
+                return None  # Fall through
+            logger.info("Brightness (IOCTL): {}% -> {}%", cur, target)
+            return {"success": True, "level": target}
 
-        db_set = _DISPLAY_BRIGHTNESS()
-        db_set.ucDisplayPolicy = 0
-        db_set.ucACBrightness = target
-        db_set.ucDCBrightness = target
-
-        ok = ctypes.windll.kernel32.DeviceIoControl(
-            handle,
-            _IOCTL_VIDEO_SET_DISPLAY_BRIGHTNESS,
-            ctypes.byref(db_set), ctypes.sizeof(db_set),
-            None, 0,
-            ctypes.byref(bytes_returned), None,
-        )
-        if not ok:
-            err = ctypes.windll.kernel32.GetLastError()
-            logger.warning("IOCTL set brightness failed (err={})", err)
-            return None  # Fall through
-
-        logger.info("Brightness (IOCTL): {}% -> {}%", cur, target)
-        return {"success": True, "level": target}
+        return _brightness_apply(action, int(cur), level, do_set)
     finally:
         ctypes.windll.kernel32.CloseHandle(handle)
+
+
+def _brightness_apply(action, cur, level, do_set):
+    """共享骨架：'get' 返回当前亮度，否则计算目标并经 do_set(target) 写入。
+
+    do_set 返回 dict（成功/失败结果）或 None（策略不适用，交给上层回退）。
+    """
+    if action == "get":
+        return {"success": True, "level": int(cur)}
+    target = _compute_brightness_target(action, cur, level)
+    if target is None:
+        return {"success": False, "error": f"Unknown action: {action}"}
+    return do_set(target)
 
 
 def _compute_brightness_target(action: str, cur: int, level: int = None) -> int:
@@ -270,18 +272,17 @@ def adjust_brightness(action: str, level: int = None, monitor_index: int = 0) ->
                         span = max(1, mx.value - mn.value)
                         cur_pct = round((cur.value - mn.value) / span * 100)
 
-                        if action == "get":
-                            return {"success": True, "level": cur_pct}
+                        def do_set(target):
+                            target_raw = int(mn.value + span * target / 100)
+                            if dxva2.SetMonitorBrightness(hPhysical, target_raw):
+                                logger.info("Brightness (DDC/CI): {}% -> {}% (monitor {})", cur_pct, target, monitor_index)
+                                return {"success": True, "level": target}
+                            logger.warning("DDC/CI SetMonitorBrightness returned False")
+                            return None
 
-                        target_pct = _compute_brightness_target(action, cur_pct, level)
-                        if target_pct is None:
-                            return {"success": False, "error": f"Unknown action: {action}"}
-
-                        target_raw = int(mn.value + span * target_pct / 100)
-                        if dxva2.SetMonitorBrightness(hPhysical, target_raw):
-                            logger.info("Brightness (DDC/CI): {}% -> {}% (monitor {})", cur_pct, target_pct, monitor_index)
-                            return {"success": True, "level": target_pct}
-                        logger.warning("DDC/CI SetMonitorBrightness returned False")
+                        result = _brightness_apply(action, cur_pct, level, do_set)
+                        if result is not None:
+                            return result
                     else:
                         logger.debug("DDC/CI GetMonitorBrightness returned False")
                 finally:

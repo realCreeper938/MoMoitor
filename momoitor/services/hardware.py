@@ -9,6 +9,16 @@ from momoitor.backends import LHMMonitor, HWiNFOMonitor
 from momoitor.config import save_settings
 
 
+_EMPTY_SNAPSHOT = {
+    "cpu": {"clock": None, "temp": None, "power": None, "load": None, "voltage": None},
+    "gpu": {"temp": None, "power": None, "vram_used_gb": None, "vram_total_gb": None, "load": None, "vram_temp": None},
+    "mem": {"used_gb": 0, "total_gb": 0, "percent": 0, "temp": None, "volt": None, "clock": None},
+    "disks": [],
+    "disk_status": {"activity": None, "temp": None, "read": None, "write": None},
+    "net": {"up": 0, "down": 0, "name": "N/A"},
+}
+
+
 class HardwareService:
     """围绕硬件监视后端的线程安全包装类。"""
 
@@ -28,15 +38,7 @@ class HardwareService:
             return data
         except Exception as e:
             logger.error("snapshot() failed: {}", e)
-            return {
-                "cpu": {"clock": None, "temp": None, "power": None, "load": None, "voltage": None},
-                "gpu": {"temp": None, "power": None, "vram_used_gb": None, "vram_total_gb": None, "load": None, "vram_temp": None},
-                "mem": {"used_gb": 0, "total_gb": 0, "percent": 0, "temp": None, "volt": None, "clock": None},
-                "disks": [],
-                "disk_status": {"activity": None, "temp": None, "read": None, "write": None},
-                "net": {"up": 0, "down": 0, "name": "N/A"},
-                "error": str(e),
-            }
+            return {**_EMPTY_SNAPSHOT, "error": str(e)}
 
     def get_hw_names(self) -> dict:
         try:
@@ -62,34 +64,6 @@ class HardwareService:
         except Exception as e:
             logger.error("get_hw_detail failed: {}", e)
             return {"cpu": {}, "gpu": {}, "mem": {}}
-
-    def snapshot_with_detail(self) -> dict:
-        """在同一个锁下返回快照与硬件详情。"""
-        try:
-            gpu_index = self._settings.get("display", {}).get("gpu_index", 0)
-            with self._lock:
-                data = self._sanitize(self._monitor.snapshot(gpu_index=gpu_index))
-                detail = self._sanitize(self._monitor.get_hw_detail(gpu_index=gpu_index))
-            data["error"] = ""
-            return {"snapshot": data, "detail": detail}
-        except Exception as e:
-            logger.error("snapshot_with_detail failed: {}", e)
-            return {
-                "snapshot": {
-                    "cpu": {"clock": None, "temp": None, "power": None, "load": None, "voltage": None},
-                    "gpu": {"temp": None, "power": None, "vram_used_gb": None, "vram_total_gb": None, "load": None, "vram_temp": None},
-                    "mem": {"used_gb": 0, "total_gb": 0, "percent": 0, "temp": None, "volt": None, "clock": None},
-                    "disks": [],
-                    "disk_status": {"activity": None, "temp": None, "read": None, "write": None},
-                    "net": {"up": 0, "down": 0, "name": "N/A"},
-                    "error": str(e),
-                },
-                "detail": {"cpu": {}, "gpu": {}, "mem": {}},
-            }
-
-    def get_memory(self) -> dict:
-        with self._lock:
-            return self._monitor.get_memory()
 
     def get_backend_info(self) -> dict:
         """后端名称 + 版本（关于页显示）。"""

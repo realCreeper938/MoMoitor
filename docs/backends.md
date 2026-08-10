@@ -8,12 +8,10 @@
 |---|---|
 | `_run_wmic(args, timeout=3)` | 隐藏窗口执行 wmic |
 | `_run_powershell(script, timeout=5)` | 隐藏窗口执行 PowerShell |
-| `get_cpu()` / `get_gpu(index=None)` / `get_memory()` | 单类快照 |
-| `get_disks()` / `get_disk_status()` | 磁盘/磁盘状态 |
+| `_get_disk_partitions()` | psutil 磁盘分区（10s 缓存） |
 | `get_hw_names()` -> dict | 硬件型号 |
 | `get_hw_detail(gpu_index=None)` -> dict | 硬件详情 |
 | `get_network()` / `_get_network_name()` / `_resolve_net_hw_name(iface)` | 网络快照/活跃网卡/网卡型号 |
-| `snapshot(gpu_index=None)` -> dict | 组合快照 `{cpu,gpu,mem,disks,disk_status,net}` |
 | `get_backend_info()` -> dict | 后端标识（名称/版本） |
 | `close()` | 释放资源 |
 

@@ -12,19 +12,6 @@ DLL_PATH = os.path.join(LIB_DIR, "LibreHardwareMonitorLib.dll")
 # 静态硬件元数据（名称、WMIC 派生的规格）很少变化。
 _META_TTL = 300
 
-# 小写关键字元组缓存 —— 关键字是调用方传入的静态字符串字面量，
-# 因此相同元组对象可跨调用复用，避免在每次 _find/_agg 调用时重建。
-_KW_LOWER_CACHE = {}
-
-
-def _lower_keywords(keywords):
-    key = tuple(keywords) if not isinstance(keywords, str) else (keywords,)
-    cached = _KW_LOWER_CACHE.get(key)
-    if cached is None:
-        cached = tuple(k.lower() for k in keywords)
-        _KW_LOWER_CACHE[key] = cached
-    return cached
-
 
 class LHMMonitor(BaseMonitor):
     def __init__(self):
@@ -33,8 +20,6 @@ class LHMMonitor(BaseMonitor):
         # 硬件，耗时可达数百毫秒。窗口应先弹出，硬件初始化推迟到首次真正读取数据。
         self._computer = None
         self._initialized = False
-        self._disk_cache = []
-        self._disk_cache_ts = 0
         # 元数据缓存
         self._hw_names_cache = None
         self._hw_names_ts = 0
@@ -98,22 +83,20 @@ class LHMMonitor(BaseMonitor):
         return sensors
 
     def _find(self, sensors, stype, keywords):
-        keywords = _lower_keywords(keywords)
+        keywords = tuple(k.lower() for k in keywords)
         for s in sensors:
             if s["type"] == stype:
                 if all(k in s["name_lower"] for k in keywords):
                     return s["value"]
         return None
 
-    def _agg(self, sensors, stype, keywords, fn="max"):
-        keywords = _lower_keywords(keywords)
+    def _agg(self, sensors, stype, keywords):
+        keywords = tuple(k.lower() for k in keywords)
         vals = [float(s["value"]) for s in sensors
                 if s["type"] == stype
                 and all(k in s["name_lower"] for k in keywords)
                 and s["value"] is not None]
-        if not vals:
-            return None
-        return max(vals) if fn == "max" else sum(vals) / len(vals)
+        return max(vals) if vals else None
 
     _DISCRETE_KEYWORDS = {"rx ", "r9 ", "r7 ", "r5 ", "geforce", "rtx", "gtx", "quadro", "radeon pro"}
     _IGPU_KEYWORDS = {"vega", "graphics", "uhd", "iris"}
@@ -133,26 +116,6 @@ class LHMMonitor(BaseMonitor):
             return 1
         return 1
 
-    def _get_disk_partitions(self):
-        now = time.monotonic()
-        if now - self._disk_cache_ts < 10:
-            return self._disk_cache
-        self._disk_cache_ts = now
-        result = []
-        for part in psutil.disk_partitions(all=False):
-            try:
-                usage = psutil.disk_usage(part.mountpoint)
-                result.append({
-                    "letter": part.mountpoint.rstrip("\\"),
-                    "used_gb": round(usage.used / 1073741824, 0),
-                    "total_gb": round(usage.total / 1073741824, 0),
-                    "percent": usage.percent,
-                })
-            except (PermissionError, OSError):
-                continue
-        self._disk_cache = result
-        return result
-
     def snapshot(self, gpu_index=None, skip_net=False) -> dict:
         self._ensure_init()
         cpu_data = {"clock": None, "temp": None, "power": None, "load": None, "voltage": None}
@@ -171,10 +134,10 @@ class LHMMonitor(BaseMonitor):
             if ht.startswith("Cpu"):
                 cpu_data["temp"] = self._find(sensors, "Temperature", ["package"])
                 if cpu_data["temp"] is None:
-                    cpu_data["temp"] = self._agg(sensors, "Temperature", ["core"], "max")
+                    cpu_data["temp"] = self._agg(sensors, "Temperature", ["core"])
                 cpu_data["clock"] = self._find(sensors, "Clock", ["package"])
                 if cpu_data["clock"] is None:
-                    cpu_data["clock"] = self._agg(sensors, "Clock", ["core"], "max")
+                    cpu_data["clock"] = self._agg(sensors, "Clock", ["core"])
                 cpu_data["power"] = self._find(sensors, "Power", ["package"])
                 cpu_data["load"] = self._find(sensors, "Load", ["total"])
                 cpu_data["voltage"] = self._find(sensors, "Voltage", ["package"]) or self._find(sensors, "Voltage", ["core"])
@@ -248,56 +211,6 @@ class LHMMonitor(BaseMonitor):
         }
 
     # 独立 getter：单传感器查询，为兼容旧 API 保留（snapshot 已是单遍采集）
-    def get_cpu(self):
-        self._ensure_init()
-        for hw in self._computer.Hardware:
-            if str(hw.HardwareType).startswith("Cpu"):
-                hw.Update()
-                sensors = self._read_sensors(hw)
-                temp = self._find(sensors, "Temperature", ["package"])
-                if temp is None:
-                    temp = self._agg(sensors, "Temperature", ["core"], "max")
-                clock = self._find(sensors, "Clock", ["package"])
-                if clock is None:
-                    clock = self._agg(sensors, "Clock", ["core"], "max")
-                power = self._find(sensors, "Power", ["package"])
-                load = self._find(sensors, "Load", ["total"])
-                voltage = self._find(sensors, "Voltage", ["package"]) or self._find(sensors, "Voltage", ["core"])
-                return {"clock": clock, "temp": temp, "power": power, "load": load, "voltage": voltage}
-        return {"clock": None, "temp": None, "power": None, "load": None, "voltage": None}
-
-    def get_gpu(self, index=None):
-        self._ensure_init()
-        gpu_hw = []
-        for hw in self._computer.Hardware:
-            if "Gpu" in str(hw.HardwareType):
-                gpu_hw.append(hw)
-        if not gpu_hw:
-            logger.warning("No GPU detected")
-            return {"temp": None, "power": None, "vram_used_gb": None, "vram_total_gb": None, "load": None, "vram_temp": None}
-        if index is not None and 0 <= index < len(gpu_hw):
-            chosen = gpu_hw[index]
-        else:
-            chosen = min(gpu_hw, key=self._gpu_priority)
-        chosen.Update()
-        sensors = self._read_sensors(chosen)
-        vram_total = self._find(sensors, "SmallData", ["dedicated", "total"])
-        vram_used = self._find(sensors, "SmallData", ["dedicated", "used"])
-        if vram_total is None:
-            vram_total = self._find(sensors, "SmallData", ["memory total"])
-        if vram_used is None:
-            vram_used = self._find(sensors, "SmallData", ["memory used"])
-        temp = self._find(sensors, "Temperature", ["gpu core"]) or self._find(sensors, "Temperature", ["gpu"])
-        power = self._find(sensors, "Power", ["gpu"])
-        load = self._find(sensors, "Load", ["gpu core"]) or self._find(sensors, "Load", ["gpu"])
-        vram_temp = self._find(sensors, "Temperature", ["memory"]) or self._find(sensors, "Temperature", ["vram"])
-        return {
-            "temp": temp, "power": power, "load": load,
-            "vram_used_gb": round(vram_used / 1024, 1) if vram_used else None,
-            "vram_total_gb": round(vram_total / 1024, 1) if vram_total else None,
-            "vram_temp": vram_temp,
-        }
-
     def get_gpu_list(self):
         """返回可用 GPU 名称列表。"""
         self._ensure_init()
@@ -306,63 +219,6 @@ class LHMMonitor(BaseMonitor):
             if "Gpu" in str(hw.HardwareType):
                 gpus.append(str(hw.Name))
         return gpus
-
-    def get_memory(self):
-        vm = psutil.virtual_memory()
-        result = {
-            "used_gb": round(vm.used / 1073741824, 1),
-            "total_gb": round(vm.total / 1073741824, 1),
-            "percent": vm.percent,
-            "temp": None,
-            "volt": None,
-            "clock": None,
-        }
-        self._ensure_init()
-        for hw in self._computer.Hardware:
-            ht = str(hw.HardwareType)
-            name = str(hw.Name)
-            if ht == "Memory" and name not in ("Total Memory", "Virtual Memory"):
-                hw.Update()
-                sensors = self._read_sensors(hw)
-                t = self._find(sensors, "Temperature", [])
-                if t is not None:
-                    result["temp"] = float(t)
-                c = self._find(sensors, "Clock", ["memory"]) or self._find(sensors, "Clock", [])
-                if c is not None:
-                    result["clock"] = float(c)
-                v = self._find(sensors, "Voltage", ["vdd"]) or self._find(sensors, "Voltage", ["dram"]) or self._find(sensors, "Voltage", [])
-                if v is not None:
-                    result["volt"] = float(v)
-                return result
-        return result
-
-    def get_disks(self):
-        return self._get_disk_partitions()
-
-    def get_disk_status(self):
-        self._ensure_init()
-        status = {"activity": None, "temp": None, "read": None, "write": None}
-        for hw in self._computer.Hardware:
-            if str(hw.HardwareType) == "Storage":
-                hw.Update()
-                for s in hw.Sensors:
-                    v = s.Value
-                    if v is None:
-                        continue
-                    st = str(s.SensorType)
-                    sn = str(s.Name).lower()
-                    if st == "Load" and "activity" in sn:
-                        status["activity"] = float(v)
-                    elif st == "Temperature":
-                        if status["temp"] is None:
-                            status["temp"] = float(v)
-                    elif st == "Throughput":
-                        if "read" in sn:
-                            status["read"] = float(v)
-                        elif "write" in sn:
-                            status["write"] = float(v)
-                break
-        return status
 
     def get_hw_names(self):
         self._ensure_init()

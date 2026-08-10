@@ -5,11 +5,11 @@
 - uapis.cn 农历时间接口
 
 客户端方法:
-- get_now(lat, lon, key_id, project_id, private_key): 获取当前天气
-- get_city_name(lat, lon, key_id, project_id, private_key): 获取城市名称
-- get_minutely(lat, lon, key_id, project_id, private_key): 获取分钟级降水预报
-- get_airquality(lat, lon, key_id, project_id, private_key): 获取空气质量
-- get_alerts(lat, lon, key_id, project_id, private_key): 获取天气预警
+- get_now(creds): 获取当前天气
+- get_city_name(creds): 获取城市名称
+- get_minutely(creds): 获取分钟级降水预报
+- get_airquality(creds): 获取空气质量
+- get_alerts(creds): 获取天气预警
 
 WeatherService 类: 线程安全的天气数据提供者
 - invalidate(): 清除所有缓存
@@ -21,6 +21,7 @@ WeatherService 类: 线程安全的天气数据提供者
 """
 
 import time
+from dataclasses import dataclass
 
 import jwt
 import requests
@@ -30,6 +31,19 @@ from momoitor.config import has_weather_creds
 from momoitor.services.cache import TTLCache
 
 API_HOST = "https://devapi.qweather.com"
+
+
+@dataclass
+class _Creds:
+    """和风天气 API 凭证与位置参数。"""
+    lat: str
+    lon: str
+    key_id: str
+    project_id: str
+    private_key: str
+
+    def location(self):
+        return f"{self.lon},{self.lat}"
 
 
 def _build_jwt(key_id: str, project_id: str, private_key: str) -> str:
@@ -43,12 +57,15 @@ def _headers(key_id: str, project_id: str, private_key: str) -> dict:
     return {"Authorization": f"Bearer {_build_jwt(key_id, project_id, private_key)}"}
 
 
-def get_now(lat: str, lon: str, key_id: str, project_id: str, private_key: str) -> dict:
-    location = f"{lon},{lat}"
+def _auth_headers(c: _Creds) -> dict:
+    return _headers(c.key_id, c.project_id, c.private_key)
+
+
+def get_now(c: _Creds) -> dict:
     resp = requests.get(
         f"{API_HOST}/v7/weather/now",
-        params={"location": location},
-        headers=_headers(key_id, project_id, private_key),
+        params={"location": c.location()},
+        headers=_auth_headers(c),
         timeout=5,
     )
     resp.raise_for_status()
@@ -56,7 +73,7 @@ def get_now(lat: str, lon: str, key_id: str, project_id: str, private_key: str) 
     if data.get("code") != "200":
         return {"error": data.get("code")}
     now = data["now"]
-    city = get_city_name(lat, lon, key_id, project_id, private_key)
+    city = get_city_name(c)
     return {
         "text": now["text"],
         "temp": now["temp"],
@@ -72,8 +89,8 @@ def get_now(lat: str, lon: str, key_id: str, project_id: str, private_key: str) 
 
 _city_cache = {}  # 键为 "lat,lon"，值为 {"name": str, "ts": float}
 
-def get_city_name(lat: str, lon: str, key_id: str, project_id: str, private_key: str) -> str:
-    cache_key = f"{lat},{lon}"
+def get_city_name(c: _Creds) -> str:
+    cache_key = f"{c.lat},{c.lon}"
     now = time.time()
     cached = _city_cache.get(cache_key)
     if cached and now - cached.get("ts", 0) < 86400:
@@ -81,8 +98,8 @@ def get_city_name(lat: str, lon: str, key_id: str, project_id: str, private_key:
     try:
         resp = requests.get(
             "https://geoapi.qweather.com/v2/city/lookup",
-            params={"location": f"{lon},{lat}", "number": 1},
-            headers=_headers(key_id, project_id, private_key),
+            params={"location": c.location(), "number": 1},
+            headers=_auth_headers(c),
             timeout=5,
             )
         resp.raise_for_status()
@@ -96,12 +113,11 @@ def get_city_name(lat: str, lon: str, key_id: str, project_id: str, private_key:
     return cached.get("name", "") if cached else ""
 
 
-def get_minutely(lat: str, lon: str, key_id: str, project_id: str, private_key: str) -> dict:
-    location = f"{lon},{lat}"
+def get_minutely(c: _Creds) -> dict:
     resp = requests.get(
         f"{API_HOST}/v7/minutely/5m",
-        params={"location": location, "lang": "zh"},
-        headers=_headers(key_id, project_id, private_key),
+        params={"location": c.location(), "lang": "zh"},
+        headers=_auth_headers(c),
         timeout=5,
     )
     resp.raise_for_status()
@@ -117,11 +133,11 @@ def get_minutely(lat: str, lon: str, key_id: str, project_id: str, private_key: 
     }
 
 
-def get_airquality(lat: str, lon: str, key_id: str, project_id: str, private_key: str) -> dict:
+def get_airquality(c: _Creds) -> dict:
     resp = requests.get(
-        f"{API_HOST}/airquality/v1/current/{lat}/{lon}",
+        f"{API_HOST}/airquality/v1/current/{c.lat}/{c.lon}",
         params={"lang": "zh"},
-        headers=_headers(key_id, project_id, private_key),
+        headers=_auth_headers(c),
         timeout=5,
     )
     resp.raise_for_status()
@@ -157,11 +173,11 @@ def get_airquality(lat: str, lon: str, key_id: str, project_id: str, private_key
     return {"indexes": indexes, "pollutants": pollutants}
 
 
-def get_alerts(lat: str, lon: str, key_id: str, project_id: str, private_key: str) -> list:
+def get_alerts(c: _Creds) -> list:
     resp = requests.get(
-        f"{API_HOST}/weatheralert/v1/current/{lat}/{lon}",
+        f"{API_HOST}/weatheralert/v1/current/{c.lat}/{c.lon}",
         params={"localTime": "true", "lang": "zh"},
-        headers=_headers(key_id, project_id, private_key),
+        headers=_auth_headers(c),
         timeout=5,
     )
     resp.raise_for_status()
@@ -209,8 +225,8 @@ class WeatherService:
 
     def _wx_args(self, s):
         w = s["weather"]
-        return (w["lat"], w["lon"],
-                w["key_id"], w["project_id"], w["private_key"])
+        return _Creds(w["lat"], w["lon"],
+                      w["key_id"], w["project_id"], w["private_key"])
 
     def get_now(self):
         s = self._creds()
@@ -227,7 +243,7 @@ class WeatherService:
             return now_data
         minutely_data = {"summary": "", "minutely": []}
         try:
-            minutely_data = get_minutely(*self._wx_args(s))
+            minutely_data = get_minutely(self._wx_args(s))
         except Exception as e:
             logger.warning("Minutely fetch failed: {}", e)
         return {"now": now_data, "minutely": minutely_data}
@@ -275,7 +291,7 @@ class WeatherService:
         if hit:
             return value
         try:
-            result = fn(*self._wx_args(s))
+            result = fn(self._wx_args(s))
             self._cache.set(key, result)
             logger.info("Weather {} updated", key)
             return result

@@ -38,40 +38,26 @@ function maybeShowFirstLaunchHint(s) {
 
 /* Boot */
 let __bootStarted = false;
-window.addEventListener('pywebviewready', async () => {
-    // 幂等守卫：防止 pywebviewready 重复派发导致重复初始化（重复轮询/重复日志转发）
-    if (__bootStarted) return;
-    __bootStarted = true;
-    // Redirect console to Python logger
-    (function() {
-        const origLog = console.log;
-        const origWarn = console.warn;
-        const origError = console.error;
-        function forward(level, args) {
-            try {
-                const msg = Array.from(args).map(a => {
-                    if (typeof a === 'object') try { return JSON.stringify(a); } catch(e) { return String(a); }
-                    return String(a);
-                }).join(' ');
-                pywebview.api.js_log(level, msg);
-            } catch (e) { /* ignore */ }
-        }
-        console.log = function() { forward('debug', arguments); origLog.apply(console, arguments); };
-        console.warn = function() { forward('warning', arguments); origWarn.apply(console, arguments); };
-        console.error = function() { forward('error', arguments); origError.apply(console, arguments); };
-    })();
 
-    const s = await pywebview.api.get_settings();
-    window._appSettings = s;
+function initConsoleForwarding() {
+    const origLog = console.log;
+    const origWarn = console.warn;
+    const origError = console.error;
+    function forward(level, args) {
+        try {
+            const msg = Array.from(args).map(a => {
+                if (typeof a === 'object') try { return JSON.stringify(a); } catch(e) { return String(a); }
+                return String(a);
+            }).join(' ');
+            pywebview.api.js_log(level, msg);
+        } catch (e) { /* ignore */ }
+    }
+    console.log = function() { forward('debug', arguments); origLog.apply(console, arguments); };
+    console.warn = function() { forward('warning', arguments); origWarn.apply(console, arguments); };
+    console.error = function() { forward('error', arguments); origError.apply(console, arguments); };
+}
 
-    const g = s.general || {};
-    const f = s.fonts || {};
-    const ck = s.clock || {};
-    const w = s.weather || {};
-    const mus = s.music || {};
-    const ly = s.lyrics || {};
-    const dsp = s.display || {};
-
+async function initDisplay(s, g, f, ck, ly) {
     applyLang(g.language || 'en');
     if (g.follow_system_theme) {
         setFollowSystemTheme(true);
@@ -85,6 +71,7 @@ window.addEventListener('pywebviewready', async () => {
     applyLyricAutoTranslate(ly.auto_translate === true);
 
     // Move to target monitor + fullscreen, then show
+    const dsp = s.display || {};
     if (dsp.monitor) {
         await pywebview.api.move_to_monitor(dsp.monitor);
     }
@@ -95,7 +82,9 @@ window.addEventListener('pywebviewready', async () => {
         pywebview.api.set_caption(true);
     }
     maybeShowFirstLaunchHint(s);
+}
 
+function initClockBgHover() {
     // 时钟区域悬停：背景图片透明度 +10%（无图时透明度为 0，悬停不生效）
     const clockSectionEl = document.getElementById('clock-section');
     const clockBgLayerEl = document.getElementById('clock-bg-image');
@@ -109,17 +98,23 @@ window.addEventListener('pywebviewready', async () => {
             clockBgLayerEl.style.opacity = String(clockBgState.opacity);
         });
     }
+}
 
+async function initHardware() {
     await loadHwNames();
     applyHwNames(true);
     loadHwDetail();
+}
 
+function cacheWeatherCreds(w) {
     oldWeatherLat = w.lat || '';
     oldWeatherLon = w.lon || '';
     oldWeatherKid = w.key_id || '';
     oldWeatherSub = w.project_id || '';
     oldWeatherKey = w.private_key || '';
+}
 
+function initSettingsAndPolling(g, s) {
     initSettings();
     initLayoutControls();
     initTextCardEditor();
@@ -153,7 +148,9 @@ window.addEventListener('pywebviewready', async () => {
     _startInterval(true, refreshTopProcess, 2000);
     // Fit the process list to the actual box height once the initial layout is done.
     setTimeout(recalcProcLimit, 800);
+}
 
+function initMusicControls() {
     // Music transport controls — previous / play-pause / next buttons
     const bindMusicCtrl = (id, action) => {
         const el = document.getElementById(id);
@@ -186,7 +183,9 @@ window.addEventListener('pywebviewready', async () => {
     await pywebview.api.music_play_pause();
 });
     bindMusicCtrl('h-music-next', () => pywebview.api.music_next());
+}
 
+function initSeekBar() {
     // Seek bar: preview time in tooltip while dragging, seek on release
     const seekEl = document.getElementById('h-music-seek');
     if (seekEl) {
@@ -213,7 +212,9 @@ window.addEventListener('pywebviewready', async () => {
         });
     }
     bindLyricHover();
+}
 
+function initProcInteractions() {
     // Top process interactions
     const procListEl = document.getElementById('proc-list');
     if (procListEl) procListEl.addEventListener('click', (e) => {
@@ -238,6 +239,9 @@ window.addEventListener('pywebviewready', async () => {
     if (killOverlay) killOverlay.addEventListener('click', (e) => {
         if (e.target === killOverlay) hideKillConfirm();
     });
+}
+
+function initAppConfirmModal() {
     // 通用应用内确认弹窗
     const appConfirmCancelBtn = document.getElementById('app-confirm-cancel');
     if (appConfirmCancelBtn) appConfirmCancelBtn.addEventListener('click', hideAppConfirm);
@@ -251,7 +255,9 @@ window.addEventListener('pywebviewready', async () => {
     if (appConfirmOverlay) appConfirmOverlay.addEventListener('click', (e) => {
         if (e.target === appConfirmOverlay) hideAppConfirm();
     });
+}
 
+function initUpdateServerModals() {
     // Update available modal
     const updateLaterBtn = document.getElementById('update-later');
     if (updateLaterBtn) updateLaterBtn.addEventListener('click', hideUpdateModal);
@@ -276,7 +282,9 @@ window.addEventListener('pywebviewready', async () => {
             window.open(url, '_blank');
         }
     });
+}
 
+function initTaskMgrBtn() {
     // Task Manager: hover show button, click to launch Windows Task Manager
     const procSection = document.getElementById('proc-section');
     const taskmgrBtn = document.getElementById('proc-taskmgr-btn');
@@ -301,7 +309,9 @@ window.addEventListener('pywebviewready', async () => {
             pywebview.api.open_taskmgr();
         });
     }
+}
 
+function initMonitorPolling(dsp) {
     // Monitor presence polling
     let monitorHidden = false;
     let cachedMonitor = dsp.monitor || 0;
@@ -333,8 +343,38 @@ window.addEventListener('pywebviewready', async () => {
 
     checkMonitor();
     setInterval(checkMonitor, 5000);
+}
+
+window.addEventListener('pywebviewready', async () => {
+    // 幂等守卫：防止 pywebviewready 重复派发导致重复初始化（重复轮询/重复日志转发）
+    if (__bootStarted) return;
+    __bootStarted = true;
+    // Redirect console to Python logger
+    initConsoleForwarding();
+
+    const s = await pywebview.api.get_settings();
+    window._appSettings = s;
+
+    const g = s.general || {};
+    const f = s.fonts || {};
+    const ck = s.clock || {};
+    const w = s.weather || {};
+    const ly = s.lyrics || {};
+    const dsp = s.display || {};
+
+    await initDisplay(s, g, f, ck, ly);
+    initClockBgHover();
+    await initHardware();
+    cacheWeatherCreds(w);
+    initSettingsAndPolling(g, s);
+    initMusicControls();
+    initSeekBar();
+    initProcInteractions();
+    initAppConfirmModal();
+    initUpdateServerModals();
+    initTaskMgrBtn();
+    initMonitorPolling(dsp);
 
     // 全部初始化完成后，再显示界面并收起加载动画
     showBody();
-
 });

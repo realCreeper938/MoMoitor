@@ -1,3 +1,5 @@
+const _FEATURE_TOGGLE_KEYS = ['top_control', 'calendar', 'weather', 'traffic', 'clock_bg'];
+
 function refreshAllWeather() {
     refreshWeather();
     refreshWeatherDetail();
@@ -483,7 +485,7 @@ function initSettings() {
 
         // Feature toggles
         const ft = s.feature_toggles || {};
-        ['top_control','calendar','weather','traffic','background'].forEach(key => {
+        _FEATURE_TOGGLE_KEYS.forEach(key => {
             const cb = document.getElementById('ft-' + key);
             if (cb) cb.checked = ft[key] !== false;
         });
@@ -503,7 +505,7 @@ function initSettings() {
     }
 
     async function saveSettings() {
-        // Merge with existing settings to preserve keys not in the form (padding, etc.)
+        // Merge with existing settings to preserve keys not present in the form
         const existing = window._appSettings || {};
         const s = {
             ...existing,
@@ -582,7 +584,7 @@ function initSettings() {
 
         // Feature toggles
         s.feature_toggles = {};
-        ['top_control','calendar','weather','traffic','background'].forEach(key => {
+        _FEATURE_TOGGLE_KEYS.forEach(key => {
             const cb = document.getElementById('ft-' + key);
             s.feature_toggles[key] = cb ? cb.checked : true;
         });
@@ -592,9 +594,6 @@ function initSettings() {
         await pywebview.api.change_backend((s.general || {}).data_source);
 
         window._appSettings = { ...window._appSettings, ...s };
-
-        applyHoverAnim((s.general || {}).hover_animation !== false);
-        applyHoverHighlight((s.general || {}).hover_highlight !== false);
 
         if ((s.display || {}).hide_when_monitor_missing) {
             const res = await pywebview.api.check_monitor();

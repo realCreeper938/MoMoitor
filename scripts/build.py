@@ -15,7 +15,6 @@
 """
 
 import argparse
-import fnmatch
 import hashlib
 import os
 import re

@@ -483,3 +483,18 @@ function applyLang(lang) {
         if (text) el.label = text;
     });
 }
+
+function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el && el.textContent !== val) el.textContent = val;
+}
+
+function pad2(n) {
+    return n < 10 ? '0' + n : '' + n;
+}

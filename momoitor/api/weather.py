@@ -11,26 +11,16 @@ class WeatherMixin:
     """天气、黄历、节假日的 JS 桥接方法。"""
 
     def get_weather(self):
-        return self._weather.get_now()
+        return self.weather.get_now()
 
     def get_weather_detail(self):
-        return self._weather.get_detail()
+        return self.weather.get_detail()
 
     def get_airquality(self):
-        return self._weather.get_airquality()
-
-    def get_weather_info(self):
-        weather = self._weather.get_now()
-        air = self._weather.get_airquality()
-        return {"weather": weather, "air_quality": air}
+        return self.weather.get_airquality()
 
     def get_alerts(self):
-        return self._weather.get_alerts()
-
-    def get_lunar_time(self, timezone="Asia/Shanghai"):
-        if not self._feature_on("weather"):
-            return {"error": "disabled"}
-        return self._weather.get_lunar_time(timezone)
+        return self.weather.get_alerts()
 
     def get_huangli(self, year=None, month=None, day=None):
         if not self._feature_on("calendar"):
@@ -40,4 +30,4 @@ class WeatherMixin:
     def get_holiday(self, year):
         if not self._feature_on("calendar"):
             return {}
-        return self._holiday.get_year(year)
+        return self.holiday.get_year(year)

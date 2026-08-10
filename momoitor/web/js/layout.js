@@ -63,23 +63,10 @@ function enterLayoutMode() {
     _addLayoutControls();
     allCards().forEach(card => {
         const el = card.el;
-        if (!el) return;
-        el.setAttribute('draggable', 'true');
-        el.addEventListener('dragstart', onLayoutDragStart);
-        el.addEventListener('dragover', onLayoutDragOver);
-        el.addEventListener('dragleave', onLayoutDragLeave);
-        el.addEventListener('dragend', onLayoutDragEnd);
-        el.addEventListener('drop', onLayoutDrop);
+        if (el) bindCardDrag(el);
     });
     const clockEl = document.getElementById('clock-section');
-    if (clockEl) {
-        clockEl.setAttribute('draggable', 'true');
-        clockEl.addEventListener('dragstart', onLayoutDragStart);
-        clockEl.addEventListener('dragover', onLayoutDragOver);
-        clockEl.addEventListener('dragleave', onLayoutDragLeave);
-        clockEl.addEventListener('dragend', onLayoutDragEnd);
-        clockEl.addEventListener('drop', onLayoutDrop);
-    }
+    if (clockEl) bindCardDrag(clockEl);
     const grid = document.querySelector('.term-grid');
     if (grid) {
         grid.addEventListener('dragover', onGridDragOver);
@@ -87,6 +74,25 @@ function enterLayoutMode() {
         grid.addEventListener('drop', onGridDrop);
     }
     _positionClockHint();
+}
+
+function bindCardDrag(el) {
+    el.setAttribute('draggable', 'true');
+    el.addEventListener('dragstart', onLayoutDragStart);
+    el.addEventListener('dragover', onLayoutDragOver);
+    el.addEventListener('dragleave', onLayoutDragLeave);
+    el.addEventListener('dragend', onLayoutDragEnd);
+    el.addEventListener('drop', onLayoutDrop);
+}
+
+function unbindCardDrag(el) {
+    el.removeAttribute('draggable');
+    el.classList.remove('dragging', 'drag-over');
+    el.removeEventListener('dragstart', onLayoutDragStart);
+    el.removeEventListener('dragover', onLayoutDragOver);
+    el.removeEventListener('dragleave', onLayoutDragLeave);
+    el.removeEventListener('dragend', onLayoutDragEnd);
+    el.removeEventListener('drop', onLayoutDrop);
 }
 
 function exitLayoutMode() {
@@ -97,25 +103,10 @@ function exitLayoutMode() {
     _removeLayoutControls();
     allCards().forEach(card => {
         const el = card.el;
-        if (!el) return;
-        el.removeAttribute('draggable');
-        el.classList.remove('dragging', 'drag-over');
-        el.removeEventListener('dragstart', onLayoutDragStart);
-        el.removeEventListener('dragover', onLayoutDragOver);
-        el.removeEventListener('dragleave', onLayoutDragLeave);
-        el.removeEventListener('dragend', onLayoutDragEnd);
-        el.removeEventListener('drop', onLayoutDrop);
+        if (el) unbindCardDrag(el);
     });
     const clockEl = document.getElementById('clock-section');
-    if (clockEl) {
-        clockEl.removeAttribute('draggable');
-        clockEl.classList.remove('dragging', 'drag-over');
-        clockEl.removeEventListener('dragstart', onLayoutDragStart);
-        clockEl.removeEventListener('dragover', onLayoutDragOver);
-        clockEl.removeEventListener('dragleave', onLayoutDragLeave);
-        clockEl.removeEventListener('dragend', onLayoutDragEnd);
-        clockEl.removeEventListener('drop', onLayoutDrop);
-    }
+    if (clockEl) unbindCardDrag(clockEl);
     const grid = document.querySelector('.term-grid');
     if (grid) {
         grid.removeEventListener('dragover', onGridDragOver);

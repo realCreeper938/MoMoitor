@@ -39,10 +39,6 @@ async function getHolidays(year) {
     return holidayCache[year];
 }
 
-function pad2(n) {
-    return n < 10 ? '0' + n : '' + n;
-}
-
 /* Mark each cell with holiday/调休 info once its year data is loaded */
 async function markHolidays(cells) {
     const byYear = {};
@@ -69,11 +65,6 @@ async function markHolidays(cells) {
             }
         }
     }
-}
-
-function setText(id, val) {
-    const el = document.getElementById(id);
-    if (el && el.textContent !== val) el.textContent = val;
 }
 
 /* Refresh current weather */

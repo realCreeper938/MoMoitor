@@ -32,25 +32,6 @@ def get_huangli(year=None, month=None, day=None) -> dict:
         return {"error": str(e)}
 
 
-def show_calendar(window) -> bool:
-    return _eval_js(window, "window.showCalendar && window.showCalendar()")
-
-
-def hide_calendar(window) -> bool:
-    return _eval_js(window, "window.hideCalendar && window.hideCalendar()")
-
-
-def _eval_js(window, js_expr: str) -> bool:
-    if not window:
-        return False
-    try:
-        window.evaluate_js(js_expr)
-        return True
-    except Exception as e:
-        logger.warning("evaluate_js failed: {}", e)
-        return False
-
-
 HOLIDAY_API = "https://timor.tech/api/holiday/year/{year}"
 CACHE_TTL = 86400
 
@@ -60,9 +41,6 @@ class HolidayService:
 
     def __init__(self):
         self._cache = TTLCache()
-
-    def invalidate(self):
-        self._cache.clear()
 
     def _fetch(self, year):
         resp = http_get(HOLIDAY_API.format(year=year), timeout=10)

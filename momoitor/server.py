@@ -32,7 +32,6 @@ class ServerBackend:
         self._auth_user = auth_user
         self._auth_pass = auth_pass
         self._server: ThreadingHTTPServer | None = None
-        self._stop_flag = threading.Event()
 
     def start(self):
         host = self._host or "0.0.0.0"
@@ -140,7 +139,6 @@ class ServerBackend:
         try:
             self._server.serve_forever()
         finally:
-            self._stop_flag.set()
             logger.info("服务端已停止")
 
     def stop(self):

@@ -12,7 +12,7 @@ from loguru import logger
 from momoitor.config import (APP_AUTHOR, APP_GITHUB_REPO, APP_HOMEPAGE, APP_VERSION,
                              SETTINGS_FILE, load_settings, save_settings)
 from momoitor.services import autostart, window as win_svc
-from momoitor.services.calendar import HolidayService, hide_calendar, show_calendar
+from momoitor.services.calendar import HolidayService
 from momoitor.services.hardware import HardwareService
 from momoitor.services.lyrics import LyricsService
 from momoitor.services.traffic import TrafficService
@@ -29,28 +29,40 @@ class ApiCore:
         self._settings = load_settings()
         self._hw = HardwareService(monitor, self._settings)
         self._fullscreen = False
-        # 以下服务按需延迟初始化，避免启动时不必要的开销。
-        # _weather / _holiday / _traffic / _lyrics 通过 __getattr__ 惰性创建。
+        self._weather = None
+        self._holiday = None
+        self._traffic = None
+        self._lyrics = None
         logger.info("API initialized")
 
-    def __getattr__(self, name):
-        if name == '_weather':
-            svc = WeatherService(lambda: self._settings)
-        elif name == '_holiday':
-            svc = HolidayService()
-        elif name == '_traffic':
-            svc = TrafficService()
-        elif name == '_lyrics':
-            svc = LyricsService(lambda: self._settings)
-        else:
-            raise AttributeError(name)
-        setattr(self, name, svc)
-        return svc
+    @property
+    def weather(self):
+        if self._weather is None:
+            self._weather = WeatherService(lambda: self._settings)
+        return self._weather
+
+    @property
+    def holiday(self):
+        if self._holiday is None:
+            self._holiday = HolidayService()
+        return self._holiday
+
+    @property
+    def traffic(self):
+        if self._traffic is None:
+            self._traffic = TrafficService()
+        return self._traffic
+
+    @property
+    def lyrics(self):
+        if self._lyrics is None:
+            self._lyrics = LyricsService(lambda: self._settings)
+        return self._lyrics
 
     def set_window(self, window):
         self._window = window
         self._remove_window_shadow()
-        self._traffic.start()
+        self.traffic.start()
 
     def set_server_backend(self, backend):
         """服务端模式：注入 HTTP 后端用于关闭等操作。"""
@@ -59,9 +71,6 @@ class ApiCore:
     def js_log(self, level, message):
         log_func = getattr(logger, level, logger.debug)
         log_func("[JS] {}", message)
-
-    def get_feature_toggles(self):
-        return self._settings.get("feature_toggles", {})
 
     def _feature_on(self, name):
         """对应功能开关是否开启（feature_toggles 中未配置时默认开启）。"""
@@ -75,7 +84,7 @@ class ApiCore:
         old_fullscreen = self._settings.get("general", {}).get("fullscreen", True)
         old_on_top = self._settings.get("display", {}).get("on_top", True)
         self._settings = settings
-        if '_weather' in self.__dict__:
+        if self._weather is not None:
             self._weather.invalidate()
         save_settings(settings)
         if self._window:
@@ -183,14 +192,8 @@ class ApiCore:
         if self._window:
             win_svc.minimize(self._window)
 
-    def show_calendar(self):
-        return show_calendar(self._window)
-
-    def hide_calendar(self):
-        return hide_calendar(self._window)
-
     def close_monitor(self):
-        if '_traffic' in self.__dict__:
+        if self._traffic is not None:
             self._traffic.stop()
         self._hw.close()
 

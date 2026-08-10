@@ -37,6 +37,13 @@ def create_monitor():
     return LHMMonitor()
 
 
+def _start_background_services():
+    from momoitor.services import fps as _fps
+    from momoitor.services import music as _music
+    _fps.start()
+    _music.start()
+
+
 def create_window(monitor):
     api = Api(monitor)
     index = os.path.join(WEB_DIR, "index.html")
@@ -57,18 +64,12 @@ def create_window(monitor):
         x=wx, y=wy, width=ww, height=wh,
     )
     api.set_window(window)
-    from momoitor.services import fps as _fps
-    from momoitor.services import music as _music
-    _fps.start()
-    _music.start()
+    _start_background_services()
     return window, api
 
 
 def create_api(monitor):
     """服务端模式：仅创建 Api 实例，不创建 webview 窗口。"""
     api = Api(monitor)
-    from momoitor.services import fps as _fps
-    from momoitor.services import music as _music
-    _fps.start()
-    _music.start()
+    _start_background_services()
     return api

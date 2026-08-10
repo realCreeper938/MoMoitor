@@ -115,7 +115,6 @@ _LEGACY_KEY_MAP = {
     # general
     "language": ("general", "language"),
     "refresh_interval": ("general", "refresh_interval"),
-    "padding": ("general", "padding"),
     "font_size": ("general", "font_size"),
     "fullscreen": ("general", "fullscreen"),
     "colorscheme": ("general", "colorscheme"),
@@ -176,7 +175,6 @@ DEFAULT_SETTINGS = {
     "general": {
         "language": detect_system_language(),
         "refresh_interval": 1000,
-        "padding": 60,
         "font_size": 100,
         "fullscreen": False,
         "colorscheme": "gruvbox",

@@ -119,12 +119,6 @@ function filterPortsList(query) {
     }
 })();
 
-function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.appendChild(document.createTextNode(str));
-    return div.innerHTML;
-}
-
 // Close port popup
 document.getElementById('ports-popup-close')?.addEventListener('click', function() {
     document.getElementById('ports-popup-overlay').style.display = 'none';
@@ -147,8 +141,8 @@ document.addEventListener('click', function(e) {
     if (!link) return;
     e.preventDefault();
     var url = link.getAttribute('href');
-    if (window.pywebview && window.pywebview.api && window.pywebview.api.openExternal) {
-        window.pywebview.api.openExternal(url)
+    if (window.pywebview && window.pywebview.api && window.pywebview.api.open_external) {
+        window.pywebview.api.open_external(url)
             .catch(function() { window.open(url, '_blank'); });
     } else {
         window.open(url, '_blank');

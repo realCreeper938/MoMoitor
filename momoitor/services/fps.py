@@ -27,7 +27,6 @@ _fps = 0
 _frametime = 0.0
 _process_name = ""
 _history_fps = deque([0.0] * HISTORY_SIZE, maxlen=HISTORY_SIZE)
-_history_ft = deque([0.0] * HISTORY_SIZE, maxlen=HISTORY_SIZE)
 _lock = threading.Lock()
 _running = False
 
@@ -131,7 +130,6 @@ def _poll():
                 _frametime = ft
                 _process_name = name
                 _history_fps.append(float(fps))
-                _history_ft.append(ft)
         except Exception:
             pass
         time.sleep(1.0)

@@ -33,10 +33,8 @@
 | 函数/类 | 说明 |
 |---|---|
 | `get_huangli(year, month, day)` -> dict | cnlunar 黄历（干支/宜忌/节气/生肖…），失败返回 `{"error":...}` |
-| `show_calendar(window)` / `hide_calendar(window)` -> bool | 通过 `window.evaluate_js` 触发前端覆盖层 |
 | `class HolidayService` | 节假日数据（timor.tech API，按年 TTL 缓存） |
 | `HolidayService.get_year(year)` -> dict | `{"MM-DD": {"holiday": bool, "name": str, ...}}` |
-| `HolidayService.invalidate()` | 清缓存 |
 
 ## fps
 
@@ -56,8 +54,6 @@ RTSS 共享内存读取前台 FPS，后台线程轮询。
 | `snapshot()` -> dict | `{cpu,gpu,mem,disks,disk_status,net}` |
 | `get_hw_names()` / `get_hw_detail()` | 型号 / 详情 |
 | `get_gpu_list()` | GPU 列表 |
-| `snapshot_with_detail()` | `{snapshot, detail}` 合并 |
-| `get_memory()` -> dict | 内存快照 |
 | `get_backend_info()` -> dict | 后端版本信息 |
 | `change_backend(source)` -> bool | `lhm`/`hwinfo` 切换 |
 | `close()` | 释放后端资源 |
@@ -122,7 +118,7 @@ WinRT `Windows.Media.Control` 全局媒体会话。
 
 QWeather（和风）JWT 客户端 + 缓存服务（合并于同一模块）。
 
-客户端函数（签名一致 `(lat, lon, key_id, project_id, private_key)`）：
+客户端函数（签名一致 `(creds)`，creds 为 `_Creds` dataclass：lat/lon/key_id/project_id/private_key）：
 `get_now()` / `get_city_name()` / `get_minutely()` / `get_airquality()` / `get_alerts()`。
 
 `WeatherService(get_settings_fn)`：`get_now()`、`get_detail()`（now+minutely）、`get_airquality()`、`get_alerts()`、`get_lunar_time(timezone="Asia/Shanghai")`、`invalidate()`。未配置凭证返回 `{"error":"not_configured"}`（alerts 返回 `[]`）。按端点 TTL 缓存（now/airquality/alerts 600s，lunar 3600s）。

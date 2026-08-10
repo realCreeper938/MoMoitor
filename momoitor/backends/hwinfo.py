@@ -3,7 +3,6 @@
 import ctypes
 import ctypes.wintypes
 import struct
-import time
 import psutil
 from loguru import logger
 from .base import BaseMonitor
@@ -68,8 +67,6 @@ class HWiNFOMonitor(BaseMonitor):
     def __init__(self):
         super().__init__()
         self._hw_names = None
-        self._disk_cache = []
-        self._disk_cache_ts = 0
         logger.info("HWiNFO backend initialized")
 
     def close(self):
@@ -421,41 +418,6 @@ class HWiNFOMonitor(BaseMonitor):
             names["gpu"] = sname.split(':')[-1].strip() if ':' in sname else sname
         return names
 
-    def _get_disk_partitions(self):
-        now = time.monotonic()
-        if now - self._disk_cache_ts < 10:
-            return self._disk_cache
-        self._disk_cache_ts = now
-        result = []
-        for part in psutil.disk_partitions(all=False):
-            try:
-                usage = psutil.disk_usage(part.mountpoint)
-                result.append({
-                    "letter": part.mountpoint.rstrip("\\"),
-                    "used_gb": round(usage.used / 1073741824, 0),
-                    "total_gb": round(usage.total / 1073741824, 0),
-                    "percent": usage.percent,
-                })
-            except (PermissionError, OSError):
-                continue
-        self._disk_cache = result
-        return result
-
-    def get_cpu(self):
-        return self.snapshot()["cpu"]
-
-    def get_gpu(self, index=None):
-        return self.snapshot()["gpu"]
-
-    def get_memory(self):
-        return self.snapshot()["mem"]
-
-    def get_disks(self):
-        return self._get_disk_partitions()
-
-    def get_disk_status(self):
-        return self.snapshot()["disk_status"]
-
     def get_hw_names(self):
         if self._hw_names is None:
             try:
@@ -495,7 +457,6 @@ class HWiNFOMonitor(BaseMonitor):
             elif r['sensor_idx'] in gpu_sensor_names:
                 info["gpu"]["sensors"][key] = round(float(r['value']), 2)
 
-        import psutil
         vm = psutil.virtual_memory()
         info["mem"]["total_gb"] = round(vm.total / 1073741824, 1)
         return info

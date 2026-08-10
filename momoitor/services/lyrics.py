@@ -145,7 +145,7 @@ class LyricsService:
             if not lrc_url:
                 return ""
             lresp = http_get(lrc_url, timeout=8)
-            resp.raise_for_status()
+            lresp.raise_for_status()
             return lresp.text
         except Exception as e:
             logger.opt(exception=True).debug("Lyrics search/lrc failed for '{}': {}", keyword, e)

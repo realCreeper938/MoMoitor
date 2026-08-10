@@ -354,11 +354,10 @@ function formatNet(b) {
     return { val: Math.round(b / 1024), unit: 'KB/s' };
 }
 
-function updateUI(d) {
-    // CPU
+function updateCPU(d) {
     const cpuLoad = fmt(d.cpu.load, 0);
     setText('cpu-load', cpuLoad);
-    applyLoadColor('cpu-load', d.cpu.load);
+    applyLoadColor('cpu-load');
     setText('cpu-temp', fmt(d.cpu.temp, 0));
     setText('cpu-power', fmt(d.cpu.power, 1));
     setText('cpu-clock', fmt(d.cpu.clock, 0));
@@ -376,11 +375,12 @@ function updateUI(d) {
     } else if (Number.isFinite(d.cpu.load) && d.cpu.load < 95 && throttled) {
         throttled = false;
     }
+}
 
-    // GPU
+function updateGPU(d) {
     const gpuLoad = fmt(d.gpu.load, 0);
     setText('gpu-load', gpuLoad);
-    applyLoadColor('gpu-load', d.gpu.load);
+    applyLoadColor('gpu-load');
     setText('gpu-temp', fmt(d.gpu.temp, 0));
     setText('gpu-power', fmt(d.gpu.power, 1));
     setText('gpu-vram-temp', fmt(d.gpu.vram_temp, 0));
@@ -392,8 +392,9 @@ function updateUI(d) {
     // GPU temp color
     const gpuTempEl = getUiEl('gpu-temp');
     if (gpuTempEl) gpuTempEl.className = 'mono ' + tempColorClass(d.gpu.temp, TEMP_THRESHOLDS.gpu);
+}
 
-    // Memory
+function updateMem(d) {
     if (_memCleanPending) {
         // Poll right after a click-clean — count down to the new value
         _memCleanPending = false;
@@ -401,7 +402,7 @@ function updateUI(d) {
         animateMemPct(parseInt(cur ? cur.textContent : '0', 10) || 0, d.mem.percent);
     } else {
         setText('mem-pct', fmt(d.mem.percent, 0));
-        applyLoadColor('mem-pct', d.mem.percent);
+        applyLoadColor('mem-pct');
     }
     setText('mem-used', fmt(d.mem.used_gb, 1));
     setText('mem-total', fmt(d.mem.total_gb, 1));
@@ -414,8 +415,9 @@ function updateUI(d) {
     // Memory temp color
     const memTempEl = getUiEl('mem-temp');
     if (memTempEl) memTempEl.className = 'mono ' + tempColorClass(d.mem.temp, TEMP_THRESHOLDS.mem);
+}
 
-    // Disk
+function updateDisk(d) {
     if (d.disks && d.disks.length > 0) {
         let totalUsed = 0;
         let totalSize = 0;
@@ -442,8 +444,9 @@ function updateUI(d) {
     updateChart('disk_write', true);
     // Cache partition data for hover display
     _diskPartitions = d.disks || [];
+}
 
-    // Network
+function updateNet(d) {
     const up = formatNet(d.net.up);
     const down = formatNet(d.net.down);
     setText('net-up', up.val);
@@ -459,7 +462,14 @@ function updateUI(d) {
     if (netLabel) {
         netLabel.textContent = d.net.name ? 'NETWORK · ' + d.net.name : 'Network';
     }
+}
 
+function updateUI(d) {
+    updateCPU(d);
+    updateGPU(d);
+    updateMem(d);
+    updateDisk(d);
+    updateNet(d);
     updateLivePopups(d);
     updateTempWarnings(d);
     updateDataError(d);
@@ -484,9 +494,9 @@ function updateLivePopups(d) {
     setText('mem-live-used', fmt(d.mem.used_gb, 1));
     setText('mem-live-total', fmt(d.mem.total_gb, 1));
     setText('mem-live-temp', fmt(d.mem.temp, 0));
-    applyLoadColor('cpu-live-load', d.cpu.load);
-    applyLoadColor('gpu-live-load', d.gpu.load);
-    applyLoadColor('mem-live-pct', d.mem.percent);
+    applyLoadColor('cpu-live-load');
+    applyLoadColor('gpu-live-load');
+    applyLoadColor('mem-live-pct');
 }
 
 /* Disk partition data cache for hover display */

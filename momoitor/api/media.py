@@ -11,12 +11,10 @@ from momoitor.services.brightness import adjust_brightness
 from momoitor.services.fps import get_current as get_fps
 from momoitor.services.music import (
     get_current as get_music,
-    get_last_player,
     launch_last_player,
     next_track as music_next,
     play_pause as music_play_pause,
     prev_track as music_prev,
-    refresh_cover as music_refresh_cover,
     seek_track as music_seek,
 )
 from momoitor.services.volume import adjust_volume
@@ -42,7 +40,7 @@ class MediaMixin:
         if not self._settings.get("music", {}).get("meting_api_base", "").strip():
             return {"lines": []}
         try:
-            return {"lines": self._lyrics.get_lyrics(title or "", artist or "")}
+            return {"lines": self.lyrics.get_lyrics(title or "", artist or "")}
         except Exception as e:
             logger.warning("get_lyrics failed: {}", e)
             return {"lines": []}
@@ -52,9 +50,6 @@ class MediaMixin:
             return {"fps": 0, "frametime": 0, "low1pct": 0, "avg_fps": 0, "p99_fps": 0}
         return get_fps()
 
-    def get_last_player(self):
-        return get_last_player()
-
     def launch_last_player(self):
         return launch_last_player()
 
@@ -62,11 +57,6 @@ class MediaMixin:
         if not self._feature_on("music"):
             return {"error": "disabled"}
         return music_play_pause()
-
-    def music_refresh_cover(self):
-        if not self._feature_on("music"):
-            return {"error": "disabled"}
-        return music_refresh_cover()
 
     def music_next(self):
         if not self._feature_on("music"):
@@ -93,17 +83,17 @@ class MediaMixin:
     def get_traffic_today(self):
         if not self._feature_on("traffic"):
             return {"error": "disabled"}
-        return self._traffic.get_today()
+        return self.traffic.get_today()
 
     def get_traffic_month(self, year, month):
         if not self._feature_on("traffic"):
             return {"error": "disabled"}
-        return self._traffic.get_month(int(year), int(month))
+        return self.traffic.get_month(int(year), int(month))
 
     def get_traffic_top_processes(self, limit=5):
         if not self._feature_on("traffic"):
             return {"error": "disabled"}
-        return self._traffic.get_top_processes(int(limit))
+        return self.traffic.get_top_processes(int(limit))
 
     def get_bg_list(self):
         if not self._feature_on("clock_bg"):

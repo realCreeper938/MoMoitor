@@ -91,23 +91,8 @@ class TestHardwareBackend:
     def test_lhm_snapshot(self, benchmark, lhm_monitor):
         _bench_slow(benchmark, lhm_monitor.snapshot)
 
-    def test_lhm_cpu(self, benchmark, lhm_monitor):
-        _bench_slow(benchmark, lhm_monitor.get_cpu)
-
-    def test_lhm_gpu(self, benchmark, lhm_monitor):
-        _bench_slow(benchmark, lambda: lhm_monitor.get_gpu(0))
-
     def test_lhm_gpu_list(self, benchmark, lhm_monitor):
         _bench_slow(benchmark, lhm_monitor.get_gpu_list)
-
-    def test_lhm_memory(self, benchmark, lhm_monitor):
-        _bench_slow(benchmark, lhm_monitor.get_memory)
-
-    def test_lhm_disks(self, benchmark, lhm_monitor):
-        _bench_slow(benchmark, lhm_monitor.get_disks)
-
-    def test_lhm_disk_status(self, benchmark, lhm_monitor):
-        _bench_slow(benchmark, lhm_monitor.get_disk_status)
 
     def test_lhm_network(self, benchmark, lhm_monitor):
         _bench_slow(benchmark, lhm_monitor.get_network)
@@ -120,9 +105,6 @@ class TestHardwareBackend:
 
     def test_service_snapshot(self, benchmark, hw_service):
         _bench_slow(benchmark, hw_service.snapshot)
-
-    def test_service_snapshot_with_detail(self, benchmark, hw_service):
-        _bench_slow(benchmark, hw_service.snapshot_with_detail)
 
     def test_hwinfo_snapshot(self, benchmark):
         from momoitor.backends import HWiNFOMonitor

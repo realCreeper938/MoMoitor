@@ -386,7 +386,7 @@ function animateMemPct(fromVal, toVal) {
         if (t < 1) {
             requestAnimationFrame(step);
         } else {
-            applyLoadColor('mem-pct', toVal);
+            applyLoadColor('mem-pct');
         }
     };
     requestAnimationFrame(step);
