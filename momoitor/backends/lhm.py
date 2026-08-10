@@ -153,7 +153,7 @@ class LHMMonitor(BaseMonitor):
         self._disk_cache = result
         return result
 
-    def snapshot(self, gpu_index=None) -> dict:
+    def snapshot(self, gpu_index=None, skip_net=False) -> dict:
         self._ensure_init()
         cpu_data = {"clock": None, "temp": None, "power": None, "load": None, "voltage": None}
         gpu_data = {"temp": None, "power": None, "vram_used_gb": None, "vram_total_gb": None, "load": None, "vram_temp": None}
@@ -244,7 +244,7 @@ class LHMMonitor(BaseMonitor):
             "mem": mem,
             "disks": self._get_disk_partitions(),
             "disk_status": disk_status,
-            "net": self.get_network(),
+            "net": self.get_network() if not skip_net else {"up": 0, "down": 0, "name": "N/A"},
         }
 
     # 独立 getter：单传感器查询，为兼容旧 API 保留（snapshot 已是单遍采集）

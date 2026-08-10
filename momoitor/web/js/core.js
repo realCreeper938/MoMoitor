@@ -557,6 +557,7 @@ function _applyFpsSpan(el, span) {
 }
 
 async function refreshFps() {
+    if (!_sectionVisible('fps-section')) return;
     try {
         const f = await pywebview.api.get_fps();
 
@@ -635,8 +636,7 @@ function recalcProcLimit() {
 }
 
 async function refreshTopProcess() {
-    const procSection = document.getElementById('proc-section');
-    if (procSection && procSection.style.display === 'none') return; // 卡片被删除时不再获取进程信息
+    if (!_sectionVisible('proc-section')) return; // 卡片被删除/隐藏时不再获取进程信息
     try {
         const list = await pywebview.api.get_top_processes(procMode, procLimit);
         const listEl = document.getElementById('proc-list');
@@ -788,7 +788,8 @@ async function confirmKill() {
 
 async function poll(generation = pollGeneration) {
     try {
-        const data = await pywebview.api.get_data();
+        const skipNet = !_sectionVisible('net-section');
+        const data = await pywebview.api.get_data(skipNet);
         if (generation !== pollGeneration) return;
         updateUI(data);
         hideBackendError();

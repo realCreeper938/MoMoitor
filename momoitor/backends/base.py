@@ -318,13 +318,14 @@ class BaseMonitor(abc.ABC):
                     return val
         return ""
 
-    def snapshot(self, gpu_index=None) -> dict:
+    def snapshot(self, gpu_index=None, skip_net=False) -> dict:
+        net = self.get_network() if not skip_net else {"up": 0, "down": 0, "name": "N/A"}
         return {
             "cpu": self.get_cpu(),
             "gpu": self.get_gpu(gpu_index),
             "mem": self.get_memory(),
             "disks": self.get_disks(),
             "disk_status": self.get_disk_status(),
-            "net": self.get_network(),
+            "net": net,
         }
 

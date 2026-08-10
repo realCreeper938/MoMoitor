@@ -47,9 +47,12 @@ class PluginMonitor(ABC):
 
     def get_memory(self) -> dict:
         """单独的内存信息。默认从 snapshot() 中取出 mem 字段。"""
-        return self.snapshot().get("mem", {})
+        return self.snapshot(skip_net=True).get("mem", {})
 
     @abstractmethod
-    def snapshot(self, gpu_index=None) -> dict:
-        """返回一次硬件快照（结构见模块文档）。必须由子类实现。"""
+    def snapshot(self, gpu_index=None, skip_net=False) -> dict:
+        """返回一次硬件快照（结构见模块文档）。必须由子类实现。
+
+        skip_net=True 表示网络卡片不可见，可跳过网络数据获取。
+        """
         raise NotImplementedError

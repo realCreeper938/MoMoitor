@@ -181,7 +181,7 @@ class HWiNFOMonitor(BaseMonitor):
             results.append(r)
         return results
 
-    def snapshot(self, gpu_index=None) -> dict:
+    def snapshot(self, gpu_index=None, skip_net=False) -> dict:
         readings = self._read_shared_memory()
 
         # 缓存硬件名称
@@ -199,7 +199,7 @@ class HWiNFOMonitor(BaseMonitor):
             "mem": mem,
             "disks": self._get_disk_partitions(),
             "disk_status": disk_status,
-            "net": self.get_network(),
+            "net": self.get_network() if not skip_net else {"up": 0, "down": 0, "name": "N/A"},
         }
 
     def _extract_cpu(self, readings):

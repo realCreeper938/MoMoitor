@@ -19,8 +19,8 @@ from momoitor.services.system import (clean_memory, get_sysinfo,
 class HardwareMixin:
     """硬件数据与系统信息的 JS 桥接方法。"""
 
-    def get_data(self):
-        data = self._hw.snapshot()
+    def get_data(self, skip_net=False):
+        data = self._hw.snapshot(skip_net=skip_net)
         # 插件快照钩子：可在数据返回前端前修改/扩展
         return self._plugin_manager.apply_snapshot_hooks(data)
 

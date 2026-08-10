@@ -105,6 +105,7 @@
     const PluginApi = {
         /* 卡片 */
         registerCard,
+        isCardVisible(id) { return typeof _sectionVisible === 'function' && !!_sectionVisible(id); },
 
         /* 生命周期与事件 */
         onReady(fn) { if (typeof fn === 'function') readyHooks.push(fn); },
