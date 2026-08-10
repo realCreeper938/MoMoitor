@@ -9,8 +9,8 @@
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    gap: 18px;
-    padding: 6px 16px;
+    gap: calc(18px * var(--density));
+    padding: calc(6px * var(--density)) calc(16px * var(--density));
 }
 
 #music-section .h-music-cover {
@@ -27,7 +27,7 @@
 #music-section .music-main {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: calc(8px * var(--density));
     min-width: 0;
     flex: 1 1 auto;
 }
@@ -70,13 +70,13 @@
 #music-section .music-controls {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: calc(16px * var(--density));
 }
 
 #music-section .music-ctrl-row {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: calc(16px * var(--density));
 }
 
 /* 进度条与剩余时间：默认隐藏，鼠标悬停大卡片时才显�?*/
@@ -84,7 +84,7 @@
     display: none;
     position: relative;
     align-items: center;
-    gap: 10px;
+    gap: calc(10px * var(--density));
     width: 100%;
     min-width: 0;
 }
@@ -173,8 +173,8 @@
     border: none;
     background: transparent;
     color: var(--text-dim);
-    width: 38px;
-    height: 38px;
+    width: calc(38px * var(--density));
+    height: calc(38px * var(--density));
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
@@ -198,8 +198,8 @@
 
 .music-ctrl-toggle {
     font-size: calc(24px * var(--font-scale));
-    width: 44px;
-    height: 44px;
+    width: calc(44px * var(--density));
+    height: calc(44px * var(--density));
 }
 
 /* 播放控件与歌词的容器：内部二选一显示，hover 容器可切�?*/
@@ -254,8 +254,8 @@
 #music-section[data-span="2"] .music-content {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
-    padding: 12px 20px 24px;
+    gap: calc(12px * var(--density));
+    padding: calc(12px * var(--density)) calc(20px * var(--density)) calc(24px * var(--density));
 }
 
 #music-section[data-span="2"] .h-music-cover {
@@ -265,7 +265,7 @@
 }
 
 #music-section[data-span="2"] .music-main {
-    gap: 8px;
+    gap: calc(8px * var(--density));
     width: 100%;
 }
 
@@ -280,15 +280,16 @@
 #music-section[data-span="2"] .music-player-zone {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: calc(8px * var(--density));
     width: 100%;
 }
 
 #music-section[data-span="2"] .music-controls {
     flex-direction: column;
-    align-items: center;
-    gap: 8px;
+    align-items: flex-start;
+    gap: calc(8px * var(--density));
     width: 100%;
+    margin-top: calc(10px * var(--density));
 }
 
 #music-section[data-span="2"] .music-lyrics {
@@ -310,15 +311,15 @@
 }
 
 #music-section[data-span="2"] .music-ctrl {
-    width: 40px;
-    height: 40px;
+    width: calc(40px * var(--density));
+    height: calc(40px * var(--density));
     font-size: calc(20px * var(--font-scale));
 }
 
 #music-section[data-span="2"] .music-ctrl-toggle {
     font-size: calc(25px * var(--font-scale));
-    width: 46px;
-    height: 46px;
+    width: calc(46px * var(--density));
+    height: calc(46px * var(--density));
 }
 
 /* 进度条固定在卡片底部略抬一点，不占文档流高度，因此不影响封�?歌词/控件的大�?*/
@@ -326,14 +327,14 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 10px;
+    bottom: calc(10px * var(--density));
     z-index: 3;
     align-items: center;
-    gap: 10px;
+    gap: calc(10px * var(--density));
     width: 100%;
     min-width: 0;
     box-sizing: border-box;
-    padding: 0 16px;
+    padding: 0 calc(16px * var(--density));
 }
 
 #music-section[data-span="2"] .music-seek {
@@ -372,8 +373,8 @@
 }
 
 #music-section[data-span="2"]:hover .music-content {
-    gap: 10px;
-    padding: 10px 18px 22px;
+    gap: calc(10px * var(--density));
+    padding: calc(10px * var(--density)) calc(18px * var(--density)) calc(22px * var(--density));
 }
 
 /* 未在播放：将“未在播放”文案与播放控件水平、垂直居中到卡片正中�?*/
@@ -384,7 +385,7 @@
 
 #music-section[data-span="2"].not-playing .music-main {
     align-items: center;
-    gap: 14px;
+    gap: calc(14px * var(--density));
 }
 
 #music-section[data-span="2"].not-playing .h-music-meta {
@@ -397,6 +398,11 @@
 
 #music-section[data-span="2"].not-playing .music-player-zone {
     align-items: center;
+}
+
+#music-section[data-span="2"].not-playing .music-controls {
+    align-items: center;
+    margin-top: 0;
 }
 
 /* 音乐大卡片：右上/右下角根据封面主色绘制的柔和渐变色。色值由 JS 采样
