@@ -341,6 +341,46 @@
     height: 3px;
 }
 
+/* Only shrink the big card's cover/text on hover when the viewport is small
+   enough that the cover is below its max clamp size; on large screens the
+   cover keeps its enlarged size and nothing shrinks. */
+@media (max-width: 2153px) {
+    #music-section[data-span="2"] .h-music-cover,
+    #music-section[data-span="2"] .h-music-title,
+    #music-section[data-span="2"] .h-music-artist,
+    #music-section[data-span="2"] .h-lyric-current,
+    #music-section[data-span="2"] .h-lyric-next,
+    #music-section[data-span="2"] .music-content {
+        transition: width 0.2s ease, height 0.2s ease, font-size 0.2s ease, gap 0.2s ease, padding 0.2s ease;
+    }
+
+    #music-section[data-span="2"]:hover .h-music-cover {
+        width: calc(68px * var(--font-scale));
+        height: calc(68px * var(--font-scale));
+    }
+
+    #music-section[data-span="2"]:hover .h-music-title {
+        font-size: calc(19px * var(--font-scale));
+    }
+
+    #music-section[data-span="2"]:hover .h-music-artist {
+        font-size: calc(13px * var(--font-scale));
+    }
+
+    #music-section[data-span="2"]:hover .h-lyric-current {
+        font-size: calc(19px * var(--font-scale));
+    }
+
+    #music-section[data-span="2"]:hover .h-lyric-next {
+        font-size: calc(13px * var(--font-scale));
+    }
+
+    #music-section[data-span="2"]:hover .music-content {
+        gap: calc(10px * var(--density));
+        padding: calc(10px * var(--density)) calc(18px * var(--density)) calc(22px * var(--density));
+    }
+}
+
 
 /* 未在播放：将“未在播放”文案与播放控件水平、垂直居中到卡片正中�?*/
 #music-section[data-span="2"].not-playing .music-content {
