@@ -318,6 +318,27 @@
 }
 
 /* ===== Settings About tab ===== */
+.about-hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 6px 0 14px;
+}
+
+.about-icon {
+    width: 40px;
+    height: 40px;
+    image-rendering: pixelated;
+}
+
+.about-name {
+    font-family: "IoskeleyMono", monospace;
+    font-size: calc(22px * var(--ui-scale));
+    font-weight: 700;
+    color: var(--text);
+}
+
 .about-list {
     display: grid;
     grid-template-columns: 1fr 1fr;
