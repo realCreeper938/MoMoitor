@@ -37,13 +37,13 @@
 }
 
 .welcome-title {
-    font-size: calc(19px * var(--font-scale));
+    font-size: calc(19px * var(--ui-scale));
     font-weight: 700;
     color: var(--text);
 }
 
 .welcome-desc {
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text-dim);
     max-width: 460px;
     line-height: 1.6;
@@ -82,13 +82,13 @@
 }
 
 .welcome-monitor-name {
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 600;
     color: var(--text);
 }
 
 .welcome-monitor-res {
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
     color: var(--text-dim);
 }
 
@@ -96,7 +96,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text);
     cursor: pointer;
 }
@@ -134,7 +134,7 @@
     grid-template-columns: 92px 1fr 48px;
     align-items: center;
     gap: 12px;
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text);
     cursor: pointer;
 }
@@ -147,7 +147,7 @@
 
 .welcome-size-val {
     font-family: var(--font-mono);
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(12px * var(--ui-scale));
     color: var(--text-dim);
     text-align: right;
 }

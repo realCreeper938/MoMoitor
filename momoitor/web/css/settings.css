@@ -65,6 +65,11 @@
     font-weight: 600;
 }
 
+/* 设置侧边栏图标跟随界面字体大小，不受全局 .nf-icon（卡片字号）影响 */
+.settings-sidebar .nf-icon {
+    font-size: calc(14px * var(--ui-scale));
+}
+
 /* 选中指示器：在侧边栏标签间滑动（Material Design 风格） */
 .nav-indicator {
     position: absolute;
