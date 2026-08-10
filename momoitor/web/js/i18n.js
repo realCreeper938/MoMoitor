@@ -178,7 +178,6 @@ const LANGS = {
         "short-esc": "Esc Exit",
         "first-launch-hint": "Press S to open settings.",
         // Feature Toggles
-        "nav-features": "Features",
         "settings-features": "Feature Toggles",
         "desc-features": "Disable features you don't need to reduce API calls and CPU usage. Hardware monitoring (CPU, GPU, Memory, Network, Disk) is always on.",
         "music-not-playing": "Not Playing",
@@ -401,7 +400,6 @@ const LANGS = {
         "short-esc": "Esc 退出",
         "first-launch-hint": "按下 S 键打开设置。",
         // Feature Toggles
-        "nav-features": "功能开关",
         "settings-features": "功能开关",
         "desc-features": "关闭不需要的功能或可减少 API 调用和 CPU 占用。硬件监控（CPU、GPU、内存、网络、硬盘）将始终开启。",
         "music-not-playing": "未在播放",

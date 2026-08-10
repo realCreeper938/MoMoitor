@@ -33,6 +33,7 @@
     gap: 2px;
     padding: 8px 6px;
     overflow-y: auto;   /* 屏幕较矮、标签多时允许滚�?*/
+    position: relative;
 }
 
 .nav-btn {
@@ -51,6 +52,7 @@
     text-align: left;
     white-space: nowrap;
     position: relative;
+    z-index: 1;
 }
 
 .nav-btn:hover {
@@ -60,8 +62,21 @@
 
 .nav-btn.active {
     color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
     font-weight: 600;
+}
+
+/* 选中指示器：在侧边栏标签间滑动（Material Design 风格） */
+.nav-indicator {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    top: 8px;
+    height: 0;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    transition: top 0.25s cubic-bezier(0.4, 0, 0.2, 1), height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 0;
 }
 
 /* 激活指示条：内嵌于侧边栏左缘，不改变布局 */
@@ -316,6 +331,7 @@
 
 /* ── Sub-tabs (inside Theme tab: Appearance / Fonts / Layout) ── */
 .subtab-bar {
+    position: relative;
     display: flex;
     gap: 6px;
     margin-bottom: 12px;
@@ -333,6 +349,9 @@
     padding: 5px 14px;
     transition: color 0.15s, background 0.15s, border-color 0.15s;
     cursor: pointer;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
 }
 
 .subtab-btn:hover {
@@ -342,9 +361,21 @@
 
 .subtab-btn.active {
     color: var(--accent);
-    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
     font-weight: 600;
+}
+
+/* 选中指示器：在标签间滑动（Material Design 风格） */
+.subtab-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 0;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .subtab-content {
@@ -353,7 +384,37 @@
 
 .subtab-content.active {
     display: block;
-    animation: fadeIn 0.15s ease;
+}
+
+/* 子标签切换动画：内容按点击方向横向滑入 + 渐显（Material Design 风格） */
+.subtab-content.slide-in-right {
+    animation: subtab-slide-right 0.22s ease-out;
+}
+
+.subtab-content.slide-in-left {
+    animation: subtab-slide-left 0.22s ease-out;
+}
+
+@keyframes subtab-slide-right {
+    from {
+        opacity: 0;
+        transform: translateX(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes subtab-slide-left {
+    from {
+        opacity: 0;
+        transform: translateX(-14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* ── Font picker (reuses theme-card visual language) ── */

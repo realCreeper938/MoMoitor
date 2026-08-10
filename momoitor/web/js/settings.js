@@ -123,6 +123,7 @@ function initSettings() {
     // Font slots
     const subtabBtns = document.querySelectorAll('.subtab-btn');
     const subtabContents = document.querySelectorAll('.subtab-content');
+    const subtabBars = document.querySelectorAll('.subtab-bar');
     let fontUiValue = 'JetBrains Maple Mono';
     let fontDataValue = 'IoskeleyMono';
     let fontClockValue = 'Departure Mono';
@@ -144,7 +145,26 @@ function initSettings() {
     // Tab switching
     // 使用事件委托，动态注册的插件标签页也能正常工作
     const sidebar = document.querySelector('.settings-sidebar');
+    let navIndicator = null;
     if (sidebar) {
+        navIndicator = document.createElement('span');
+        navIndicator.className = 'nav-indicator';
+        sidebar.appendChild(navIndicator);
+
+        function placeNavIndicator(btn, animate) {
+            const style = navIndicator.style;
+            if (!animate) style.transition = 'none';
+            style.top = btn.offsetTop + 'px';
+            style.height = btn.offsetHeight + 'px';
+            if (!animate) {
+                void navIndicator.offsetWidth;   // 强制回流，恢复过渡属性后不触发动画
+                style.transition = '';
+            }
+        }
+
+        const initialActive = sidebar.querySelector('.nav-btn.active') || sidebar.querySelector('.nav-btn');
+        if (initialActive) placeNavIndicator(initialActive, false);
+
         sidebar.addEventListener('click', (e) => {
             const btn = e.target.closest('.nav-btn');
             if (!btn) return;
@@ -153,19 +173,73 @@ function initSettings() {
             _deactivateSettingsTabs(sidebar);
             btn.classList.add('active');
             target.classList.add('active');
+            syncSubtabIndicators();
+            if (navIndicator) placeNavIndicator(btn, true);
         });
     }
 
     // Sub-tab switching (Appearance / Fonts inside Theme tab)
+    // 添加 Material Design 风格的切换动画：滑动选中指示器 + 水波纹 + 内容按方向滑入
+    function placeSubtabIndicator(ind, btn, animate) {
+        const style = ind.style;
+        if (!animate) style.transition = 'none';
+        style.width = btn.offsetWidth + 'px';
+        style.height = btn.offsetHeight + 'px';
+        style.left = btn.offsetLeft + 'px';
+        style.top = btn.offsetTop + 'px';
+        if (!animate) {
+            void ind.offsetWidth;   // 强制回流，使过渡属性恢复后不触发动画
+            style.transition = '';
+        }
+    }
+
+    function syncSubtabIndicators() {
+        document.querySelectorAll('.subtab-bar').forEach(bar => {
+            const ind = bar.querySelector('.subtab-indicator');
+            if (!ind) return;
+            const active = bar.querySelector('.subtab-btn.active');
+            if (active) placeSubtabIndicator(ind, active, false);
+        });
+    }
+
+    // 为每个子标签栏注入滑动指示器
+    subtabBars.forEach(bar => {
+        const ind = document.createElement('span');
+        ind.className = 'subtab-indicator';
+        bar.appendChild(ind);
+        const active = bar.querySelector('.subtab-btn.active');
+        if (active) placeSubtabIndicator(ind, active, false);
+    });
+
     subtabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            subtabBtns.forEach(b => b.classList.remove('active'));
-            subtabContents.forEach(c => c.classList.remove('active'));
-            btn.classList.add('active');
+        btn.addEventListener('click', (e) => {
+            if (typeof spawnCtrlRipple === 'function') spawnCtrlRipple(btn, e);
             const target = document.getElementById('subtab-' + btn.dataset.subtab);
-            if (target) target.classList.add('active');
+            if (!target) return;
+
+            const prevActive = document.querySelector('.subtab-content.active');
+            let slideClass = 'slide-in-right';
+            if (prevActive && (prevActive.compareDocumentPosition(target) &
+                Node.DOCUMENT_POSITION_FOLLOWING)) {
+                slideClass = 'slide-in-left';
+            }
+
+            const bar = btn.closest('.subtab-bar');
+            const ind = bar && bar.querySelector('.subtab-indicator');
+
+            subtabBtns.forEach(b => b.classList.remove('active'));
+            subtabContents.forEach(c => c.classList.remove('active', 'slide-in-right', 'slide-in-left'));
+            btn.classList.add('active');
+            target.classList.add('active');
+            target.classList.add(slideClass);
+            if (ind) placeSubtabIndicator(ind, btn, true);
         });
     });
+
+    // 布局/字体变化后保持指示器对齐
+    if (typeof ResizeObserver === 'function') {
+        subtabBars.forEach(bar => new ResizeObserver(syncSubtabIndicators).observe(bar));
+    }
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {

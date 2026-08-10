@@ -626,10 +626,6 @@
                         <span class="nf-icon">&#xF1FC;</span>
                         <span data-i18n="nav-theme">Theme</span>
                     </button>
-                    <button class="nav-btn" data-tab="features">
-                        <span class="nf-icon">&#xF009;</span>
-                        <span data-i18n="nav-features">Features</span>
-                    </button>
                     <button class="nav-btn" data-tab="plugins">
                         <span class="nf-icon">&#xF12E;</span>
                         <span data-i18n="nav-plugins">Plugins</span>
@@ -1064,9 +1060,10 @@
                         </div>
                     </div>
                     <!-- Features Tab -->
-                    <div class="tab-content" id="tab-features">
+                    <!-- Behavior Tab -->
+                    <div class="tab-content" id="tab-behavior">
                         <div class="setting-group">
-                            <div class="setting-group-title" data-i18n="settings-features">Feature Toggles</div>
+                            <div class="setting-group-title" data-i18n="settings-behavior">Behavior</div>
                             <div class="setting-desc" data-i18n="desc-features">Disable features you don't need to reduce API calls and CPU usage. Hardware monitoring (CPU, GPU, Memory, Network, Disk) is always on.</div>
                             <div class="setting-item">
                                 <span data-i18n="ft-top-control">Top Brightness/Volume</span>
@@ -1103,19 +1100,6 @@
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
-                        </div>
-                    </div>
-                    <!-- Plugins Tab -->
-                    <div class="tab-content" id="tab-plugins">
-                        <div class="setting-group">
-                            <div class="setting-group-title" data-i18n="settings-plugins">Plugins</div>
-                            <div id="plugin-list"></div>
-                        </div>
-                    </div>
-                    <!-- Behavior Tab -->
-                    <div class="tab-content" id="tab-behavior">
-                        <div class="setting-group">
-                            <div class="setting-group-title" data-i18n="settings-behavior">Behavior</div>
                             <div class="setting-item">
                                 <span data-i18n="label-auto-launch">Auto-launch music player</span>
                                 <label class="toggle">
@@ -1124,6 +1108,13 @@
                                 </label>
                             </div>
                             <div class="setting-desc" data-i18n="desc-auto-launch">When no music is playing, clicking the play button will automatically launch the last music player process and start playback.</div>
+                        </div>
+                    </div>
+                    <!-- Plugins Tab -->
+                    <div class="tab-content" id="tab-plugins">
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-plugins">Plugins</div>
+                            <div id="plugin-list"></div>
                         </div>
                     </div>
                     <!-- About Tab -->
