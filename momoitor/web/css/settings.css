@@ -665,7 +665,6 @@
 .proc-item .proc-name {
     flex: 1 1 auto;
     min-width: 0;
-    font-size: calc(12px * var(--ui-scale));
     font-weight: 500;
     color: var(--text);
     white-space: nowrap;
