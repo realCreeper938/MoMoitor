@@ -108,7 +108,14 @@ For deeper architectural detail, consult `docs/` (backends, config, services, js
 - Add indirection only when it serves an actual, present need (e.g., a second backend or a second consumer already exists).
 - YAGNI: do not build features, flags, or abstractions "just in case."
 
-## 13. Conventions (Follow the Existing Style)
+## 13. Prove the Approach Before Implementing
+
+- Before implementing a feature (especially one that introduces a new mechanism, algorithm, or third-party API/strategy), you must first verify the approach is proven and reliable. Satisfy at least one of:
+  - A working test or proof-of-concept that exercises the approach and passes (e.g. a quick experiment script that runs end-to-end before wiring it into the app).
+  - Substantial real-world evidence that the approach is mature and widely used, backed by concrete references (documentation, official examples, established projects using the same technique).
+- Do not ship a feature built on an unverified, speculative, or newly-invented approach. If you cannot prove the approach works or that it is mature, stop and present the uncertainty to the user before proceeding.
+
+## 14. Conventions (Follow the Existing Style)
 
 - Code style: match surrounding code. Python targets >= 3.10, uses `loguru` logging, module docstrings, and type-agnostic plain functions/classes consistent with the codebase.
 - The codebase and docs are primarily written in Chinese; keep that consistency for docs and commit messages.
@@ -119,7 +126,7 @@ For deeper architectural detail, consult `docs/` (backends, config, services, js
 - When adding settings options, you must update all of: `config.py` defaults, `settings.js` read/write, `i18n.js` bilingual keys, and the `index.html` control.
 - Windows-only code is expected; use `sys.platform == "win32"` guards for anything not Windows-specific.
 
-## 14. What Not to Do
+## 15. What Not to Do
 
 - Do not modify `momoitor/libs/` (third-party .NET DLLs, unmodified distribution).
 - Do not commit secrets or API keys.
