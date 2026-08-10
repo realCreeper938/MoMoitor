@@ -186,6 +186,7 @@ DEFAULT_SETTINGS = {
         "hover_highlight": True,  # 鼠标悬停监控项时高亮该项、其余降低透明度
         "hover_animation": True,  # 鼠标悬停卡片时的边框高亮动画
         "hint_dismissed": False,   # 首次启动提示是否已忽略
+        "force_welcome": False,  # 下次启动时是否强制显示欢迎向导
         "update_check_enabled": True,  # 是否检查 GitHub 新版本并弹窗提示
         "debug_logs": False,  # 是否输出 debug 级别日志（设置 → 高级 可开启），默认关闭
         "debug": False,  # 是否启用 pywebview 调试模式（F12 打开 DevTools），默认关闭

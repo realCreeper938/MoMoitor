@@ -38,6 +38,7 @@ function initSettings() {
     const serverPassInput = document.getElementById('opt-server-pass');
     const debugLogsChk = document.getElementById('opt-debug-logs');
     const debugChk = document.getElementById('opt-debug');
+    const forceWelcomeChk = document.getElementById('opt-force-welcome');
     const autoLaunchChk = document.getElementById('opt-auto-launch');
 
     // Data
@@ -478,6 +479,7 @@ function initSettings() {
         serverPassInput.value = sv.auth_pass || '';
         debugLogsChk.checked = g.debug_logs === true;
         if (debugChk) debugChk.checked = g.debug === true;
+        if (forceWelcomeChk) forceWelcomeChk.checked = g.force_welcome === true;
 
         // Behavior
         if (autoLaunchChk) autoLaunchChk.checked = m.auto_launch_music_player !== false;
@@ -524,6 +526,7 @@ function initSettings() {
                 follow_system_theme: followThemeChk.checked,
                 debug_logs: debugLogsChk.checked,
                 debug: debugChk ? debugChk.checked : false,
+                force_welcome: forceWelcomeChk ? forceWelcomeChk.checked : false,
             },
             display: {
                 ...(existing.display || {}),

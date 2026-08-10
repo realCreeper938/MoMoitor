@@ -337,8 +337,8 @@ window.addEventListener('pywebviewready', async () => {
     initMonitorPolling(dsp);
 
     // 全部初始化完成后，再显示界面并收起加载动画；
-    // 首次启动则先展示欢迎向导，向导完成后再显示界面
-    if ((s.general || {}).hint_dismissed) {
+    // 首次启动或开启强制向导时，先展示欢迎向导，向导完成后再显示界面
+    if ((s.general || {}).hint_dismissed && !(s.general || {}).force_welcome) {
         showBody();
     } else {
         showWelcomeWizard(s);

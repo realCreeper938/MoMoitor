@@ -1062,6 +1062,11 @@
                     </div>
                     <!-- Advanced Tab -->
                     <div class="tab-content" id="tab-advanced">
+                        <div class="subtab-bar">
+                            <button type="button" class="subtab-btn active" data-subtab="advanced" data-i18n="subtab-advanced">Advanced</button>
+                            <button type="button" class="subtab-btn" data-subtab="debug" data-i18n="subtab-debug">Debug</button>
+                        </div>
+                        <div class="subtab-content active" id="subtab-advanced">
                         <div class="setting-group">
                             <div class="setting-group-title" data-i18n="settings-server">Server Mode</div>
                             <div class="setting-item">
@@ -1096,6 +1101,8 @@
                             </div>
                             <div class="setting-desc" data-i18n="desc-server-mode">Launch as a web server accessible via browser instead of a desktop window</div>
                         </div>
+                        </div>
+                        <div class="subtab-content" id="subtab-debug">
                         <div class="setting-group">
                             <div class="setting-group-title" data-i18n="settings-diagnostics">Diagnostics</div>
                             <div class="setting-item">
@@ -1114,6 +1121,15 @@
                                 </label>
                             </div>
                             <div class="setting-desc" data-i18n="desc-debug">Enable pywebview debug mode (F12 to open DevTools). Requires restart to take effect.</div>
+                            <div class="setting-item">
+                                <span data-i18n="label-force-welcome">Force Welcome Wizard on Next Start</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="opt-force-welcome">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-desc" data-i18n="desc-force-welcome">Show the first-launch welcome wizard again on next app start.</div>
+                        </div>
                         </div>
                     </div>
                     <!-- Features Tab -->

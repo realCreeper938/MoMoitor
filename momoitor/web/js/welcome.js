@@ -132,6 +132,7 @@ async function _wizardFinish() {
     g.colorscheme_dark = _wizardColorDark;
     g.colorscheme_light = _wizardColorLight;
     g.hint_dismissed = true;
+    g.force_welcome = false;
     if (_wizardHasMonitorStep) {
         dsp.monitor = _wizardMonitor;
         dsp.on_top = document.getElementById('welcome-on-top').checked;
