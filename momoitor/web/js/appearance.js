@@ -600,6 +600,12 @@ function applyFontSize(pct) {
     setTimeout(recalcProcLimit, 0);
 }
 
+function applyUiFontSize(pct) {
+    // UI font scale (settings panel, popups/modals) is independent from the
+    // card font scale, driven by its own --ui-scale variable.
+    document.documentElement.style.setProperty('--ui-scale', pct / 100);
+}
+
 let _featureToggles = {};
 
 /** Whether a layout-controlled section may be shown, honoring BOTH the feature

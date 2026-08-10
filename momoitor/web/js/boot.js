@@ -30,6 +30,7 @@ async function initDisplay(s, g, f, ck, ly) {
     applyFonts(f.ui, f.data, f.clock);
     await applyClockBackgroundSetting(ck.bg_image, ck.bg_opacity, ck.bg_blur, ck.bg_gradient !== false, ck.bg_fit || 'fit', ck.bg_offset_x ?? 50, ck.bg_offset_y ?? 50);
     applyFontSize(g.font_size || 100);
+    applyUiFontSize(g.font_size_ui || 100);
     applyLyricAutoTranslate(ly.auto_translate === true);
 
     // Move to target monitor + fullscreen, then show

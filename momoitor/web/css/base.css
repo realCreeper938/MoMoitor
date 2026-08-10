@@ -40,7 +40,7 @@
 
 .boot-loading-title {
     font-family: var(--font-data);
-    font-size: calc(18px * var(--font-scale));
+    font-size: calc(18px * var(--ui-scale));
     font-weight: 700;
     letter-spacing: 4px;
     color: var(--text-dim);
@@ -70,7 +70,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(12px * var(--ui-scale));
     color: var(--text-dim);
 }
 

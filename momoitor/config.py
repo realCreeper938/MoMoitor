@@ -175,7 +175,8 @@ DEFAULT_SETTINGS = {
     "general": {
         "language": detect_system_language(),
         "refresh_interval": 1000,
-        "font_size": 100,
+        "font_size": 100,  # 卡片字体大小（含悬浮窗）
+        "font_size_ui": 100,  # 界面字体大小（设置/弹窗等）
         "fullscreen": False,
         "colorscheme": "gruvbox",
         "colorscheme_dark": "gruvbox",  # 跟随系统主题时使用的暗色主题

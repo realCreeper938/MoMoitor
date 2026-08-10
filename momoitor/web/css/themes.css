@@ -57,6 +57,9 @@
     /* Global font-size multiplier (1 = 100%). The "Font Size" setting writes
        this var; text scales up/down while the layout keeps its px dimensions. */
     --font-scale: 1;
+    /* Global UI font-size multiplier (settings panel, popups/modals). The "UI
+       Font Size" setting writes this var; independent from --font-scale. */
+    --ui-scale: 1;
     /* Gruvbox Dark Palette (default) */
     --nord0: #282828;
     --nord1: #3c3836;

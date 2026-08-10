@@ -16,14 +16,14 @@
 
 .ports-popup-title {
     font-weight: 700;
-    font-size: calc(14px * var(--font-scale));
+    font-size: calc(14px * var(--ui-scale));
 }
 
 .ports-popup-close {
     background: none;
     border: none;
     color: var(--nord0);
-    font-size: calc(20px * var(--font-scale));
+    font-size: calc(20px * var(--ui-scale));
     cursor: pointer;
     line-height: 1;
     padding: 0 4px;
@@ -54,7 +54,7 @@
     border-radius: var(--radius-sm);
     color: var(--text);
     font-family: var(--font-ui);
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(12px * var(--ui-scale));
     outline: none;
 }
 
@@ -73,7 +73,7 @@
     padding: 6px 10px;
     gap: 6px;
     border-bottom: 1px solid var(--border);
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-dim);
     text-transform: uppercase;
@@ -95,14 +95,14 @@
     text-align: center;
     padding: 24px;
     color: var(--text-dim);
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
 }
 
 .ports-empty {
     text-align: center;
     padding: 24px;
     color: var(--text-dim);
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
 }
 
 .ports-item {
@@ -112,7 +112,7 @@
     border-bottom: 1px solid var(--border);
     gap: 6px;
     min-width: 0;
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(12px * var(--ui-scale));
 }
 
 .ports-item:last-child {
@@ -123,7 +123,7 @@
     width: 40px;
     flex-shrink: 0;
     font-family: var(--font-data);
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-dim);
 }
@@ -133,12 +133,12 @@
     flex-shrink: 0;
     font-family: var(--font-data);
     color: var(--text-dim);
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
 }
 
 .ports-item-name {
     flex: 1;
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(12px * var(--ui-scale));
     font-weight: 600;
     color: var(--text);
     white-space: nowrap;
@@ -150,7 +150,7 @@
 .ports-item-addr {
     width: 140px;
     flex-shrink: 0;
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
     color: var(--text-dim);
     font-family: var(--font-data);
     white-space: nowrap;
@@ -159,7 +159,7 @@
 .ports-item-port {
     width: 55px;
     flex-shrink: 0;
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 700;
     color: var(--cyan);
     font-family: var(--font-data);
@@ -179,7 +179,7 @@
     color: var(--nord0);
     border: none;
     font-family: var(--font-ui);
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
     font-weight: 600;
     padding: 3px 8px;
     cursor: pointer;
@@ -341,12 +341,12 @@
 }
 
 .about-row-label {
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
     opacity: 0.7;
 }
 
 .about-row-value {
-    font-size: calc(14px * var(--font-scale));
+    font-size: calc(14px * var(--ui-scale));
     font-weight: 600;
     overflow-wrap: anywhere;
 }
@@ -354,7 +354,7 @@
 /* 关于页项目地址链接 */
 .about-row-link {
     color: var(--accent);
-    font-size: calc(14px * var(--font-scale));
+    font-size: calc(14px * var(--ui-scale));
     font-weight: 600;
     overflow-wrap: anywhere;
     text-decoration: underline;
@@ -378,7 +378,7 @@
 
 .about-update-badge {
     color: var(--accent);
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
     font-weight: 600;
     border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
     border-radius: 999px;
@@ -406,7 +406,7 @@
     background: color-mix(in srgb, var(--surface) 88%, transparent);
     backdrop-filter: blur(8px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text);
     opacity: 0;
     transform: translateY(-6px);
@@ -455,7 +455,7 @@ body.layout-mode .term-box .layout-drag-handle {
     border-radius: var(--radius-sm);
     background: color-mix(in srgb, var(--surface) 80%, var(--accent) 20%);
     color: var(--accent);
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(12px * var(--ui-scale));
     cursor: grab;
     pointer-events: none;
 }
@@ -541,7 +541,7 @@ body.layout-mode .layout-control-group .layout-del-btn {
     border-radius: var(--radius-sm);
     color: var(--red);
     background: color-mix(in srgb, var(--surface) 80%, var(--red) 20%);
-    font-size: calc(14px * var(--font-scale));
+    font-size: calc(14px * var(--ui-scale));
     cursor: pointer;
     transition: background 0.12s, color 0.12s;
     line-height: 1;
@@ -555,7 +555,7 @@ body.layout-mode .layout-control-group .layout-del-btn {
 
 .layout-toolbar-label {
     font-family: var(--font-data);
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--text);
     margin-right: 4px;
 }
@@ -567,7 +567,7 @@ body.layout-mode .layout-control-group .layout-del-btn {
     border-radius: var(--radius-sm);
     color: var(--text);
     font-family: var(--font-ui);
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(12px * var(--ui-scale));
     padding: 4px 6px;
     min-width: 52px;
     flex-shrink: 0;
@@ -611,7 +611,7 @@ body.layout-mode .layout-control-group .layout-del-btn {
     padding: 10px 14px;
     border-bottom: 1px solid var(--border);
     font-family: var(--font-data);
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(12px * var(--ui-scale));
     color: var(--text);
     flex-shrink: 0;
 }
@@ -619,7 +619,7 @@ body.layout-mode .layout-control-group .layout-del-btn {
     background: none;
     border: none;
     color: var(--text-dim);
-    font-size: calc(16px * var(--font-scale));
+    font-size: calc(16px * var(--ui-scale));
     cursor: pointer;
     line-height: 1;
     padding: 2px 4px;

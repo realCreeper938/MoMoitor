@@ -42,7 +42,7 @@
     align-items: center;
     gap: 10px;
     z-index: 3500;
-    font-size: calc(15px * var(--font-scale));
+    font-size: calc(15px * var(--ui-scale));
     font-weight: 500;
     background: rgba(var(--bg-rgb), 0.85);
     color: var(--text);
@@ -52,7 +52,7 @@
 
 .backend-error-icon {
     color: var(--red);
-    font-size: calc(20px * var(--font-scale));
+    font-size: calc(20px * var(--ui-scale));
     font-family: "Symbols Nerd Font Mono", monospace;
 }
 
@@ -104,7 +104,7 @@
     border-radius: var(--radius-sm);
     color: var(--text);
     font-family: var(--font-ui);
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
     padding: 8px 20px;
     cursor: pointer;
     transition: all 0.15s;
@@ -167,7 +167,7 @@
     color: var(--nord0);
     padding: 10px 16px;
     font-weight: 700;
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
     flex-shrink: 0;
 }
 
@@ -193,7 +193,7 @@
     border-radius: var(--radius-sm);
     color: var(--text-dim);
     font-family: var(--font-ui);
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
     padding: 5px 14px;
     cursor: pointer;
     transition: all 0.15s;
@@ -210,7 +210,7 @@
     border: 1px solid var(--accent);
     border-radius: var(--radius-sm);
     font-family: var(--font-ui);
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
     font-weight: 600;
     padding: 5px 14px;
     cursor: pointer;
@@ -229,21 +229,21 @@
 .update-version {
     font-family: var(--font-data);
     font-weight: 700;
-    font-size: calc(16px * var(--font-scale));
+    font-size: calc(16px * var(--ui-scale));
     color: var(--accent);
     margin-bottom: 4px;
     font-variant-numeric: tabular-nums;
 }
 
 .update-date {
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(12px * var(--ui-scale));
     color: var(--text-dim);
     margin-bottom: 10px;
     font-variant-numeric: tabular-nums;
 }
 
 .update-changelog {
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(12px * var(--ui-scale));
     line-height: 1.6;
     color: var(--text);
     background: var(--nord0);
@@ -269,7 +269,7 @@
 }
 
 .server-info-msg {
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
     line-height: 1.6;
     color: var(--text);
     white-space: pre-wrap;
@@ -282,7 +282,7 @@
 }
 
 .server-info-label {
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(12px * var(--ui-scale));
     font-weight: 600;
     color: var(--text-dim);
     margin-bottom: 4px;
@@ -290,7 +290,7 @@
 
 .server-info-urls,
 .server-info-path {
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
     color: var(--accent);
     line-height: 1.5;
     word-break: break-all;
@@ -341,7 +341,7 @@
 }
 
 .offset-hint {
-    font-size: calc(10px * var(--font-scale));
+    font-size: calc(10px * var(--ui-scale));
     color: var(--text-dim);
     opacity: 0.7;
 }
@@ -576,14 +576,14 @@
 
 .traffic-popup-title {
     font-weight: 700;
-    font-size: calc(14px * var(--font-scale));
+    font-size: calc(14px * var(--ui-scale));
 }
 
 .traffic-popup-close {
     background: none;
     border: none;
     color: var(--nord0);
-    font-size: calc(20px * var(--font-scale));
+    font-size: calc(20px * var(--ui-scale));
     cursor: pointer;
     line-height: 1;
     padding: 0 4px;
@@ -618,14 +618,14 @@
 }
 
 .traffic-card-label {
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .traffic-card-value {
-    font-size: calc(20px * var(--font-scale));
+    font-size: calc(20px * var(--ui-scale));
     font-weight: 700;
     color: var(--text);
     font-family: var(--font-data);
@@ -640,7 +640,7 @@
 }
 
 .traffic-card-proc .traffic-card-value {
-    font-size: calc(15px * var(--font-scale));
+    font-size: calc(15px * var(--ui-scale));
     color: var(--accent);
     white-space: nowrap;
     overflow: hidden;
@@ -658,7 +658,7 @@
 .traffic-cal-title {
     flex: 1;
     text-align: center;
-    font-size: calc(16px * var(--font-scale));
+    font-size: calc(16px * var(--ui-scale));
     font-weight: 700;
     color: var(--text);
 }
@@ -669,7 +669,7 @@
     background: var(--nord0);
     border: 1px solid var(--border);
     color: var(--text);
-    font-size: calc(16px * var(--font-scale));
+    font-size: calc(16px * var(--ui-scale));
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -694,7 +694,7 @@
 
 .traffic-weekdays span {
     text-align: center;
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(12px * var(--ui-scale));
     font-weight: 700;
     color: var(--text-dim);
     padding: 6px 0;
@@ -742,7 +742,7 @@
 }
 
 .traffic-cal-day-num {
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(13px * var(--ui-scale));
     font-weight: 500;
     color: var(--text);
     line-height: 1.2;
@@ -754,7 +754,7 @@
 }
 
 .traffic-cal-day-val {
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
     font-weight: 600;
     color: var(--text);
     line-height: 1;
@@ -782,7 +782,7 @@
     display: flex;
     align-items: center;
     gap: 3px;
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(11px * var(--ui-scale));
     color: var(--text-dim);
 }
 
@@ -795,7 +795,7 @@
 
 /* Exit popup */
 .exit-popup-text {
-    font-size: calc(18px * var(--font-scale));
+    font-size: calc(18px * var(--ui-scale));
     font-weight: 700;
     color: var(--text);
     padding: 24px 40px;

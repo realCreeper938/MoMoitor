@@ -22,6 +22,8 @@ function initSettings() {
     const languageSel = document.getElementById('opt-language');
     const fontsizeRange = document.getElementById('opt-fontsize');
     const fontsizeVal = document.getElementById('fontsize-val');
+    const fontsizeUiRange = document.getElementById('opt-fontsize-ui');
+    const fontsizeUiVal = document.getElementById('fontsize-ui-val');
     const fullscreenChk = document.getElementById('opt-fullscreen');
     const autostartChk = document.getElementById('opt-autostart');
     const hoverHighlightChk = document.getElementById('opt-hover-highlight');
@@ -346,6 +348,8 @@ function initSettings() {
         languageSel.value = g.language || 'en';
         fontsizeRange.value = g.font_size || 100;
         fontsizeVal.textContent = (g.font_size || 100) + '%';
+        fontsizeUiRange.value = g.font_size_ui || 100;
+        fontsizeUiVal.textContent = (g.font_size_ui || 100) + '%';
         fullscreenChk.checked = g.fullscreen !== false;
         hoverHighlightChk.checked = g.hover_highlight !== false;
         applyHoverHighlight(g.hover_highlight !== false);
@@ -514,6 +518,7 @@ function initSettings() {
                 ...(existing.general || {}),
                 language: languageSel.value,
                 font_size: parseInt(fontsizeRange.value),
+                font_size_ui: parseInt(fontsizeUiRange.value),
                 fullscreen: fullscreenChk.checked,
                 hover_highlight: hoverHighlightChk.checked,
                 hover_animation: hoverAnimChk.checked,
@@ -607,6 +612,7 @@ function initSettings() {
         startPolling((s.general || {}).refresh_interval);
         applyLang((s.general || {}).language || 'en');
         applyFontSize((s.general || {}).font_size);
+        applyUiFontSize((s.general || {}).font_size_ui);
         if ((s.general || {}).follow_system_theme) {
             setFollowSystemTheme(true);
             _checkSystemTheme(true);
@@ -656,6 +662,10 @@ function initSettings() {
     fontsizeRange.addEventListener('input', () => {
         fontsizeVal.textContent = fontsizeRange.value + '%';
         applyFontSize(parseInt(fontsizeRange.value));
+    });
+    fontsizeUiRange.addEventListener('input', () => {
+        fontsizeUiVal.textContent = fontsizeUiRange.value + '%';
+        applyUiFontSize(parseInt(fontsizeUiRange.value));
     });
     // Clock sidebar background live preview
     clockBgOpacityRange.addEventListener('input', () => {
