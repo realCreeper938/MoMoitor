@@ -25,8 +25,7 @@ def isolated_config(tmp_path, monkeypatch):
 def test_normalize_fills_defaults():
     s = _normalize_settings({})
     assert s["schema_version"] == config_mod.SCHEMA_VERSION
-    assert "general" in s and "plugins" in s and "layout" in s
-    assert s["plugins"]["enabled"] == []
+    assert "general" in s and "layout" in s
     assert s["layout"]["rows"] == 5 and s["layout"]["cols"] == 2
     assert s["general"]["language"] in ("zh", "en")
 
@@ -50,11 +49,6 @@ def test_normalize_preserves_whole_groups():
     assert s["layout"] == raw["layout"]
     assert s["custom_text"] == raw["custom_text"]
     assert s["feature_toggles"] == raw["feature_toggles"]
-
-
-def test_normalize_plugins_group_preserved():
-    s = _normalize_settings({"plugins": {"enabled": ["example_basic"]}})
-    assert s["plugins"]["enabled"] == ["example_basic"]
 
 
 def test_normalize_legacy_flat_migration():
@@ -90,7 +84,6 @@ def test_save_then_load_roundtrip(isolated_config, monkeypatch):
     s["general"]["refresh_interval"] = 2000
     s["layout"]["rows"] = 8
     s["layout"]["cols"] = 3
-    s["plugins"]["enabled"] = ["example_basic"]
 
     isolated_config.save_settings(s)
 
@@ -101,7 +94,6 @@ def test_save_then_load_roundtrip(isolated_config, monkeypatch):
     assert loaded["general"]["refresh_interval"] == 2000
     assert loaded["layout"]["rows"] == 8
     assert loaded["layout"]["cols"] == 3
-    assert loaded["plugins"]["enabled"] == ["example_basic"]
     assert loaded["schema_version"] == config_mod.SCHEMA_VERSION
 
 
@@ -128,20 +120,18 @@ def test_save_updates_cache(isolated_config):
 def test_save_preserves_unrelated_groups(isolated_config, monkeypatch):
     """保存时不应丢失任何分组：整份文件往返必须完整。"""
     s = isolated_config.load_settings()
-    s["plugins"]["enabled"] = ["example_theme"]
     isolated_config.save_settings(s)
 
     monkeypatch.setattr(config_mod, "_settings_cache", None)
     loaded = isolated_config.load_settings()
     for group in ("general", "display", "clock", "fonts", "weather", "music",
-                  "lyrics", "server", "layout", "custom_text", "feature_toggles", "plugins"):
+                  "lyrics", "server", "layout", "custom_text", "feature_toggles"):
         assert group in loaded
 
 
 def test_load_missing_file_returns_defaults(isolated_config):
     s = isolated_config.load_settings()
     assert s["schema_version"] == config_mod.SCHEMA_VERSION
-    assert s["plugins"]["enabled"] == []
 
 
 def test_load_corrupt_file_returns_defaults(isolated_config):

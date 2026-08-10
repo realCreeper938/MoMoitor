@@ -10,7 +10,6 @@ import webview
 from loguru import logger
 from momoitor.config import load_settings, DATA_DIR
 from momoitor.api import create_monitor, create_window, create_api
-from momoitor.plugins import init_manager, shutdown_manager
 
 logger.remove()
 
@@ -87,7 +86,6 @@ def main():
     logger.info("Starting MoMoitor")
     _cleanup_webview2_data()
     settings = load_settings()
-    init_manager(settings)
     try:
         logger.debug("Initializing hardware monitor")
         monitor = create_monitor()
@@ -111,7 +109,6 @@ def main():
             api.close_monitor()
         else:
             monitor.close()
-        shutdown_manager()
         logger.info("MoMoitor exited")
 
 

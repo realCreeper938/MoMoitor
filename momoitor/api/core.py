@@ -18,7 +18,6 @@ from momoitor.services.lyrics import LyricsService
 from momoitor.services.traffic import TrafficService
 from momoitor.services.update import check_latest as check_latest_release
 from momoitor.services.weather import WeatherService
-from momoitor.plugins import get_manager
 
 
 class ApiCore:
@@ -28,13 +27,7 @@ class ApiCore:
         self._window = None
         self._server_backend = None
         self._settings = load_settings()
-        # 插件管理器：先挂接 API 方法，再创建硬件服务（数据源可来自插件）
-        self._plugin_manager = get_manager()
-        self._plugin_manager.attach(self)
-        self._hw = HardwareService(
-            monitor, self._settings,
-            plugin_monitor_factory=self._plugin_manager.create_monitor,
-        )
+        self._hw = HardwareService(monitor, self._settings)
         self._fullscreen = False
         # 以下服务按需延迟初始化，避免启动时不必要的开销。
         # _weather / _holiday / _traffic / _lyrics 通过 __getattr__ 惰性创建。

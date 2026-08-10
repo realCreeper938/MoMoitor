@@ -4,7 +4,6 @@
 - api.hardware.HardwareMixin: 硬件数据 / 系统信息 / 进程 / 端口
 - api.weather.WeatherMixin: 天气 / 黄历 / 节假日
 - api.media.MediaMixin: 音乐 / 歌词 / FPS / 流量 / 壁纸 / 音量亮度
-- api.plugins.PluginMixin: 插件管理 / 前端资源 / 主题 / 数据源
 
 用法（对外唯一入口，保持向后兼容）:
     from momoitor.api import create_monitor, create_window, create_api
@@ -15,29 +14,23 @@ import os
 import webview
 
 from momoitor.config import WEB_DIR, load_settings
-from momoitor.plugins import get_manager
 from momoitor.services import window as win_svc
 
 from .core import ApiCore
 from .hardware import HardwareMixin
 from .media import MediaMixin
-from .plugins import PluginMixin
 from .weather import WeatherMixin
 
 __all__ = ["Api", "create_monitor", "create_window", "create_api"]
 
 
-class Api(ApiCore, HardwareMixin, WeatherMixin, MediaMixin, PluginMixin):
+class Api(ApiCore, HardwareMixin, WeatherMixin, MediaMixin):
     """面向前端 JS 的 pywebview API 门面（组合各能力 mixin）。"""
 
 
 def create_monitor():
     settings = load_settings()
     source = settings.get("general", {}).get("data_source", "lhm")
-    # 插件提供的数据源优先
-    monitor = get_manager().create_monitor(source)
-    if monitor is not None:
-        return monitor
     from momoitor.backends import LHMMonitor, HWiNFOMonitor
     if source == "hwinfo":
         return HWiNFOMonitor()

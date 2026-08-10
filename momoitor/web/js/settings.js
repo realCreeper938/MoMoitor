@@ -42,15 +42,6 @@ function initSettings() {
     const intervalSel = document.getElementById('opt-interval');
     const datasourceSel = document.getElementById('opt-datasource');
     const gpuSel = document.getElementById('opt-gpu');
-    // 插件数据源（由 initPlugins 填充）
-    if (window._pluginDataSources) {
-        window._pluginDataSources.forEach(ds => {
-            const opt = document.createElement('option');
-            opt.value = ds.value;
-            opt.textContent = ds.label;
-            datasourceSel.appendChild(opt);
-        });
-    }
     const metingUrlInput = document.getElementById('opt-meting-url');
     const lyricsWhitelistInput = document.getElementById('opt-lyrics-whitelist');
     const lyricsTranslateChk = document.getElementById('opt-lyrics-translate');
@@ -501,7 +492,6 @@ function initSettings() {
         loadAboutInfo();
 
         // Show overlay
-        if (window.PluginApi) PluginApi._notifySettingsOpen();
         _deactivateSettingsTabs(sidebar);
         sidebar.querySelector('.nav-btn').classList.add('active');
         document.querySelector('.settings-body > .tab-content').classList.add('active');
@@ -597,15 +587,11 @@ function initSettings() {
             s.feature_toggles[key] = cb ? cb.checked : true;
         });
 
-        if (window.PluginApi) PluginApi._notifySettingsSave(s);
-
         await pywebview.api.save_settings(s);
         await pywebview.api.set_autostart(autostartChk.checked);
         await pywebview.api.change_backend((s.general || {}).data_source);
 
         window._appSettings = { ...window._appSettings, ...s };
-
-        if (window.PluginApi) PluginApi._notifySettingsSaved(s);
 
         applyHoverAnim((s.general || {}).hover_animation !== false);
         applyHoverHighlight((s.general || {}).hover_highlight !== false);

@@ -1,6 +1,5 @@
 // Card registry — the single source of truth for which cards exist and how each
-// card behaves. layout.js drives grid positioning/geometry from here, plugins
-// register dynamic cards through registerCard().
+// card behaves. layout.js drives grid positioning/geometry from here.
 //
 // The clock column is NOT a registered card: it has no col/row/span/hidden and is
 // handled as a special case in the layout state (clock-section.side).
@@ -83,7 +82,7 @@ function getLayoutSpan(id) {
 }
 
 /* Register a card. Built-in cards are registered at load time from their HTML
-   elements; plugin cards pass their already-built element in opts.el. */
+   elements. */
 function registerCard(id, opts) {
     const existing = getCard(id);
     if (existing) return existing;

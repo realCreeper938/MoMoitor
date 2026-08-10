@@ -7,10 +7,6 @@ import re
 def test_package_imports():
     for name in [
         "momoitor.config",
-        "momoitor.plugins",
-        "momoitor.plugins.base",
-        "momoitor.plugins.manager",
-        "momoitor.plugins.monitor",
         "momoitor.api",
         "momoitor.server",
         "momoitor.main",

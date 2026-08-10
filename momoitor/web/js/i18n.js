@@ -204,12 +204,6 @@ const LANGS = {
         "ports-name": "Process",
         "ports-addr": "Address",
         "ports-port": "Port",
-        // Plugins
-        "nav-plugins": "Plugins",
-        "settings-plugins": "Plugins",
-        "plugins-empty": "No plugins found. Place plugins into the ./plugins directory and restart.",
-        "plugin-restart-hint": "Plugin changes take effect after restart",
-        "plugin-invalid": "Invalid plugin",
         // Behavior
         "nav-behavior": "Behavior",
         "settings-behavior": "Behavior",
@@ -425,12 +419,6 @@ const LANGS = {
         "ports-name": "进程",
         "ports-addr": "地址",
         "ports-port": "端口",
-        // Plugins
-        "nav-plugins": "插件",
-        "settings-plugins": "插件",
-        "plugins-empty": "未找到插件。将插件放入 ./plugins 目录后重启。",
-        "plugin-restart-hint": "插件改动将在重启后生效",
-        "plugin-invalid": "无效插件",
         // Behavior
         "nav-behavior": "行为",
         "settings-behavior": "行为",

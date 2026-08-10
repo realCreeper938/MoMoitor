@@ -1,6 +1,5 @@
 """硬件监视服务 —— 线程安全地封装后端监视器，提供快照查询与后端切换。"""
 
-import inspect
 import math
 import threading
 
@@ -13,21 +12,18 @@ from momoitor.config import save_settings
 class HardwareService:
     """围绕硬件监视后端的线程安全包装类。"""
 
-    def __init__(self, monitor, settings: dict, plugin_monitor_factory=None):
+    def __init__(self, monitor, settings: dict):
         self._monitor = monitor
         self._lock = threading.RLock()
         self._settings = settings
         self._backend_source = settings.get("general", {}).get("data_source", "lhm")
         self._closed = False
-        # 插件数据源工厂：给定 source 返回插件 Monitor（无匹配则返回 None）
-        self._plugin_monitor_factory = plugin_monitor_factory
-        self._snapshot_accepts_skip_net = None
 
     def snapshot(self, skip_net=False) -> dict:
         try:
             gpu_index = self._settings.get("display", {}).get("gpu_index", 0)
             with self._lock:
-                data = self._sanitize(self._call_snapshot(gpu_index, skip_net))
+                data = self._sanitize(self._monitor.snapshot(gpu_index=gpu_index, skip_net=skip_net))
             data["error"] = ""
             return data
         except Exception as e:
@@ -41,19 +37,6 @@ class HardwareService:
                 "net": {"up": 0, "down": 0, "name": "N/A"},
                 "error": str(e),
             }
-
-    def _call_snapshot(self, gpu_index, skip_net):
-        """按监视器签名调用 snapshot()，兼容未实现 skip_net 的旧插件数据源。"""
-        fn = self._monitor.snapshot
-        if getattr(self, "_snapshot_accepts_skip_net", None) is None:
-            try:
-                params = inspect.signature(fn).parameters
-                self._snapshot_accepts_skip_net = "skip_net" in params
-            except (TypeError, ValueError):
-                self._snapshot_accepts_skip_net = False
-        if self._snapshot_accepts_skip_net:
-            return fn(gpu_index=gpu_index, skip_net=skip_net)
-        return fn(gpu_index=gpu_index)
 
     def get_hw_names(self) -> dict:
         try:
@@ -117,27 +100,6 @@ class HardwareService:
             return {"name": self._backend_source.upper(), "version": None}
 
     def change_backend(self, source: str) -> bool:
-        # 插件提供的数据源：优先尝试，命中则直接切换
-        if self._plugin_monitor_factory is not None and source not in ("lhm", "hwinfo"):
-            if source == self._backend_source:
-                return True
-            new_monitor = self._plugin_monitor_factory(source)
-            if new_monitor is not None:
-                with self._lock:
-                    old_monitor = self._monitor
-                    self._monitor = new_monitor
-                    self._backend_source = source
-                    self._closed = False
-                    self._snapshot_accepts_skip_net = None
-                    try:
-                        old_monitor.close()
-                    except Exception as e:
-                        logger.warning("Failed to close previous backend: {}", e)
-                self._settings.setdefault("general", {})["data_source"] = source
-                save_settings(self._settings)
-                logger.info("Switched to plugin backend {}", source)
-                return True
-            logger.warning("Plugin backend {} not available, falling back", source)
         source = "hwinfo" if source == "hwinfo" else "lhm"
         if source == self._backend_source:
             return True
@@ -147,7 +109,6 @@ class HardwareService:
             self._monitor = new_monitor
             self._backend_source = source
             self._closed = False
-            self._snapshot_accepts_skip_net = None
             try:
                 old_monitor.close()
             except Exception as e:

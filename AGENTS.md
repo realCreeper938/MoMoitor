@@ -12,7 +12,6 @@ Key facts:
 - Shows CPU/GPU/RAM/network/disk/process metrics, clock/calendar (with lunar calendar, almanac, holidays), weather (QWeather API), music/media control + lyrics, game FPS via RTSS, brightness/volume control, memory cleaning, port/network traffic viewers.
 - Two run modes: desktop WebView window (default) and optional server mode (bottle HTTP server for browser/phone access).
 - Settings are stored in a schema-versioned `settings.json` (see `momoitor/config.py`, `SCHEMA_VERSION = 2`).
-- Plugin system exists under `momoitor/plugins/` (experimental, TODO in README).
 
 Key architecture layout:
 
@@ -26,11 +25,10 @@ Key architecture layout:
 | `momoitor/backends/` | Hardware sources: `base.py` (abstract), `lhm.py`, `hwinfo.py` |
 | `momoitor/services/` | Feature services (hardware, system, weather, music, lyrics, fps, traffic, calendar, brightness, volume, etc.) |
 | `momoitor/web/` | Frontend: `index.html` + vanilla JS files + CSS |
-| `momoitor/plugins/` | Plugin system (base, manager, monitor) |
 | `scripts/build.py` | Build/release CLI (`check` / `build` / `run` / `release`) |
 | `tests/` | pytest tests |
 
-For deeper architectural detail, consult `docs/` (backends, config, services, js-api, plugins, utilities, entrypoint) and the `momoitor-overview` skill.
+For deeper architectural detail, consult `docs/` (backends, config, services, js-api, utilities, entrypoint) and the `momoitor-overview` skill.
 
 ## 2. Do Not Reinvent the Wheel
 
@@ -68,7 +66,7 @@ For deeper architectural detail, consult `docs/` (backends, config, services, js
   - Adding/removing dependencies.
   - Changing the settings schema (version, keys, defaults) or data layout/migration.
   - Large refactors or restructuring.
-  - Changing public API surface (pywebview bridge methods, plugin API).
+  - Changing public API surface (pywebview bridge methods).
   - Design decisions with multiple viable options.
 - When proposing options, present a recommendation along with alternatives, and let the user decide.
 

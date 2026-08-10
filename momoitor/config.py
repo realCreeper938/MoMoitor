@@ -39,9 +39,6 @@ LIB_DIR = os.path.join(BASE_DIR, "libs")
 WALLPAPERS_DIR = os.path.join(DATA_DIR, "wallpapers")
 SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 
-# 插件根目录：每个子目录是一个插件，用 config.py 描述元信息
-PLUGINS_DIR = os.path.join(PROJECT_ROOT, "plugins")
-
 
 def _migrate_legacy_data():
     """打包版首次运行时，将旧版 %LOCALAPPDATA%\\MoMoitor 中的数据迁移到新数据目录。
@@ -282,10 +279,6 @@ DEFAULT_SETTINGS = {
         "traffic": True,
         "clock_bg": True,
         "top_control": True,  # 鼠标移到界面顶端时的亮度/音量调节条
-    },
-    # 插件：已启用的插件 id 列表（在设置 → 插件中开关，下次启动生效）
-    "plugins": {
-        "enabled": [],
     },
 }
 

@@ -64,8 +64,6 @@ window.addEventListener('pywebviewready', async () => {
     const s = await pywebview.api.get_settings();
     window._appSettings = s;
 
-    await initPlugins();
-
     const g = s.general || {};
     const f = s.fonts || {};
     const ck = s.clock || {};
@@ -123,7 +121,6 @@ window.addEventListener('pywebviewready', async () => {
     oldWeatherKey = w.private_key || '';
 
     initSettings();
-    renderPluginList();
     initLayoutControls();
     initTextCardEditor();
     setupTopControl();
@@ -338,7 +335,6 @@ window.addEventListener('pywebviewready', async () => {
     setInterval(checkMonitor, 5000);
 
     // 全部初始化完成后，再显示界面并收起加载动画
-    if (window.PluginApi) PluginApi.bootstrap();
     showBody();
 
 });

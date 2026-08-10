@@ -6,4 +6,3 @@
 - [config.md](config.md) — 路径常量与 settings.json 配置项
 - [utilities.md](utilities.md) — 公共工具（common / db / cache）
 - [entrypoint.md](entrypoint.md) — 运行入口（main / server）
-- [plugins.md](plugins.md) — 插件系统（PluginManager / PluginContext / 前端 PluginApi）
