@@ -12,14 +12,18 @@
     padding: 2px 20px;
 }
 
-/* 微调 CPU/GPU/内存 卡片内容整体往左 */
+/* 卡片内容整体往左微调 */
 #cpu-section > .box-content,
 #gpu-section > .box-content,
-#mem-section > .box-content {
+#mem-section > .box-content,
+#fps-section > .box-content {
     padding-left: 12px;
 }
 
-/* Pull the FPS value further left for better balance (small form only) */
+/* 小卡片（span 1）内容更偏左，避免右侧信息被挤压截断 */
+#cpu-section:not([data-span="2"]) > .box-content,
+#gpu-section:not([data-span="2"]) > .box-content,
+#mem-section:not([data-span="2"]) > .box-content,
 #fps-section:not([data-span="2"]) > .box-content {
     padding-left: 5px;
 }
