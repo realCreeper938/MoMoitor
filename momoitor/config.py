@@ -226,6 +226,7 @@ DEFAULT_SETTINGS = {
     },
     # 天气
     "weather": {
+        "enabled": True,  # 是否启用天气：关闭后不再获取任何天气信息
         "lat": "39.92",
         "lon": "116.41",
         "key_id": "",
@@ -285,7 +286,7 @@ DEFAULT_SETTINGS = {
     },
     "feature_toggles": {
         "calendar": True,
-        "weather": True,  # 是否在时钟侧栏显示天气（即使未配置天气 API 也可开启）
+        "weather": True,  # 是否在时钟侧栏显示天气（仅影响显示，不影响天气卡片与数据获取）
         "traffic": True,
         "clock_bg": True,
         "top_control": True,  # 鼠标移到界面顶端时的亮度/音量调节条

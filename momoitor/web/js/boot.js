@@ -103,9 +103,8 @@ function initSettingsAndPolling(g, s) {
     const ft = s.feature_toggles || {};
 
     // Start intervals only for enabled features
-    const weatherOn = ft.weather !== false;
-    _startWeatherIntervals(weatherOn);
-    _startInterval(weatherOn, refreshWeatherCard, 600000);
+    const wxOn = (s.weather || {}).enabled !== false;
+    _startAllWeatherIntervals(wxOn);
     _startInterval(ft.music !== false, refreshMusic, 3000);
     _startInterval(ft.fps !== false, refreshFps, 1000);
     _startInterval(true, refreshSysinfo, 60000);

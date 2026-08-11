@@ -138,6 +138,7 @@ function initSettings() {
     const lyricsTranslateChk = document.getElementById('opt-lyrics-translate');
 
     // Weather
+    const wxEnabledChk = document.getElementById('opt-wx-enabled');
     const wxLat = document.getElementById('opt-wx-lat');
     const wxLon = document.getElementById('opt-wx-lon');
     const wxKid = document.getElementById('opt-wx-kid');
@@ -489,6 +490,7 @@ function initSettings() {
         } catch (e) { console.warn('get_gpu_list:', e); }
 
         // Weather
+        wxEnabledChk.checked = w.enabled !== false;
         wxLat.value = w.lat || '';
         wxLon.value = w.lon || '';
         wxKid.value = w.key_id || '';
@@ -665,6 +667,7 @@ function initSettings() {
             },
             weather: {
                 ...(existing.weather || {}),
+                enabled: wxEnabledChk.checked,
                 lat: wxLat.value.trim(),
                 lon: wxLon.value.trim(),
                 key_id: wxKid.value.trim(),
@@ -736,9 +739,10 @@ function initSettings() {
         applyHwNames(true);
         applyFeatureToggles(s.feature_toggles || {});
 
-        // Restart sidebar weather intervals to match the Show Weather toggle
-        const wxSidebarOn = (s.feature_toggles || {}).weather !== false;
-        _startWeatherIntervals(wxSidebarOn);
+        // Restart weather intervals to match the Enable Weather toggle
+        const wxEnabledOn = (s.weather || {}).enabled !== false;
+        _startAllWeatherIntervals(wxEnabledOn);
+        if (!wxEnabledOn) resetWeatherDisplays();
 
         const wx = s.weather || {};
         const wxChanged = wx.lat !== oldWeatherLat || wx.lon !== oldWeatherLon ||

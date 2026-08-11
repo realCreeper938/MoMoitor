@@ -820,14 +820,15 @@
                     <!-- Weather Tab -->
                     <div class="tab-content" id="tab-weather">
                         <div class="setting-group">
-                            <div class="setting-group-title" data-i18n="settings-features">Feature Toggles</div>
+                            <div class="setting-group-title" data-i18n="settings-weather">Weather</div>
                             <div class="setting-item">
-                                <span data-i18n="ft-weather">Show Weather</span>
+                                <span data-i18n="wx-enabled">Enable Weather</span>
                                 <label class="toggle">
-                                    <input type="checkbox" id="ft-weather" checked>
+                                    <input type="checkbox" id="opt-wx-enabled" checked>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
+                            <div class="setting-desc" data-i18n="desc-wx-enabled">Turn off to stop fetching weather data</div>
                         </div>
                         <div class="setting-group">
                             <div class="setting-group-title" data-i18n="settings-location">Location</div>
@@ -1036,6 +1037,13 @@
                                     <span data-i18n="label-show-seconds">Show Seconds</span>
                                     <label class="toggle">
                                         <input type="checkbox" id="opt-show-seconds" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="clock-show-weather">Weather in Clock</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="ft-weather" checked>
                                         <span class="toggle-slider"></span>
                                     </label>
                                 </div>

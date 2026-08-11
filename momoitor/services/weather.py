@@ -223,18 +223,26 @@ class WeatherService:
             return None
         return s
 
+    def _disabled(self):
+        """天气开关 weather.enabled 关闭时不获取任何天气信息。"""
+        return not self._get_settings().get("weather", {}).get("enabled", True)
+
     def _wx_args(self, s):
         w = s["weather"]
         return _Creds(w["lat"], w["lon"],
                       w["key_id"], w["project_id"], w["private_key"])
 
     def get_now(self):
+        if self._disabled():
+            return {"error": "disabled"}
         s = self._creds()
         if not s:
             return {"error": "not_configured"}
         return self._cached_call("now", 600, get_now, s)
 
     def get_detail(self):
+        if self._disabled():
+            return {"error": "disabled"}
         s = self._creds()
         if not s:
             return {"error": "not_configured"}
@@ -249,12 +257,16 @@ class WeatherService:
         return {"now": now_data, "minutely": minutely_data}
 
     def get_airquality(self):
+        if self._disabled():
+            return {"error": "disabled"}
         s = self._creds()
         if not s:
             return {"error": "not_configured"}
         return self._cached_call("airquality", 600, get_airquality, s)
 
     def get_alerts(self):
+        if self._disabled():
+            return []
         s = self._creds()
         if not s:
             return []

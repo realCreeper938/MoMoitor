@@ -23,6 +23,56 @@ function wxIcon(iconCode) {
     return WX_ICONS[iconCode] || '\u{F0590}';
 }
 
+/** 天气总开关：weather.enabled 关闭时不获取天气信息。 */
+function weatherEnabled() {
+    return !window._appSettings || (window._appSettings.weather || {}).enabled !== false;
+}
+
+/* 天气停用时把侧栏天气与天气卡片重置为占位显示。 */
+function resetWeatherDisplays() {
+    setText('h-clock-weather-temp', '--℃');
+    const hIcon = document.getElementById('h-wx-icon');
+    if (hIcon) hIcon.textContent = '#';
+    const popupIcon = document.getElementById('wx-popup-icon');
+    if (popupIcon) popupIcon.textContent = '';
+    setText('wx-popup-temp', '--');
+    setText('wx-popup-text', '--');
+    setText('wx-popup-city', '--');
+    setText('wx-popup-updated', '--:--');
+    setText('wx-feels', '--');
+    setText('wx-humidity', '--');
+    setText('wx-wind-dir', '--');
+    setText('wx-wind-scale', '--');
+    const aqiRow = document.getElementById('wx-aqi-row');
+    if (aqiRow) aqiRow.style.display = 'none';
+    const precipRow = document.getElementById('wx-precip-row');
+    if (precipRow) precipRow.style.display = 'none';
+    const alertsRow = document.getElementById('wx-alerts-row');
+    if (alertsRow) alertsRow.style.display = 'none';
+    const section = document.getElementById('weather-section');
+    if (section) {
+        section.dataset.wx = '';
+        section.style.setProperty('--wx-bg-opacity', '0.5');
+        section.classList.remove('has-precip', 'has-alerts');
+    }
+    const cardIcon = document.getElementById('wx-card-icon');
+    if (cardIcon) cardIcon.textContent = wxIcon('999');
+    setText('wx-card-temp', '--');
+    setText('wx-card-text', '--');
+    setText('wx-card-city', '--');
+    setText('wx-card-updated', '--');
+    setText('wx-card-feels', '--');
+    setText('wx-card-humidity', '--');
+    setText('wx-card-wind', '--');
+    const cardAqiRow = document.getElementById('wx-card-aqi-row');
+    if (cardAqiRow) cardAqiRow.style.display = 'none';
+    const cardPrecipRow = document.getElementById('wx-card-precip-row');
+    if (cardPrecipRow) cardPrecipRow.style.display = 'none';
+    const cardAlertsRow = document.getElementById('wx-card-alerts-row');
+    if (cardAlertsRow) cardAlertsRow.style.display = 'none';
+    hideWxTip();
+}
+
 function appendMoreAlerts(container, count, maxShow) {
     const more = document.createElement('div');
     more.className = 'wx-alert-more';
@@ -79,6 +129,7 @@ function wxAlertPublishHTML(a) {
 }
 
 async function refreshWeather() {
+    if (!weatherEnabled()) { resetWeatherDisplays(); return; }
     try {
         const w = await pywebview.api.get_weather();
         if (w.error) {
@@ -119,6 +170,7 @@ function formatUpdateDate(t) {
 }
 
 async function refreshWeatherDetail() {
+    if (!weatherEnabled()) { resetWeatherDisplays(); return; }
     try {
         const d = await pywebview.api.get_weather_detail();
         if (d.error) return;
@@ -166,6 +218,7 @@ function aqiColorClass(category) {
 }
 
 async function refreshAirQuality() {
+    if (!weatherEnabled()) { resetWeatherDisplays(); return; }
     try {
         const d = await pywebview.api.get_airquality();
         const el = document.getElementById('wx-aqi-val');
@@ -186,6 +239,7 @@ async function refreshAirQuality() {
 
 /* Weather alerts */
 async function refreshAlerts() {
+    if (!weatherEnabled()) { resetWeatherDisplays(); return; }
     try {
         const alerts = await pywebview.api.get_alerts();
         const row = document.getElementById('wx-alerts-row');
@@ -249,6 +303,7 @@ function showWxTip(chip, a) {
 }
 
 async function refreshWeatherCard() {
+    if (!weatherEnabled()) { resetWeatherDisplays(); return; }
     try {
         const section = document.getElementById('weather-section');
         if (!section) return;

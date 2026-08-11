@@ -874,3 +874,9 @@ function _startWeatherIntervals(enabled) {
     _startInterval(enabled, refreshAirQuality, 1800000);
     _startInterval(enabled, refreshAlerts, 600000);
 }
+
+/** 启动/停止全部天气刷新（侧栏天气 + 天气卡片），受 weather.enabled 控制。 */
+function _startAllWeatherIntervals(enabled) {
+    _startWeatherIntervals(enabled);
+    _startInterval(enabled, refreshWeatherCard, 600000);
+}
