@@ -207,6 +207,25 @@
                 </div>
             </div>
 
+            <!-- Battery -->
+            <div class="term-box" id="battery-section">
+                <svg class="sparkline-bg" data-spark="battery" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon class="spark-area" points="" /><polyline class="spark-line" points="" /><line class="spark-cursor" y1="0" y2="100" /></svg>
+                <div class="layout-drag-handle">⠿</div>
+                <div class="corner-label">BATT</div>
+                <div class="box-header" id="battery-header">Battery</div>
+                <div class="box-content">
+                    <div class="split-row">
+                        <div class="data-col">
+                            <div class="value-row">
+                                <span class="metric-value big mono" id="batt-pct">--</span><span class="pct">%</span>
+                                <svg class="batt-icon" id="batt-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13 2 3 14h7l-1 8 10-12h-7l1-8z" /></svg>
+                            </div>
+                            <div class="info-line"><span class="mono" id="batt-status">--</span> · <span class="mono" id="batt-rate">--</span><span class="unit">W</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Traffic Popup -->
             <div id="traffic-popup-overlay" class="modal-overlay" style="display:none">
                 <div id="traffic-popup" class="modal-panel traffic-popup">
@@ -773,6 +792,7 @@
                                 <div class="setting-desc" data-i18n="hint-datasource">Drag to reorder priority; uncheck a source to disable it</div>
                                 <div class="setting-desc" data-i18n="desc-datasource">HWiNFO needs its shared memory running; WMI needs no extra software but lacks temperature/power data</div>
                                 <div class="setting-desc" data-i18n="desc-datasource-aida64">AIDA64: enable "Allow Shared Memory" in Settings → External Applications, and it is recommended to check all monitoring items</div>
+                                <div class="setting-desc" data-i18n="desc-datasource-many">Enabling too many data sources may cause lag or delayed updates</div>
                                 <div class="setting-item">
                                     <span data-i18n="label-interval">Refresh Interval</span>
                                     <select id="opt-interval">

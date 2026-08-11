@@ -25,10 +25,13 @@ class CompositeMonitor(BaseMonitor):
         """monitors: [(source_name, BaseMonitor), ...]，顺序即优先级。"""
         super().__init__()
         self._monitors = list(monitors)
+        # 最近一次快照中失败的源名（供前端提示）。
+        self._failed_sources = []
 
     def _source_snapshots(self, gpu_index, skip_net):
         """依次采集每个后端的快照；单个后端异常时跳过（该源视为无数据）。"""
         snaps = []
+        failed = []
         for name, mon in self._monitors:
             try:
                 snap = mon.snapshot(gpu_index=gpu_index, skip_net=skip_net)
@@ -36,6 +39,8 @@ class CompositeMonitor(BaseMonitor):
                     snaps.append(snap)
             except Exception as e:
                 logger.warning("{} backend snapshot failed: {}", name, e)
+                failed.append(name)
+        self._failed_sources = failed
         return snaps
 
     def snapshot(self, gpu_index=None, skip_net=False) -> dict:
@@ -73,6 +78,7 @@ class CompositeMonitor(BaseMonitor):
              if snap.get("net") and snap["net"].get("name") != "N/A"),
             {"up": 0, "down": 0, "name": "N/A"},
         )
+        result["unavailable_sources"] = list(self._failed_sources)
         return result
 
     def get_hw_names(self) -> dict:

@@ -487,3 +487,84 @@
 .term-box:hover .hw-name {
     opacity: 0.85;
 }
+
+/* ---- Battery card: left value / right status-info layout (like memory) ---- */
+#battery-section > .box-content {
+    flex: 1 1 auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 2px 20px 10px 18px;
+}
+
+#battery-section:not([data-span="2"]) > .box-content {
+    padding-left: 8px;
+}
+
+#battery-section .split-row {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#battery-section .data-col {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 8px 32px;
+    width: 100%;
+}
+
+#battery-section .value-row {
+    grid-column: 1;
+    grid-row: 1 / -1;
+}
+
+#battery-section .info-line {
+    grid-column: 2;
+    grid-row: 1 / -1;
+    align-self: center;
+    font-variant-numeric: tabular-nums;
+}
+
+#battery-section .metric-value.big {
+    font-variant-numeric: tabular-nums;
+    min-width: 3ch;
+    text-align: right;
+    font-size: calc(clamp(56px, 6.5vw, 96px) * var(--font-scale));
+}
+
+#battery-section[data-span="2"] .metric-value.big {
+    font-size: calc(clamp(64px, 8vw, 120px) * var(--font-scale));
+}
+
+#battery-section .info-line {
+    font-size: calc(clamp(18px, 1.7vw, 23px) * var(--font-scale));
+    line-height: 1;
+    opacity: 0.85;
+}
+
+#battery-section[data-span="2"] .info-line {
+    font-size: calc(clamp(19px, 1.9vw, 26px) * var(--font-scale));
+}
+
+#battery-section .info-line .mono {
+    font-size: calc(clamp(16px, 1.6vw, 24px) * var(--font-scale));
+}
+
+#battery-section .info-line .unit {
+    font-size: calc(clamp(13px, 1.25vw, 18px) * var(--font-scale));
+}
+
+/* Charging bolt icon — green, next to the big percentage */
+.batt-icon {
+    width: 1em;
+    height: 1em;
+    color: var(--green);
+    vertical-align: middle;
+    margin-left: 0.2em;
+    display: none;
+}

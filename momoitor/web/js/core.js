@@ -66,7 +66,7 @@ let tempWarnTimer = null;
 
 /* Sparkline chart — 90s resource usage rendered as SVG polyline (CPU/GPU/MEM/FPS/Net) */
 const CHART_WINDOW_MS = 90000;
-const chartData = { cpu: [], gpu: [], mem: [], fps: [], fps_low1: [], net_up: [], net_down: [], disk_read: [], disk_write: [] };
+const chartData = { cpu: [], gpu: [], mem: [], fps: [], fps_low1: [], net_up: [], net_down: [], disk_read: [], disk_write: [], battery: [] };
 
 function chartPush(key, val, maxVal) {
     const arr = chartData[key];
@@ -565,6 +565,29 @@ function _applyFpsSpan(el, span) {
     _applyFpsFontSize();
 }
 
+async function refreshBattery() {
+    if (!_sectionVisible('battery-section')) return;
+    try {
+        const b = await pywebview.api.get_battery();
+        updateBattery(b);
+    } catch (e) { console.warn('refreshBattery:', e); }
+}
+
+function updateBattery(b) {
+    if (!b) return;
+    setText('batt-pct', fmt(b.percent, 0));
+    const icon = document.getElementById('batt-icon');
+    if (icon) icon.style.display = b.charging ? 'inline-block' : 'none';
+    const statusEl = document.getElementById('batt-status');
+    if (statusEl) statusEl.textContent = t('batt-' + (b.status || 'unknown'));
+    const rateEl = document.getElementById('batt-rate');
+    if (rateEl) rateEl.textContent = Number.isFinite(Number(b.rate_w)) ? fmt(Math.abs(b.rate_w), 1) : '--';
+    if (Number.isFinite(Number(b.percent))) {
+        chartPush('battery', Number(b.percent), 100);
+        updateChart('battery');
+    }
+}
+
 async function refreshFps() {
     if (!_sectionVisible('fps-section')) return;
     try {
@@ -800,12 +823,29 @@ async function confirmKill() {
     }
 }
 
+/* Track which data sources are currently unavailable, so a toast fires
+   only when a source flips from available to unavailable (not every poll). */
+let _unavailableSources = new Set();
+
+function updateUnavailableSources(unavailable) {
+    if (!Array.isArray(unavailable)) return;
+    const next = new Set(unavailable);
+    for (const name of next) {
+        if (!_unavailableSources.has(name)) {
+            const label = _DATASOURCE_LABELS && _DATASOURCE_LABELS[name] ? _DATASOURCE_LABELS[name] : name;
+            showToast(t('toast-source-unavailable').replace('{source}', label), 6000);
+        }
+    }
+    _unavailableSources = next;
+}
+
 async function poll(generation = pollGeneration) {
     try {
         const skipNet = !_sectionVisible('net-section');
         const data = await pywebview.api.get_data(skipNet);
         if (generation !== pollGeneration) return;
         updateUI(data);
+        updateUnavailableSources(data.unavailable_sources);
         hideBackendError();
     } catch (e) {
         console.error(e);

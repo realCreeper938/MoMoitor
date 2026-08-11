@@ -70,10 +70,31 @@ class HardwareService:
             with self._lock:
                 data = self._sanitize(self._monitor.snapshot(gpu_index=gpu_index, skip_net=skip_net))
             data["error"] = ""
+            data["unavailable_sources"] = self._unavailable_sources(data)
             return data
         except Exception as e:
             logger.error("snapshot() failed: {}", e)
-            return {**_EMPTY_SNAPSHOT, "error": str(e)}
+            data = {**_EMPTY_SNAPSHOT, "error": str(e)}
+            data["unavailable_sources"] = list(self._source_names)
+            return data
+
+    def _unavailable_sources(self, data: dict) -> list:
+        """从快照中提取不可用的数据源名。
+
+        聚合后端会在快照里带上失败的源；单后端快照本身没有该字段——
+        若快照内容整体为空（没有任何有效数据），则视为当前源不可用。
+        """
+        if data.get("unavailable_sources"):
+            return data["unavailable_sources"]
+        has_data = bool(
+            data.get("disks")
+            or data.get("mem", {}).get("total_gb")
+            or data.get("cpu", {}).get("load") is not None
+            or data.get("gpu", {}).get("load") is not None
+        )
+        if not has_data:
+            return list(self._source_names)
+        return []
 
     def get_hw_names(self) -> dict:
         try:

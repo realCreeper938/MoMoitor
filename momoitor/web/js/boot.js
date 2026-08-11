@@ -110,6 +110,7 @@ function initSettingsAndPolling(g, s) {
     _startInterval(ft.fps !== false, refreshFps, 1000);
     _startInterval(true, refreshSysinfo, 60000);
     _startInterval(true, refreshTopProcess, 2000);
+    _startInterval(true, refreshBattery, 5000);
     // Fit the process list to the actual box height once the initial layout is done.
     setTimeout(recalcProcLimit, 800);
 }

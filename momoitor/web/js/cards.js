@@ -209,6 +209,11 @@ registerCard('net-section', {
     resizable: true,
     meta: { name: 'Network', color: 'var(--green)', type: 'duo', duo: [['↓', '12.3', 'MB/s'], ['↑', '4.5', 'MB/s']] },
 });
+registerCard('battery-section', {
+    def: { col: 2, row: 2, span: 1, hidden: false },
+    resizable: true,
+    meta: { name: 'Battery', color: 'var(--green)', value: '88', pct: '%', lines: [['AC', '', '', '']] },
+});
 registerCard('fps-section', {
     def: { col: 3, row: 4, span: 2, hidden: false },
     resizable: true,
