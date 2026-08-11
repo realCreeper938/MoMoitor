@@ -5,7 +5,7 @@ import threading
 
 from loguru import logger
 
-from momoitor.backends import LHMMonitor, HWiNFOMonitor
+from momoitor.backends import LHMMonitor, HWiNFOMonitor, WMIMonitor
 from momoitor.config import save_settings
 
 
@@ -16,6 +16,13 @@ _EMPTY_SNAPSHOT = {
     "disks": [],
     "disk_status": {"activity": None, "temp": None, "read": None, "write": None},
     "net": {"up": 0, "down": 0, "name": "N/A"},
+}
+
+
+_BACKENDS = {
+    "lhm": LHMMonitor,
+    "hwinfo": HWiNFOMonitor,
+    "wmi": WMIMonitor,
 }
 
 
@@ -74,10 +81,10 @@ class HardwareService:
             return {"name": self._backend_source.upper(), "version": None}
 
     def change_backend(self, source: str) -> bool:
-        source = "hwinfo" if source == "hwinfo" else "lhm"
+        source = source if source in _BACKENDS else "lhm"
         if source == self._backend_source:
             return True
-        new_monitor = HWiNFOMonitor() if source == "hwinfo" else LHMMonitor()
+        new_monitor = _BACKENDS[source]()
         with self._lock:
             old_monitor = self._monitor
             self._monitor = new_monitor

@@ -28,7 +28,7 @@ const LANGS = {
         "label-interval": "Refresh Interval",
         "label-datasource": "Data Source",
         "label-gpu": "GPU",
-        "desc-datasource": "To use [HWiNFO](https://www.hwinfo.com/), keep it running in the background and enable its shared memory in its settings.",
+        "desc-datasource": "HWiNFO needs its shared memory running in the background; WMI needs no extra software but lacks temperature and power data.",
         // Weather
         "settings-location": "Location",
         "settings-apikeys": "API Keys",
@@ -273,7 +273,7 @@ const LANGS = {
         "label-interval": "刷新间隔",
         "label-datasource": "数据源",
         "label-gpu": "GPU",
-        "desc-datasource": "使用 [HWiNFO](https://www.hwinfo.com/) 需要确保其在后台运行，并在其设置中开启了共享内存。",
+        "desc-datasource": "使用 HWiNFO 需要确保其在后台运行并开启共享内存；WMI 无需额外软件，但不提供温度与功耗数据。",
         "settings-location": "位置",
         "settings-apikeys": "API 密钥",
         "label-lat": "纬度",
