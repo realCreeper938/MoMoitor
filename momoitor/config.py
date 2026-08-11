@@ -316,9 +316,21 @@ def _migrate_data_sources(general: dict, has_sources: bool = False):
             for s in order
         ]
     else:
+        # 已有 data_sources 列表：按默认顺序补全缺失的后端（保持用户已有顺序与启用状态），
+        # 确保列表始终包含全部可用后端，避免前端漏显示。
         sources = general.get("data_sources")
         if isinstance(sources, list) and sources and isinstance(sources[0], dict):
-            general["data_source"] = sources[0]["source"] if sources[0].get("enabled") else "lhm"
+            default_enabled = {
+                d["source"]: d.get("enabled", True)
+                for d in DEFAULT_SETTINGS["general"]["data_sources"]
+            }
+            seen = {item["source"] for item in sources if isinstance(item, dict)}
+            merged = [dict(item) for item in sources if isinstance(item, dict)]
+            for d in DEFAULT_SETTINGS["general"]["data_sources"]:
+                if d["source"] not in seen:
+                    merged.append({"source": d["source"], "enabled": bool(d.get("enabled", True))})
+            general["data_sources"] = merged
+            general["data_source"] = merged[0]["source"] if merged[0].get("enabled") else "lhm"
 
 
 def _normalize_settings(raw: dict) -> dict:
