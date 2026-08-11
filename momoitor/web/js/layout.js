@@ -77,6 +77,8 @@ function enterLayoutMode() {
 }
 
 function bindCardDrag(el) {
+    if (el.dataset.dragBound) return;
+    el.dataset.dragBound = '1';
     el.setAttribute('draggable', 'true');
     el.addEventListener('dragstart', onLayoutDragStart);
     el.addEventListener('dragover', onLayoutDragOver);
@@ -86,6 +88,7 @@ function bindCardDrag(el) {
 }
 
 function unbindCardDrag(el) {
+    delete el.dataset.dragBound;
     el.removeAttribute('draggable');
     el.classList.remove('dragging', 'drag-over');
     el.removeEventListener('dragstart', onLayoutDragStart);
@@ -123,35 +126,7 @@ function _addLayoutControls() {
         const el = card.el;
         const id = card.id;
         if (!el) return;
-        const group = document.createElement('div');
-        group.className = 'layout-control-group';
-        const fontGroup = _createLayoutFontGroup(id);
-        group.appendChild(fontGroup);
-        const delBtn = document.createElement('button');
-        delBtn.type = 'button';
-        delBtn.className = 'layout-del-btn';
-        delBtn.textContent = '×';
-        delBtn.addEventListener('click', function(e) { e.stopPropagation(); _deleteCard(id); });
-        group.appendChild(delBtn);
-        group._fontVal = fontGroup._fontVal;
-        group._cardId = id;
-        el.appendChild(group);
-        if (card.resizable) {
-            const handle = document.createElement('div');
-            handle.className = 'layout-resize-handle';
-            handle.setAttribute('data-card', id);
-            handle.setAttribute('draggable', 'false');
-            handle.addEventListener('pointerdown', function(e) { _resizeHandleDown(e, id); });
-            el.appendChild(handle);
-        }
-        if ((id === 'text-section' || isCustomCard(id)) && !el.dataset.ceBound) {
-            el.dataset.ceBound = '1';
-            el.addEventListener('click', function(e) {
-                if (!_layoutMode) return;
-                if (e.target.closest('.layout-control-group') || e.target.closest('.layout-resize-handle')) return;
-                openCardEditor(id);
-            });
-        }
+        _addCardLayoutControls(id);
     });
     const clockEl = document.getElementById('clock-section');
     if (clockEl) {
@@ -164,6 +139,45 @@ function _addLayoutControls() {
         clockEl.appendChild(group);
     }
     _updateCardsBtn();
+}
+
+/* Add the layout-mode control overlay (font stepper + delete) and the
+   click-to-edit binding for one card. Idempotent: a card that already has its
+   control group is left untouched, so a card added while layout mode is already
+   active gets the same controls as ones that existed on entry. */
+function _addCardLayoutControls(id) {
+    const el = getCard(id).el;
+    if (!el) return;
+    if (el.querySelector('.layout-control-group')) return;
+    const group = document.createElement('div');
+    group.className = 'layout-control-group';
+    const fontGroup = _createLayoutFontGroup(id);
+    group.appendChild(fontGroup);
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'layout-del-btn';
+    delBtn.textContent = '×';
+    delBtn.addEventListener('click', function(e) { e.stopPropagation(); _deleteCard(id); });
+    group.appendChild(delBtn);
+    group._fontVal = fontGroup._fontVal;
+    group._cardId = id;
+    el.appendChild(group);
+    if (getCard(id).resizable) {
+        const handle = document.createElement('div');
+        handle.className = 'layout-resize-handle';
+        handle.setAttribute('data-card', id);
+        handle.setAttribute('draggable', 'false');
+        handle.addEventListener('pointerdown', function(e) { _resizeHandleDown(e, id); });
+        el.appendChild(handle);
+    }
+    if ((id === 'text-section' || isCustomCard(id)) && !el.dataset.ceBound) {
+        el.dataset.ceBound = '1';
+        el.addEventListener('click', function(e) {
+            if (!_layoutMode) return;
+            if (e.target.closest('.layout-control-group') || e.target.closest('.layout-resize-handle')) return;
+            openCardEditor(id);
+        });
+    }
 }
 
 /* Build the A- / value% / A+ font-size stepper for a card (or the clock). */
@@ -463,6 +477,10 @@ function _placeCard(id, col, row, span) {
     setCardPos(id, { col: col, row: row, span: s, hidden: false });
     if (el) {
         getCard(id).applyGrid();
+        if (_layoutMode) {
+            bindCardDrag(el);
+            _addCardLayoutControls(id);
+        }
         if (id === 'weather-section') refreshWeatherCard();
         if (id === 'text-section') applyCustomText(id);
         if (isCustomCard(id)) applyCustomCard(id);
