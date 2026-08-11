@@ -131,12 +131,9 @@ class HardwareService:
             except Exception as e:
                 logger.warning("Failed to close previous backend: {}", e)
         self._settings.setdefault("general", {})["data_sources"] = [
-            {"source": it.get("source"), "enabled": bool(it.get("enabled"))}
-            for it in sources or []
-            if isinstance(it, dict) and it.get("source") in _BACKENDS
+            {"source": s, "enabled": True} for s in new_names
         ]
-        first = next((d for d in self._settings["general"]["data_sources"] if d["enabled"]), None)
-        self._settings["general"]["data_source"] = first["source"] if first else "lhm"
+        self._settings["general"]["data_source"] = new_names[0]
         save_settings(self._settings)
         logger.info("Switched data sources: {}", " + ".join(new_names))
         return True
