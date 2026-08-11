@@ -507,6 +507,65 @@
     font-size: calc(12px * var(--ui-scale));
 }
 
+/* ── Data source priority list ── */
+.datasource-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.datasource-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    background: var(--nord0);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: grab;
+    user-select: none;
+    transition: border-color 0.15s, opacity 0.15s, transform 0.15s;
+}
+
+.datasource-row:hover {
+    border-color: var(--accent);
+}
+
+.datasource-row.dragging {
+    opacity: 0.45;
+    border-style: dashed;
+}
+
+.datasource-row.drop-before {
+    box-shadow: 0 -2px 0 0 var(--accent);
+}
+
+.datasource-row.drop-after {
+    box-shadow: 0 2px 0 0 var(--accent);
+}
+
+.datasource-row.disabled {
+    opacity: 0.5;
+}
+
+.datasource-handle {
+    color: var(--text-dim);
+    font-size: calc(14px * var(--ui-scale));
+    line-height: 1;
+}
+
+.datasource-name {
+    flex: 1;
+    font-size: calc(12px * var(--ui-scale));
+}
+
+.datasource-row input[type="checkbox"] {
+    width: auto;
+    flex-shrink: 0;
+    accent-color: var(--accent);
+}
+
 /* ── Image picker (thumbnail grid) ── */
 .image-picker {
     display: grid;

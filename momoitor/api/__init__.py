@@ -30,10 +30,8 @@ class Api(ApiCore, HardwareMixin, WeatherMixin, MediaMixin):
 
 def create_monitor():
     settings = load_settings()
-    source = settings.get("general", {}).get("data_source", "lhm")
-    from momoitor.services.hardware import _BACKENDS
-    cls = _BACKENDS.get(source, _BACKENDS["lhm"])
-    return cls()
+    from momoitor.services.hardware import _sources_from_settings, build_monitor
+    return build_monitor(_sources_from_settings(settings))
 
 
 def _start_background_services():

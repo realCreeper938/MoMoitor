@@ -182,7 +182,13 @@ DEFAULT_SETTINGS = {
         "colorscheme_dark": "gruvbox",  # 跟随系统主题时使用的暗色主题
         "colorscheme_light": "gruvbox-light",  # 跟随系统主题时使用的亮色主题
         "follow_system_theme": False,  # 是否跟随 Windows 亮/暗模式自动切换主题
-        "data_source": "lhm",
+        "data_source": "lhm",  # 兼容旧版单数据源设置（迁移为 data_sources 首项）
+        "data_sources": [  # 数据源优先级列表：数组顺序即优先级，enabled 控制是否启用；默认仅启用 lhm
+            {"source": "lhm", "enabled": True},
+            {"source": "aida64", "enabled": False},
+            {"source": "hwinfo", "enabled": False},
+            {"source": "wmi", "enabled": False},
+        ],
         "autostart": False,
         "hover_highlight": True,  # 鼠标悬停监控项时高亮该项、其余降低透明度
         "hover_animation": True,  # 鼠标悬停卡片时的边框高亮动画
@@ -287,6 +293,34 @@ DEFAULT_SETTINGS = {
 }
 
 
+def _migrate_data_sources(general: dict, has_sources: bool = False):
+    """把 general 分组内的数据源设置规范化。
+
+    兼容旧版单一 data_source 字符串：has_sources 为 False（用户未显式提供
+    data_sources 列表，即旧版升级）时，以 data_source 值为首项生成完整列表。
+    若用户已提供 data_sources，则确保兼容键 data_source 指向当前首个启用源，
+    避免前端旧逻辑误读。
+    """
+    if not has_sources:
+        legacy = general.get("data_source") or "lhm"
+        default_enabled = {
+            d["source"]: d.get("enabled", True)
+            for d in DEFAULT_SETTINGS["general"]["data_sources"]
+        }
+        order = [legacy] + [
+            d["source"] for d in DEFAULT_SETTINGS["general"]["data_sources"]
+            if d["source"] != legacy
+        ]
+        general["data_sources"] = [
+            {"source": s, "enabled": (s == legacy) or bool(default_enabled.get(s))}
+            for s in order
+        ]
+    else:
+        sources = general.get("data_sources")
+        if isinstance(sources, list) and sources and isinstance(sources[0], dict):
+            general["data_source"] = sources[0]["source"] if sources[0].get("enabled") else "lhm"
+
+
 def _normalize_settings(raw: dict) -> dict:
     """将任意旧版/缺键设置字典统一为新版分组结构。
 
@@ -321,6 +355,7 @@ def _normalize_settings(raw: dict) -> dict:
                 else:
                     merged = dict(defaults)
                     merged.update(value)
+                    _migrate_data_sources(merged, has_sources=isinstance(value, dict) and "data_sources" in value)
             else:
                 merged = copy.deepcopy(value)
             new[group] = merged
@@ -337,6 +372,7 @@ def _normalize_settings(raw: dict) -> dict:
                 for flat_key, (g, key) in _LEGACY_KEY_MAP.items():
                     if g == group and flat_key in raw:
                         merged[key] = raw[flat_key]
+                _migrate_data_sources(merged)
                 new[group] = merged
             else:
                 new[group] = copy.deepcopy(defaults)

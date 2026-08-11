@@ -1,5 +1,91 @@
 const _FEATURE_TOGGLE_KEYS = ['top_control', 'calendar', 'weather', 'traffic', 'clock_bg'];
 
+const _DATASOURCE_LABELS = {
+    lhm: 'LibreHardwareMonitor',
+    aida64: 'AIDA64',
+    hwinfo: 'HWiNFO',
+    wmi: 'WMI',
+};
+
+let _dragSourceEl = null;
+
+function renderDataSourceList(dataSources) {
+    const list = document.getElementById('datasource-list');
+    if (!list) return;
+    const items = (Array.isArray(dataSources) && dataSources.length)
+        ? dataSources
+        : [{ source: 'lhm', enabled: true }];
+    list.innerHTML = '';
+    items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'datasource-row' + (item.enabled === false ? ' disabled' : '');
+        row.draggable = true;
+        row.dataset.source = item.source;
+        row.innerHTML = '<span class="datasource-handle">⠿</span>'
+            + '<span class="datasource-name">' + escapeHtml(_DATASOURCE_LABELS[item.source] || item.source) + '</span>'
+            + '<input type="checkbox" class="datasource-enable"'
+            + (item.enabled === false ? '' : ' checked') + '>';
+        list.appendChild(row);
+    });
+}
+
+function collectDataSourceList() {
+    const list = document.getElementById('datasource-list');
+    if (!list) return [];
+    const items = [];
+    list.querySelectorAll('.datasource-row').forEach(row => {
+        const cb = row.querySelector('.datasource-enable');
+        items.push({ source: row.dataset.source, enabled: cb.checked });
+    });
+    return items;
+}
+
+function initDataSourceDrag() {
+    const list = document.getElementById('datasource-list');
+    if (!list) return;
+    list.addEventListener('dragstart', e => {
+        const row = e.target.closest('.datasource-row');
+        if (!row) return;
+        _dragSourceEl = row;
+        row.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', row.dataset.source);
+    });
+    list.addEventListener('dragover', e => {
+        e.preventDefault();
+        const row = e.target.closest('.datasource-row');
+        if (!row || row === _dragSourceEl) return;
+        const rect = row.getBoundingClientRect();
+        const after = (e.clientY - rect.top) > rect.height / 2;
+        list.querySelectorAll('.datasource-row').forEach(r => r.classList.remove('drop-after', 'drop-before'));
+        row.classList.add(after ? 'drop-after' : 'drop-before');
+    });
+    list.addEventListener('dragleave', e => {
+        const row = e.target.closest('.datasource-row');
+        if (row) row.classList.remove('drop-after', 'drop-before');
+    });
+    list.addEventListener('drop', e => {
+        e.preventDefault();
+        list.querySelectorAll('.datasource-row').forEach(r => r.classList.remove('dragging', 'drop-after', 'drop-before'));
+        const target = e.target.closest('.datasource-row');
+        if (!target || !_dragSourceEl || target === _dragSourceEl) return;
+        const rect = target.getBoundingClientRect();
+        const after = (e.clientY - rect.top) > rect.height / 2;
+        list.insertBefore(_dragSourceEl, after ? target.nextSibling : target);
+        _dragSourceEl = null;
+    });
+    list.addEventListener('dragend', () => {
+        list.querySelectorAll('.datasource-row').forEach(r => r.classList.remove('dragging', 'drop-after', 'drop-before'));
+        _dragSourceEl = null;
+    });
+    list.addEventListener('change', e => {
+        const row = e.target.closest('.datasource-row');
+        if (row && e.target.classList.contains('datasource-enable')) {
+            row.classList.toggle('disabled', !e.target.checked);
+        }
+    });
+}
+
 function refreshAllWeather() {
     refreshWeather();
     refreshWeatherDetail();
@@ -45,7 +131,7 @@ function initSettings() {
 
     // Data
     const intervalSel = document.getElementById('opt-interval');
-    const datasourceSel = document.getElementById('opt-datasource');
+    const datasourceList = document.getElementById('datasource-list');
     const gpuSel = document.getElementById('opt-gpu');
     const metingUrlInput = document.getElementById('opt-meting-url');
     const lyricsWhitelistInput = document.getElementById('opt-lyrics-whitelist');
@@ -377,7 +463,7 @@ function initSettings() {
 
         // Data
         intervalSel.value = String(g.refresh_interval || 1000);
-        datasourceSel.value = g.data_source || 'lhm';
+        renderDataSourceList(g.data_sources);
         metingUrlInput.value = m.meting_api_base || '';
         lyricsWhitelistInput.value = ly.process_whitelist || '';
         lyricsTranslateChk.checked = ly.auto_translate === true;
@@ -542,7 +628,8 @@ function initSettings() {
                 hover_animation: hoverAnimChk.checked,
                 update_check_enabled: updateNotifyChk.checked,
                 refresh_interval: parseInt(intervalSel.value),
-                data_source: datasourceSel.value,
+                data_sources: collectDataSourceList(),
+                data_source: collectDataSourceList().find(d => d.enabled)?.source || 'lhm',
                 colorscheme: colorschemeSel.value,
                 colorscheme_dark: colorschemeDark || 'gruvbox',
                 colorscheme_light: colorschemeLight || 'gruvbox-light',
@@ -616,7 +703,7 @@ function initSettings() {
 
         await pywebview.api.save_settings(s);
         await pywebview.api.set_autostart(autostartChk.checked);
-        await pywebview.api.change_backend((s.general || {}).data_source);
+        await pywebview.api.change_backend(collectDataSourceList());
 
         window._appSettings = { ...window._appSettings, ...s };
 
@@ -710,6 +797,7 @@ function initSettings() {
 
     saveBtn.addEventListener('click', saveSettings);
     closeBtn.addEventListener('click', closeSettings);
+    initDataSourceDrag();
 }
 
 /* Top-hover Control Popup (brightness & volume) */

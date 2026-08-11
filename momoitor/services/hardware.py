@@ -6,6 +6,7 @@ import threading
 from loguru import logger
 
 from momoitor.backends import LHMMonitor, HWiNFOMonitor, WMIMonitor, AIDA64Monitor
+from momoitor.backends.composite import CompositeMonitor
 from momoitor.config import save_settings
 
 
@@ -27,6 +28,32 @@ _BACKENDS = {
 }
 
 
+def _sources_from_settings(settings: dict) -> list:
+    """从设置中提取启用的数据源顺序列表 [source_name, ...]。"""
+    sources = settings.get("general", {}).get("data_sources")
+    if not isinstance(sources, list) or not sources:
+        legacy = settings.get("general", {}).get("data_source", "lhm")
+        return [legacy]
+    return [
+        item["source"] for item in sources
+        if isinstance(item, dict) and item.get("enabled") and item.get("source") in _BACKENDS
+    ]
+
+
+def build_monitor(source_names: list):
+    """按优先级构造监视器：单个源直接返回该后端，多个源用 CompositeMonitor。"""
+    monitors = []
+    for name in source_names:
+        if name not in _BACKENDS:
+            continue
+        monitors.append((name, _BACKENDS[name]()))
+    if not monitors:
+        monitors = [("lhm", _BACKENDS["lhm"]())]
+    if len(monitors) == 1:
+        return monitors[0][1]
+    return CompositeMonitor(monitors)
+
+
 class HardwareService:
     """围绕硬件监视后端的线程安全包装类。"""
 
@@ -34,7 +61,7 @@ class HardwareService:
         self._monitor = monitor
         self._lock = threading.RLock()
         self._settings = settings
-        self._backend_source = settings.get("general", {}).get("data_source", "lhm")
+        self._source_names = _sources_from_settings(settings)
         self._closed = False
 
     def snapshot(self, skip_net=False) -> dict:
@@ -79,25 +106,36 @@ class HardwareService:
             with self._lock:
                 return self._monitor.get_backend_info()
         except Exception:
-            return {"name": self._backend_source.upper(), "version": None}
+            return {"name": " + ".join(self._source_names) or "None", "version": None}
 
-    def change_backend(self, source: str) -> bool:
-        source = source if source in _BACKENDS else "lhm"
-        if source == self._backend_source:
+    def change_backend(self, sources) -> bool:
+        """按新数据源列表重建监视器。sources: [{source, enabled}, ...] 顺序即优先级。"""
+        new_names = []
+        for item in sources or []:
+            if isinstance(item, dict) and item.get("enabled"):
+                src = item.get("source")
+                if src in _BACKENDS:
+                    new_names.append(src)
+        if not new_names:
+            new_names = ["lhm"]
+        if new_names == self._source_names:
             return True
-        new_monitor = _BACKENDS[source]()
+        new_monitor = build_monitor(new_names)
         with self._lock:
             old_monitor = self._monitor
             self._monitor = new_monitor
-            self._backend_source = source
+            self._source_names = new_names
             self._closed = False
             try:
                 old_monitor.close()
             except Exception as e:
                 logger.warning("Failed to close previous backend: {}", e)
-        self._settings.setdefault("general", {})["data_source"] = source
+        self._settings.setdefault("general", {})["data_sources"] = [
+            {"source": s, "enabled": True} for s in new_names
+        ]
+        self._settings["general"]["data_source"] = new_names[0]
         save_settings(self._settings)
-        logger.info("Switched to {} backend", source)
+        logger.info("Switched data sources: {}", " + ".join(new_names))
         return True
 
     def close(self):
