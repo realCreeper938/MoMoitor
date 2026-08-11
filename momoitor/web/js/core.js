@@ -66,7 +66,7 @@ let tempWarnTimer = null;
 
 /* Sparkline chart — 90s resource usage rendered as SVG polyline (CPU/GPU/MEM/FPS/Net) */
 const CHART_WINDOW_MS = 90000;
-const chartData = { cpu: [], gpu: [], mem: [], fps: [], fps_low1: [], net_up: [], net_down: [], disk_read: [], disk_write: [], battery: [] };
+const chartData = { cpu: [], gpu: [], mem: [], fps: [], fps_low1: [], net_up: [], net_down: [], disk_read: [], disk_write: [] };
 
 function chartPush(key, val, maxVal) {
     const arr = chartData[key];
@@ -470,7 +470,6 @@ function updateUI(d) {
     updateMem(d);
     updateDisk(d);
     updateNet(d);
-    if (d.battery) updateBattery(d.battery);
     updateLivePopups(d);
     updateTempWarnings(d);
     updateDataError(d);
@@ -564,22 +563,6 @@ function _applyFpsSpan(el, span) {
     const pct = el.querySelector('.pct');
     if (pct) pct.style.display = span === 2 ? 'none' : '';
     _applyFpsFontSize();
-}
-
-function updateBattery(b) {
-    if (!b) return;
-    if (!_sectionVisible('battery-section')) return;
-    setText('batt-pct', fmt(b.percent, 0));
-    const icon = document.getElementById('batt-icon');
-    if (icon) icon.style.display = b.charging ? 'inline-block' : 'none';
-    const statusEl = document.getElementById('batt-status');
-    if (statusEl) statusEl.textContent = t('batt-' + (b.status || 'unknown'));
-    const rateEl = document.getElementById('batt-rate');
-    if (rateEl) rateEl.textContent = Number.isFinite(Number(b.rate_w)) ? fmt(Math.abs(b.rate_w), 1) : '--';
-    if (Number.isFinite(Number(b.percent))) {
-        chartPush('battery', Number(b.percent), 100);
-        updateChart('battery');
-    }
 }
 
 async function refreshFps() {

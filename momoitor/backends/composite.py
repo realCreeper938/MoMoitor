@@ -71,13 +71,6 @@ class CompositeMonitor(BaseMonitor):
         result["disks"] = next(
             (snap["disks"] for snap in snaps if snap.get("disks")), []
         )
-        # 电池：取第一个提供电量数据（percent 非 None）后端的整体，
-        # 各后端充电状态/功率信号独立，不逐字段混用。
-        result["battery"] = next(
-            (snap["battery"] for snap in snaps
-             if snap.get("battery") and snap["battery"].get("percent") is not None),
-            self._battery_from_signals(None, None, None, None),
-        )
         # 网络速率：取第一个提供有效数据（name 非 N/A）后端的整体，
         # 各后端独立累计，不逐字段混用。
         result["net"] = next(

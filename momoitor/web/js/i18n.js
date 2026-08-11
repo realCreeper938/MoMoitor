@@ -33,11 +33,6 @@ const LANGS = {
         "desc-datasource-aida64": "AIDA64: enable \"Allow Shared Memory\" in Settings → External Applications; it is recommended to check all monitoring items.",
         "desc-datasource-many": "Enabling too many data sources may cause lag or delayed updates.",
         "toast-source-unavailable": "Data source {source} is unavailable. Please check whether it is running with shared memory enabled.",
-        // Battery
-        "batt-ac": "AC Power",
-        "batt-charging": "Charging",
-        "batt-discharging": "Discharging",
-        "batt-unknown": "Unknown",
         // Weather
         "settings-location": "Location",
         "settings-apikeys": "API Keys",
@@ -287,10 +282,6 @@ const LANGS = {
         "desc-datasource-aida64": "AIDA64：需要在设置 → 外部程序中勾选\"允许共享内存\"，并建议将所有监控项全部勾选。",
         "desc-datasource-many": "启用过多的数据源可能会导致卡顿、数据更新不及时。",
         "toast-source-unavailable": "数据源 {source} 不可用，请检查是否已运行并启用共享内存。",
-        "batt-ac": "交流电源",
-        "batt-charging": "充电中",
-        "batt-discharging": "放电中",
-        "batt-unknown": "未知",
         "settings-location": "位置",
         "settings-apikeys": "API 密钥",
         "label-lat": "纬度",

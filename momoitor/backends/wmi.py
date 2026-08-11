@@ -66,22 +66,16 @@ class WMIMonitor(BaseMonitor):
             self._initialized = True
             logger.info("WMI backend initialized")
 
-    def _query(self, query, scope=None):
+    def _query(self, query):
         """执行 WQL 查询，返回行字典列表；失败/异常返回 None。
 
         永远用 for 循环迭代集合（见模块 docstring），不要把集合传给
-        list()/len()。scope 指定 WMI 命名空间（默认 root\\cimv2）。
+        list()/len()。
         """
         self._ensure_init()
         rows = []
         try:
-            if scope:
-                from System.Management import ManagementScope
-                searcher = self._searcher_fn(query)
-                searcher.Scope = ManagementScope(scope)
-            else:
-                searcher = self._searcher_fn(query)
-            for mo in searcher.Get():
+            for mo in self._searcher_fn(query).Get():
                 rows.append(mo)
         except BaseException as e:
             logger.debug("WMI query failed: {}", e)
@@ -198,39 +192,11 @@ class WMIMonitor(BaseMonitor):
             "temp": None, "read": None, "write": None,
         }
 
-    def _get_battery(self):
-        """电池：percent 来自 Win32_Battery，充放电率/是否接电来自 root\\wmi BatteryStatus。"""
-        percent = None
-        batt = self._first(
-            "SELECT EstimatedChargeRemaining FROM Win32_Battery"
-        )
-        if batt:
-            percent = _parse_int(self._wmi_val(batt, "EstimatedChargeRemaining"))
-        plugged = None
-        rate_w = None
-        status_rows = self._query(
-            "SELECT ChargeRate, DischargeRate, PowerOnline FROM BatteryStatus",
-            scope="root\\wmi",
-        )
-        if status_rows:
-            mo = status_rows[0]
-            charge = _parse_int(self._wmi_val(mo, "ChargeRate"), 0)
-            discharge = _parse_int(self._wmi_val(mo, "DischargeRate"), 0)
-            online = self._wmi_val(mo, "PowerOnline")
-            if online is not None:
-                plugged = str(online).strip().lower() == "true"
-            if charge > 0:
-                rate_w = round(charge / 1000.0, 2)
-            elif discharge > 0:
-                rate_w = round(-discharge / 1000.0, 2)
-        return self._battery_from_signals(percent, rate_w is not None and rate_w > 0, plugged, rate_w)
-
     def snapshot(self, gpu_index=None, skip_net=False) -> dict:
         return {
             "cpu": self._get_cpu(),
             "gpu": self._get_gpu(gpu_index),
             "mem": self._get_mem(),
-            "battery": self._get_battery(),
             "disks": self._get_disk_partitions(),
             "disk_status": self._get_disk_status(),
             "net": self.get_network() if not skip_net else {"up": 0, "down": 0, "name": "N/A"},

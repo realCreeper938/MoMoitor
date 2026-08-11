@@ -193,18 +193,6 @@ class AIDA64Monitor(BaseMonitor):
         status["temp"] = self._sensor_float(sensors, "THDD1")
         return status
 
-    def _get_battery(self, sensors):
-        """电池：SBATTLVL（电量）、PBATTCHR（充电率 W）。"""
-        percent = self._sensor_int(sensors, "SBATTLVL")
-        rate_w = self._sensor_float(sensors, "PBATTCHR")
-        # AIDA64 的充电率为 0 时表示未充电（无法区分交流供电与否）。
-        return self._battery_from_signals(
-            percent,
-            rate_w is not None and rate_w > 0,
-            None,
-            rate_w,
-        )
-
     def snapshot(self, gpu_index=None, skip_net=False) -> dict:
         sensors = self._read_sensors()
         if gpu_index is None:
@@ -213,7 +201,6 @@ class AIDA64Monitor(BaseMonitor):
             "cpu": self._get_cpu(sensors),
             "gpu": self._get_gpu(sensors, gpu_index),
             "mem": self._get_mem(sensors),
-            "battery": self._get_battery(sensors),
             "disks": self._get_disk_partitions(),
             "disk_status": self._get_disk_status(sensors),
             "net": self.get_network() if not skip_net else {"up": 0, "down": 0, "name": "N/A"},
