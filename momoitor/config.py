@@ -368,7 +368,12 @@ def _normalize_settings(raw: dict) -> dict:
                 else:
                     merged = dict(defaults)
                     merged.update(value)
-                    _migrate_data_sources(merged, has_sources=isinstance(value, dict) and "data_sources" in value)
+                    if group == "general":
+                        _migrate_data_sources(merged, has_sources=isinstance(value, dict) and "data_sources" in value)
+                    else:
+                        # 旧版 bug 曾把 data_sources/data_source 注入每个分组，这里清理掉
+                        merged.pop("data_sources", None)
+                        merged.pop("data_source", None)
             else:
                 merged = copy.deepcopy(value)
             new[group] = merged
@@ -385,7 +390,8 @@ def _normalize_settings(raw: dict) -> dict:
                 for flat_key, (g, key) in _LEGACY_KEY_MAP.items():
                     if g == group and flat_key in raw:
                         merged[key] = raw[flat_key]
-                _migrate_data_sources(merged)
+                if group == "general":
+                    _migrate_data_sources(merged)
                 new[group] = merged
             else:
                 new[group] = copy.deepcopy(defaults)

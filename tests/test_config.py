@@ -53,6 +53,24 @@ def test_normalize_preserves_whole_groups():
     assert s["custom_cards"]["text-section"]["type"] == "text"
 
 
+def test_normalize_data_sources_only_in_general():
+    """data_sources/data_source 只能出现在 general 分组。
+
+    旧版 bug 曾把 _migrate_data_sources 应用到每个分组，导致 display/clock/...
+    都被注入 data_sources/data_source；归一化时应清理掉这些冗余键。
+    """
+    raw = {
+        "display": {"monitor": 1, "data_sources": [{"source": "lhm", "enabled": True}], "data_source": "lhm"},
+        "weather": {"lat": "39.9", "lon": "116.4", "data_sources": [{"source": "lhm", "enabled": True}]},
+    }
+    s = _normalize_settings(raw)
+    assert s["general"]["data_sources"]
+    assert s["general"]["data_source"] == "lhm"
+    for group in ("display", "clock", "fonts", "weather", "music", "lyrics", "server"):
+        assert "data_sources" not in s[group]
+        assert "data_source" not in s[group]
+
+
 def test_normalize_custom_cards_preserves_existing_types():
     """已有 type 的自定义卡片条目原样保留，不被迁移改写；clock 类型已移除，被清除。"""
     raw = {
