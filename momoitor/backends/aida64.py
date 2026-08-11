@@ -22,8 +22,8 @@ from .base import BaseMonitor
 
 # 共享内存名称（官方文档：local/global 命名空间均可用，此处用默认名）。
 _SHM_NAME = "AIDA64_SensorValues"
-# 共享内存典型 1-3KB，官方建议至少 10KB buffer。
-_SHM_SIZE = 65536
+# 共享内存读取的分块大小；内容以 NUL 结尾，分块读取直到遇到结束符。
+_SHM_READ_CHUNK = 4096
 
 # 元数据（硬件名/列表）缓存时长。
 _META_TTL = 300
@@ -92,14 +92,23 @@ class AIDA64Monitor(BaseMonitor):
         if not handle:
             raise OSError(f"AIDA64 shared memory '{_SHM_NAME}' not available")
         try:
-            addr = k32.MapViewOfFile(handle, 0x4, 0, 0, _SHM_SIZE)
+            # 映射整个文件（size=0）。AIDA64 共享内存通常只有几 KB，映射一个
+            # 固定的更大 size 会因超出实际大小而失败（ERROR_MAPPED_ALIGNMENT）。
+            addr = k32.MapViewOfFile(handle, 0x4, 0, 0, 0)
             if not addr:
                 raise OSError("failed to map AIDA64 shared memory")
             try:
-                data = ctypes.string_at(addr, _SHM_SIZE)
-                end = data.find(b"\x00")
-                if end != -1:
-                    data = data[:end]
+                # 未知长度，分块读取直到遇到 NUL 结束符；共享内存内容即 C 字符串。
+                data = b""
+                offset = 0
+                while True:
+                    chunk = ctypes.string_at(addr + offset, _SHM_READ_CHUNK)
+                    end = chunk.find(b"\x00")
+                    if end != -1:
+                        data += chunk[:end]
+                        break
+                    data += chunk
+                    offset += _SHM_READ_CHUNK
                 return data.decode("utf-8", errors="replace")
             finally:
                 k32.UnmapViewOfFile(addr)
@@ -301,7 +310,8 @@ class AIDA64Monitor(BaseMonitor):
         free_mb = self._sensor_float(sensors, "SFREEMEM")
         if used_mb is not None and free_mb is not None:
             mem_detail["total_gb"] = round((used_mb + free_mb) / 1024, 1)
-        spd = self._sensor_int(sensors, "SMEMSPEED") or self._sensor_int(sensors, "SMEMCLK")
+        # SMEMCLK 是 MHz 数字；SMEMSPEED 可能是 "DDR5-5600" 之类的字符串，优先用数字。
+        spd = self._sensor_int(sensors, "SMEMCLK") or self._sensor_int(sensors, "SMEMSPEED")
         if spd:
             mem_detail["speed"] = f"{spd} MHz"
         for sid, label in (("SMEMUTI", "Memory Utilization"), ("TDIMM", "DIMM Temperature"),
