@@ -675,6 +675,10 @@
                         <span class="nf-icon">&#xF233;</span>
                         <span data-i18n="nav-advanced">Advanced</span>
                     </button>
+                    <button class="nav-btn" data-tab="backup">
+                        <span class="nf-icon">&#xF187;</span>
+                        <span data-i18n="nav-backup">Backup</span>
+                    </button>
                     <button class="nav-btn" data-tab="monitor">
                         <span class="nf-icon">&#xF108;</span>
                         <span data-i18n="nav-monitor">Monitor</span>
@@ -852,6 +856,18 @@
                                     <textarea id="opt-wx-key" rows="3" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    <!-- Backup Tab -->
+                    <div class="tab-content" id="tab-backup">
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-backup">Backup</div>
+                            <div class="setting-desc" data-i18n="desc-backup">Export all program data (settings, wallpapers, lyric and traffic caches) to a zip file, or restore from a previous backup.</div>
+                            <div class="setting-item setting-item-block">
+                                <button type="button" class="text-btn" id="btn-backup-export" data-i18n="btn-backup-export">Export Backup</button>
+                                <button type="button" class="text-btn" id="btn-backup-restore" data-i18n="btn-backup-restore">Restore Backup</button>
+                            </div>
+                            <div class="setting-desc" data-i18n="desc-backup-restart">Restoring overwrites current data; restart the app for changes to take full effect.</div>
                         </div>
                     </div>
                     <!-- Monitor Tab -->

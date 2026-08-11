@@ -802,6 +802,44 @@ function initSettings() {
     saveBtn.addEventListener('click', saveSettings);
     closeBtn.addEventListener('click', closeSettings);
     initDataSourceDrag();
+
+    // Backup
+    const backupExportBtn = document.getElementById('btn-backup-export');
+    const backupRestoreBtn = document.getElementById('btn-backup-restore');
+
+    if (backupExportBtn) {
+        backupExportBtn.addEventListener('click', async () => {
+            try {
+                const r = await pywebview.api.export_backup();
+                if (r && r.ok) showToast(t('backup-exported').replace('{path}', r.path), 6000);
+                else if (r && r.cancelled) showToast(t('backup-cancelled'));
+                else showToast(t('backup-failed').replace('{error}', (r && r.error) || ''), 6000);
+            } catch (e) {
+                showToast(t('backup-failed').replace('{error}', String(e)), 6000);
+            }
+        });
+    }
+
+    if (backupRestoreBtn) {
+        backupRestoreBtn.addEventListener('click', () => {
+            showAppConfirm(t('backup-confirm-restore'), async () => {
+                try {
+                    const r = await pywebview.api.import_backup();
+                    if (r && r.ok) {
+                        window._appSettings = await pywebview.api.get_settings();
+                        showToast(t('backup-restored'), 6000);
+                        if (r.restart) closeSettings();
+                    } else if (r && r.cancelled) {
+                        showToast(t('backup-cancelled'));
+                    } else {
+                        showToast(t('backup-failed').replace('{error}', (r && r.error) || ''), 6000);
+                    }
+                } catch (e) {
+                    showToast(t('backup-failed').replace('{error}', String(e)), 6000);
+                }
+            });
+        });
+    }
 }
 
 /* Top-hover Control Popup (brightness & volume) */

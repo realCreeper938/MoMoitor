@@ -232,6 +232,11 @@ class TrafficService:
                 time.sleep(0.5)
                 slept += 0.5
 
+    @property
+    def running(self) -> bool:
+        """后台记录线程是否运行中。"""
+        return self._thread is not None and self._thread.is_alive()
+
     def start(self):
         """启动后台记录线程。"""
         if self._thread and self._thread.is_alive():

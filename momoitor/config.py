@@ -454,6 +454,13 @@ def save_settings(settings: dict):
         json.dump(settings, f, indent=2, ensure_ascii=False)
 
 
+def reload_settings() -> dict:
+    """丢弃设置缓存并重新从磁盘加载（数据还原等场景使用）。"""
+    global _settings_cache
+    _settings_cache = None
+    return load_settings()
+
+
 def has_weather_creds(s: dict) -> bool:
     w = s.get("weather", {})
     return all(w.get(k) for k in ("key_id", "project_id", "private_key"))

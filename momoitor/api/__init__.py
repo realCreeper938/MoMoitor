@@ -4,6 +4,7 @@
 - api.hardware.HardwareMixin: 硬件数据 / 系统信息 / 进程 / 端口
 - api.weather.WeatherMixin: 天气 / 黄历 / 节假日
 - api.media.MediaMixin: 音乐 / 歌词 / FPS / 流量 / 壁纸 / 音量亮度
+- api.backup.BackupMixin: 数据备份 / 还原
 
 用法（对外唯一入口，保持向后兼容）:
     from momoitor.api import create_monitor, create_window, create_api
@@ -16,6 +17,7 @@ import webview
 from momoitor.config import WEB_DIR, load_settings
 from momoitor.services import window as win_svc
 
+from .backup import BackupMixin
 from .core import ApiCore
 from .hardware import HardwareMixin
 from .media import MediaMixin
@@ -24,7 +26,7 @@ from .weather import WeatherMixin
 __all__ = ["Api", "create_monitor", "create_window", "create_api"]
 
 
-class Api(ApiCore, HardwareMixin, WeatherMixin, MediaMixin):
+class Api(ApiCore, HardwareMixin, WeatherMixin, MediaMixin, BackupMixin):
     """面向前端 JS 的 pywebview API 门面（组合各能力 mixin）。"""
 
 
