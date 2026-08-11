@@ -12,8 +12,8 @@ function applyLayout(layout) {
     if (grid) {
         grid.classList.toggle('clock-right', _clockSide() === 'right');
         grid.style.gridTemplateColumns = _clockSide() === 'right'
-            ? 'repeat(' + cols + ', minmax(0, 1fr)) ' + CLOCK_WIDTH + 'px'
-            : CLOCK_WIDTH + 'px repeat(' + cols + ', minmax(0, 1fr))';
+            ? 'repeat(' + cols + ', minmax(0, 1fr)) var(--clock-col)'
+            : 'var(--clock-col) repeat(' + cols + ', minmax(0, 1fr))';
         grid.style.gridTemplateRows = 'repeat(' + rows + ', minmax(0, 1fr))';
     }
     const clockEl = document.getElementById('clock-section');
@@ -756,6 +756,16 @@ function onLayoutDrop(e) {
 
 let _dropSlotEl = null;
 
+/* Current rendered clock-column width in px. CSS --clock-col scales with
+   --font-scale (weather sidebar), so the drop-slot geometry must match. */
+function _clockColumnPx(grid, right) {
+    if (!grid) return CLOCK_WIDTH;
+    const tc = getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean);
+    const token = right ? tc[tc.length - 1] : tc[0];
+    const px = parseFloat(token);
+    return px > 0 ? px : CLOCK_WIDTH;
+}
+
 /* Resolve a pointer position to a {col,row} slot inside the card columns, so
    cards can be dropped anywhere in the grid, not just onto another card. */
 function _gridSlotFromEvent(e) {
@@ -767,13 +777,15 @@ function _gridSlotFromEvent(e) {
     const rows = _gridRows();
     const innerW = rect.width - pad * 2;
     const innerH = rect.height - pad * 2;
-    const cardAreaW = innerW - CLOCK_WIDTH - gap;
+    // Clock column width may be scaled up with --font-scale (weather sidebar).
+    const right = _clockSide() === 'right';
+    const clockW = _clockColumnPx(grid, right);
+    const cardAreaW = innerW - clockW - gap;
     const colW = (cardAreaW - gap * (cols - 1)) / cols;
     if (colW <= 0) return null;
     // The card columns sit on the opposite side of the clock. When the clock is
     // on the right, the card area starts at the grid's left edge.
-    const right = _clockSide() === 'right';
-    const cardLeft = right ? rect.left + pad : rect.left + pad + CLOCK_WIDTH + gap;
+    const cardLeft = right ? rect.left + pad : rect.left + pad + clockW + gap;
     let col = null;
     for (let i = 0; i < cols; i++) {
         const l = cardLeft + i * (colW + gap);

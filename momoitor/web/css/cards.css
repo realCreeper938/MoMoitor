@@ -12,10 +12,13 @@
     padding: 2px 20px;
 }
 
-/* 卡片内容整体往左微调 */
+/* 卡片内容整体往左微调；CPU/GPU/MEM 左侧与底部间距适当加大（fps 保持原状） */
 #cpu-section > .box-content,
 #gpu-section > .box-content,
-#mem-section > .box-content,
+#mem-section > .box-content {
+    padding: 2px 20px 10px 18px;
+}
+
 #fps-section > .box-content {
     padding-left: 12px;
 }
@@ -23,7 +26,10 @@
 /* 小卡片（span 1）内容更偏左，避免右侧信息被挤压截断 */
 #cpu-section:not([data-span="2"]) > .box-content,
 #gpu-section:not([data-span="2"]) > .box-content,
-#mem-section:not([data-span="2"]) > .box-content,
+#mem-section:not([data-span="2"]) > .box-content {
+    padding-left: 8px;
+}
+
 #fps-section:not([data-span="2"]) > .box-content {
     padding-left: 5px;
 }

@@ -37,7 +37,10 @@
     position: relative;
     flex: 1;
     display: grid;
-    grid-template-columns: 150px minmax(0, 1fr) minmax(0, 1fr);
+    /* Clock column width scales with the card font size so the sidebar
+       (weather + 农历) keeps everything on one line at larger fonts. */
+    --clock-col: clamp(150px, calc(150px * (1 + (var(--font-scale) - 1) * 0.5)), 260px);
+    grid-template-columns: var(--clock-col) minmax(0, 1fr) minmax(0, 1fr);
     grid-template-rows: repeat(5, minmax(0, 1fr));
     gap: 8px;
     padding: 8px;
@@ -47,7 +50,7 @@
 
 /* Clock moved to the right side: card columns on the left, clock last. */
 .term-grid.clock-right {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 150px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--clock-col);
 }
 
 /* Drop-slot preview shown while dragging a card over the grid */
