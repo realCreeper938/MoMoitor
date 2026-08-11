@@ -60,7 +60,6 @@ function applyHwNames(show) {
     const gpuLabel = document.getElementById('gpu-header');
     const memLabel = document.getElementById('mem-header');
     const diskLabel = document.querySelector('#disk-section .box-header');
-    const netLabel = document.querySelector('#net-section .box-header');
 
     if (hwNamesCache) {
         const cpuBrand = detectCpuBrand(hwNamesCache.cpu);
@@ -77,13 +76,11 @@ function applyHwNames(show) {
         setHeaderText(gpuLabel, hwNamesCache.gpu || 'GPU');
         setHeaderText(memLabel, hwNamesCache.mem || 'Memory');
         if (diskLabel) setHeaderText(diskLabel, hwNamesCache.disk || 'Disk');
-        if (netLabel) setHeaderText(netLabel, hwNamesCache.net || 'Network');
     } else {
         setHeaderText(cpuLabel, 'CPU');
         setHeaderText(gpuLabel, 'GPU');
         setHeaderText(memLabel, 'Memory');
         if (diskLabel) setHeaderText(diskLabel, 'Disk');
-        if (netLabel) setHeaderText(netLabel, 'Network');
     }
 }
 

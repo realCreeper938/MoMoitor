@@ -364,10 +364,6 @@ function closeCalendarPopup() {
     document.querySelectorAll('.cal-day-popup').forEach(p => p.remove());
 }
 
-/* Expose to global scope for Python/backend to call */
-window.showCalendar = () => openCalendarPopup(null);
-window.hideCalendar = () => closeCalendarPopup();
-
 /* Hover scheduling — small delays so the popup doesn't flicker when the
  * mouse moves between the date and the popup itself. */
 function scheduleCalPopupShow(anchor) {

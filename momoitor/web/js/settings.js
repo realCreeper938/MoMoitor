@@ -99,7 +99,6 @@ function initSettings() {
     const clockShowSecondsChk = document.getElementById('opt-show-seconds');
 
     // Clock sidebar background (horizontal mode)
-    const clockBgGroup = document.getElementById('clock-bg-group');
     const clockBgImgPicker = document.getElementById('clockbgimg-picker');
     let clockBgImgValue = '';
     const clockBgFitSel = document.getElementById('opt-clockbgfit');
@@ -123,7 +122,6 @@ function initSettings() {
 
     // Font slots
     const subtabBtns = document.querySelectorAll('.subtab-btn');
-    const subtabContents = document.querySelectorAll('.subtab-content');
     const subtabBars = document.querySelectorAll('.subtab-bar');
     let fontUiValue = 'JetBrains Maple Mono';
     let fontDataValue = 'IoskeleyMono';
@@ -174,6 +172,15 @@ function initSettings() {
             _deactivateSettingsTabs(sidebar);
             btn.classList.add('active');
             target.classList.add('active');
+            // A tab with subtabs shows a blank body if none of its subtabs is
+            // active (e.g. its subtab was cleared when switching a subtab in
+            // another tab earlier). Fall back to the first subtab in that case.
+            if (target.querySelector('.subtab-bar') && !target.querySelector('.subtab-btn.active')) {
+                const first = target.querySelector('.subtab-btn');
+                if (first) first.classList.add('active');
+                const firstContent = document.getElementById('subtab-' + first.dataset.subtab);
+                if (firstContent) firstContent.classList.add('active');
+            }
             syncSubtabIndicators();
             if (navIndicator) placeNavIndicator(btn, true);
         });
@@ -218,18 +225,21 @@ function initSettings() {
             const target = document.getElementById('subtab-' + btn.dataset.subtab);
             if (!target) return;
 
-            const prevActive = document.querySelector('.subtab-content.active');
+            const bar = btn.closest('.subtab-bar');
+            const tab = btn.closest('.tab-content');
+            const scope = tab || document;
+            const prevActive = scope.querySelector('.subtab-content.active');
             let slideClass = 'slide-in-right';
             if (prevActive && (prevActive.compareDocumentPosition(target) &
                 Node.DOCUMENT_POSITION_FOLLOWING)) {
                 slideClass = 'slide-in-left';
             }
-
-            const bar = btn.closest('.subtab-bar');
             const ind = bar && bar.querySelector('.subtab-indicator');
 
-            subtabBtns.forEach(b => b.classList.remove('active'));
-            subtabContents.forEach(c => c.classList.remove('active', 'slide-in-right', 'slide-in-left'));
+            // Only deactivate subtabs within the current tab, so switching a
+            // subtab here never clears the active subtab of other tabs.
+            scope.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+            scope.querySelectorAll('.subtab-content').forEach(c => c.classList.remove('active', 'slide-in-right', 'slide-in-left'));
             btn.classList.add('active');
             target.classList.add('active');
             target.classList.add(slideClass);
@@ -475,9 +485,12 @@ function initSettings() {
         }
         clockShowSecondsChk.checked = ck.clock_show_seconds !== false;
         _clockShowSeconds = clockShowSecondsChk.checked;
-        clockShowSecondsChk.addEventListener('change', () => {
-            _clockShowSeconds = clockShowSecondsChk.checked;
-        });
+        if (!clockShowSecondsChk.dataset.init) {
+            clockShowSecondsChk.addEventListener('change', () => {
+                _clockShowSeconds = clockShowSecondsChk.checked;
+            });
+            clockShowSecondsChk.dataset.init = '1';
+        }
 
         // Server mode
         serverModeChk.checked = sv.mode === true;
@@ -594,8 +607,8 @@ function initSettings() {
             custom_cards: (window._appSettings && window._appSettings.custom_cards) || {},
         };
 
-        // Feature toggles
-        s.feature_toggles = {};
+        // Feature toggles — merge with existing to preserve keys without a UI control (e.g. fps, music)
+        s.feature_toggles = { ...(s.feature_toggles || {}) };
         _FEATURE_TOGGLE_KEYS.forEach(key => {
             const cb = document.getElementById('ft-' + key);
             s.feature_toggles[key] = cb ? cb.checked : true;

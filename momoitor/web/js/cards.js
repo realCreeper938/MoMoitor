@@ -177,10 +177,6 @@ function layoutCards() {
     return allCards();
 }
 
-function resizableCards() {
-    return allCards().filter(c => c.resizable);
-}
-
 /* Default layout: clock on the left, every card at its default position. */
 function defaultLayout() {
     const layout = { 'clock-section': { side: 'left', font_scale: 100 } };

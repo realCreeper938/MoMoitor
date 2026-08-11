@@ -1,7 +1,8 @@
 // Dynamically added custom cards: duplicate text cards and HTML cards. Each
 // card is persisted as an entry in settings.custom_cards with a `type` field
 // ('text' / 'html') and its own DOM element created at runtime (see cards.js
-// registerCard / layout.js for the grid system).
+// registerCard / layout.js for the grid system). The shared card editor for
+// both types (text fields + HTML source) also lives here.
 //
 // Loading order: this file runs after layout.js but before settings.js / boot.js,
 // so it can reference the card registry and layout helpers at runtime.
@@ -157,6 +158,136 @@ function applyCustomCard(id) {
     }
 }
 
+// Custom text card
+
+function _customTextCfg(id) {
+    const defaults = { text: '', font: '', bold: false, italic: false, size: 18, align: 'left', color: '' };
+    const stored = ((window._appSettings || {}).custom_cards || {})[id] || {};
+    return Object.assign({}, defaults, stored);
+}
+
+function applyCustomText(id, cfgOverride) {
+    const cfg = cfgOverride || _customTextCfg(id);
+    const el = id === 'text-section'
+        ? document.getElementById('custom-text-el')
+        : (getCard(id) ? getCard(id).el.querySelector('.custom-text') : null);
+    if (!el) return;
+    const empty = !cfg.text;
+    el.textContent = empty ? t('text-edit-hint') : cfg.text;
+    el.classList.toggle('empty', empty);
+    el.style.fontFamily = cfg.font ? '"' + cfg.font + '"' : '';
+    el.style.fontWeight = cfg.bold ? '700' : '400';
+    el.style.fontStyle = cfg.italic ? 'italic' : 'normal';
+    el.style.fontSize = (cfg.size || 18) + 'px';
+    el.style.textAlign = cfg.align || 'left';
+    el.style.color = (!empty && cfg.color) ? cfg.color : '';
+}
+
+// Editor panel
+let _ceEditId = 'text-section';
+let _ceAlign = 'left';
+let _ceColor = '';
+
+function openTextEditor(id) {
+    _ceEditId = id;
+    const cfg = _customTextCfg(id);
+    _ceAlign = cfg.align || 'left';
+    _ceColor = cfg.color || '';
+    const panel = document.getElementById('card-edit-panel');
+    if (!panel) return;
+    const textEl = document.getElementById('ce-text');
+    const fontEl = document.getElementById('ce-font');
+    const boldEl = document.getElementById('ce-bold');
+    const italicEl = document.getElementById('ce-italic');
+    const sizeEl = document.getElementById('ce-size');
+    const colorEl = document.getElementById('ce-color');
+    if (textEl) textEl.value = cfg.text;
+    if (fontEl) fontEl.value = cfg.font;
+    if (boldEl) boldEl.checked = !!cfg.bold;
+    if (italicEl) italicEl.checked = !!cfg.italic;
+    if (sizeEl) sizeEl.value = cfg.size;
+    if (colorEl) colorEl.value = cfg.color || '#e8e8e8';
+    const btns = document.querySelectorAll('#ce-align button');
+    btns.forEach(b => b.classList.toggle('active', b.dataset.align === _ceAlign));
+    panel.style.display = 'flex';
+    if (textEl) textEl.focus();
+}
+
+function closeTextEditor() {
+    hideOverlay('card-edit-panel');
+}
+
+function readTextEditorForm() {
+    const textEl = document.getElementById('ce-text');
+    const fontEl = document.getElementById('ce-font');
+    const boldEl = document.getElementById('ce-bold');
+    const italicEl = document.getElementById('ce-italic');
+    const sizeEl = document.getElementById('ce-size');
+    return {
+        type: _customTextCfg(_ceEditId).type || 'text',
+        text: textEl ? textEl.value : '',
+        font: fontEl ? fontEl.value.trim() : '',
+        bold: boldEl ? boldEl.checked : false,
+        italic: italicEl ? italicEl.checked : false,
+        size: parseInt(sizeEl ? sizeEl.value : '18', 10) || 18,
+        align: _ceAlign,
+        color: _ceColor,
+    };
+}
+
+function previewTextCard() {
+    applyCustomText(_ceEditId, readTextEditorForm());
+}
+
+async function saveTextCard() {
+    const cfg = readTextEditorForm();
+    window._appSettings = window._appSettings || {};
+    window._appSettings.custom_cards = window._appSettings.custom_cards || {};
+    window._appSettings.custom_cards[_ceEditId] = cfg;
+    applyCustomText(_ceEditId, cfg);
+    closeTextEditor();
+    try { await pywebview.api.save_settings(window._appSettings); } catch (e) { console.warn('save custom text:', e); }
+}
+
+function initTextCardEditor() {
+    const closeBtn = document.getElementById('card-edit-close');
+    if (closeBtn) closeBtn.addEventListener('click', closeTextEditor);
+    const saveBtn = document.getElementById('card-edit-save');
+    if (saveBtn) saveBtn.addEventListener('click', saveCardEditor);
+    const cancelBtn = document.getElementById('card-edit-cancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', closeTextEditor);
+    const alignBox = document.getElementById('ce-align');
+    if (alignBox) alignBox.addEventListener('click', (e) => {
+        const b = e.target.closest('button[data-align]');
+        if (!b) return;
+        _ceAlign = b.dataset.align;
+        alignBox.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
+        previewTextCard();
+    });
+    ['ce-text', 'ce-font', 'ce-bold', 'ce-italic', 'ce-size'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', previewTextCard);
+        el.addEventListener('change', previewTextCard);
+    });
+    const colorEl = document.getElementById('ce-color');
+    if (colorEl) {
+        colorEl.addEventListener('input', () => {
+            _ceColor = colorEl.value;
+            previewTextCard();
+        });
+    }
+    const colorResetBtn = document.getElementById('ce-color-reset');
+    if (colorResetBtn) {
+        colorResetBtn.addEventListener('click', () => {
+            _ceColor = '';
+            if (colorEl) colorEl.value = '#e8e8e8';
+            previewTextCard();
+        });
+    }
+    const panel = document.getElementById('card-edit-panel');
+    if (panel) panel.addEventListener('click', (e) => { e.stopPropagation(); });
+}
 /* ---- Card editor (shared panel in index.html) ---- */
 
 /* Show only the fields relevant to the edited card type and set the panel title. */
