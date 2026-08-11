@@ -310,36 +310,6 @@
     font-size: calc(8px * var(--font-scale));
     color: var(--text-dim);
 }
-/* CPU multi-core chart preview: mini sparkline-style cells */
-.card-list-preview .clp-cpucore {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-    width: 100%;
-    min-height: 40px;
-}
-.card-list-preview .clp-cpucore .clp-cell {
-    aspect-ratio: 2 / 1;
-    border: 1px solid var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-    position: relative;
-}
-.card-list-preview .clp-cpucore .clp-cell svg {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-.card-list-preview .clp-cpucore .clp-cell .spark-line {
-    stroke: var(--cyan);
-    stroke-width: 3;
-    fill: none;
-}
-.card-list-preview .clp-cpucore .clp-cell .spark-area {
-    fill: var(--cyan);
-    opacity: 0.18;
-}
-
 /* FPS large card: show corner-label, hide box-header (matches CPU/GPU large form) */
 #fps-section .corner-label {
     display: none;

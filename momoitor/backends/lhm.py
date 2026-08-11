@@ -141,9 +141,6 @@ class LHMMonitor(BaseMonitor):
                 cpu_data["power"] = self._find(sensors, "Power", ["package"])
                 cpu_data["load"] = self._find(sensors, "Load", ["total"])
                 cpu_data["voltage"] = self._find(sensors, "Voltage", ["package"]) or self._find(sensors, "Voltage", ["core"])
-                # 各逻辑处理器使用率（按核心排列，任务管理器风格的 CPU 图标数据源）。
-                # 首次调用返回全 0，下一次轮询即为真实值。
-                cpu_data["cores"] = psutil.cpu_percent(percpu=True)
 
             elif "Gpu" in ht:
                 gpu_candidates.append((hw, sensors))

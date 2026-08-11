@@ -302,14 +302,6 @@ function _cardPreviewHTML(id) {
             + '<div class="clp-weather-main"><div class="clp-title">23&deg;C</div>'
             + '<div class="clp-artist">Sunny</div></div></div>';
     }
-    if (m.type === 'cpucore') {
-        return '<div class="clp-cpucore">'
-            + '<div class="clp-cell"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polygon class="spark-area" points="0,100 15,60 30,75 50,30 70,55 100,20 100,100"></polygon><polyline class="spark-line" points="15,60 30,75 50,30 70,55 100,20"></polyline></svg></div>'
-            + '<div class="clp-cell"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polygon class="spark-area" points="0,100 20,50 40,70 60,35 80,50 100,25 100,100"></polygon><polyline class="spark-line" points="20,50 40,70 60,35 80,50 100,25"></polyline></svg></div>'
-            + '<div class="clp-cell"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polygon class="spark-area" points="0,100 25,65 50,50 75,70 100,40 100,100"></polygon><polyline class="spark-line" points="25,65 50,50 75,70 100,40"></polyline></svg></div>'
-            + '<div class="clp-cell"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><polygon class="spark-area" points="0,100 20,80 45,55 70,65 100,35 100,100"></polygon><polyline class="spark-line" points="20,80 45,55 70,65 100,35"></polyline></svg></div>'
-            + '</div>';
-    }
     if (m.type === 'duo') {
         return m.duo.map(r =>
             '<div class="clp-duo"><span class="clp-arrow">' + r[0] + '</span>'

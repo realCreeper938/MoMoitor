@@ -379,72 +379,6 @@ function updateCPU(d) {
     }
 }
 
-/* CPU multi-core chart — one mini sparkline area chart per logical processor.
-   Each cell renders an independent 90s history as a filled polyline (Task Manager style). */
-const _CORE_CHART_NS = 'http://www.w3.org/2000/svg';
-const _coreHist = [];
-
-function _renderCoreCell(hist, svg) {
-    const line = svg.querySelector('.spark-line');
-    const area = svg.querySelector('.spark-area');
-    if (!line || !area) return;
-    if (hist.length < 2) { line.setAttribute('points', ''); area.setAttribute('points', ''); return; }
-    const n = hist.length;
-    const parts = [];
-    for (let i = 0; i < n; i++) {
-        const x = (i / (n - 1)) * 100;
-        const y = 100 - hist[i].v;
-        parts.push(x.toFixed(2) + ',' + y.toFixed(2));
-    }
-    const pts = parts.join(' ');
-    line.setAttribute('points', pts);
-    area.setAttribute('points', '0,100 ' + pts + ' 100,100');
-}
-
-function updateCpuCores(d) {
-    const grid = document.getElementById('cpucore-grid');
-    if (!grid) return;
-    const cores = d.cpu.cores;
-    const n = Array.isArray(cores) ? cores.length : 0;
-    const now = Date.now();
-    // Ensure exactly one cell per logical processor.
-    let cells = grid.children;
-    while (cells.length < n) {
-        const cell = document.createElement('div');
-        cell.className = 'cpucore-cell';
-        const svg = document.createElementNS(_CORE_CHART_NS, 'svg');
-        svg.setAttribute('viewBox', '0 0 100 100');
-        svg.setAttribute('preserveAspectRatio', 'none');
-        const poly = document.createElementNS(_CORE_CHART_NS, 'polygon');
-        poly.setAttribute('class', 'spark-area');
-        svg.appendChild(poly);
-        const pl = document.createElementNS(_CORE_CHART_NS, 'polyline');
-        pl.setAttribute('class', 'spark-line');
-        svg.appendChild(pl);
-        cell.appendChild(svg);
-        const num = document.createElement('span');
-        num.className = 'cpucore-num';
-        cell.appendChild(num);
-        grid.appendChild(cell);
-        cells = grid.children;
-    }
-    while (cells.length > n) {
-        grid.removeChild(cells[cells.length - 1]);
-        cells = grid.children;
-    }
-    setText('cpucore-label', n + ' CORES');
-    while (_coreHist.length < n) _coreHist.push([]);
-    while (_coreHist.length > n) _coreHist.pop();
-    for (let c = 0; c < n; c++) {
-        const v = cores[c];
-        const pct = v == null || isNaN(v) ? 0 : Math.max(0, Math.min(100, v));
-        _coreHist[c].push({ t: now, v: pct });
-        while (_coreHist[c].length && _coreHist[c][0].t < now - CHART_WINDOW_MS) _coreHist[c].shift();
-        _renderCoreCell(_coreHist[c], cells[c].querySelector('svg'));
-        cells[c].querySelector('.cpucore-num').textContent = c + 1;
-    }
-}
-
 function updateGPU(d) {
     const gpuLoad = fmt(d.gpu.load, 0);
     setText('gpu-load', gpuLoad);
@@ -534,7 +468,6 @@ function updateNet(d) {
 
 function updateUI(d) {
     updateCPU(d);
-    updateCpuCores(d);
     updateGPU(d);
     updateMem(d);
     updateDisk(d);

@@ -237,10 +237,6 @@ class HWiNFOMonitor(BaseMonitor):
         if found:
             data["voltage"] = found[0]['value']
 
-        # 各逻辑处理器使用率（按核心排列，任务管理器风格的 CPU 图标数据源）。
-        # 首次调用返回全 0，下一次轮询即为真实值。
-        data["cores"] = psutil.cpu_percent(percpu=True)
-
         return data
 
     def _extract_gpu(self, readings):

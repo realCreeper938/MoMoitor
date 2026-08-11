@@ -231,56 +231,6 @@ body.no-hover-anim .term-box:hover {
 #net-section .sparkline-bg[data-spark="net_up"] .spark-line { stroke: var(--orange); }
 #net-section .sparkline-bg[data-spark="net_up"] .spark-area { fill: var(--orange); }
 
-/* CPU multi-core chart: one mini sparkline area chart per logical processor.
-   4-column-ish grid of rectangular cells, each with its own SVG polyline + area fill. */
-#cpucore-section .cpucore-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(calc(70px * var(--font-scale)), 1fr));
-    grid-auto-rows: 1fr;
-    gap: calc(3px * var(--font-scale));
-    width: 100%;
-    height: 100%;
-}
-
-#cpucore-section .cpucore-cell {
-    position: relative;
-    min-width: 0;
-    min-height: 0;
-    border-radius: calc(3px * var(--font-scale));
-    border: calc(1px * var(--font-scale)) solid var(--border);
-    overflow: hidden;
-    background: var(--surface);
-}
-
-#cpucore-section .cpucore-cell svg {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-
-#cpucore-section .cpucore-cell .spark-line {
-    stroke: var(--cyan);
-    stroke-width: 0.8;
-    vector-effect: non-scaling-stroke;
-}
-
-#cpucore-section .cpucore-cell .spark-area {
-    fill: var(--cyan);
-    opacity: 0.15;
-}
-
-#cpucore-section .cpucore-cell .cpucore-num {
-    position: absolute;
-    top: calc(2px * var(--font-scale));
-    left: calc(3px * var(--font-scale));
-    font-family: var(--font-data);
-    font-size: calc(8px * var(--font-scale));
-    color: var(--text-dim);
-    opacity: 0.7;
-    pointer-events: none;
-    line-height: 1;
-}
-
 #clock-section,
 #clock-section .box-content {
     overflow: visible;
@@ -295,7 +245,6 @@ body.no-hover-anim .term-box:hover {
 }
 
 #cpu-section  { grid-column: 2;          grid-row: 2 / span 2; }
-#cpucore-section { grid-column: 2;      grid-row: 2 / span 2; }
 #gpu-section  { grid-column: 3;          grid-row: 2 / span 2; }
 #mem-section  { grid-column: 2;          grid-row: 4; }
 #net-section  { grid-column: 2;          grid-row: 1; }
@@ -307,7 +256,6 @@ body.no-hover-anim .term-box:hover {
 
 /* Hide box headers */
 #cpu-section > .box-header,
-#cpucore-section > .box-header,
 #mem-section > .box-header,
 #gpu-section > .box-header,
 #net-section > .box-header,
