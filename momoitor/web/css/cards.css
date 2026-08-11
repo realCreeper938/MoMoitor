@@ -8,8 +8,8 @@
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    gap: calc(16px * var(--density));
-    padding: calc(2px * var(--density)) calc(20px * var(--density));
+    gap: 16px;
+    padding: 2px 20px;
 }
 
 /* 卡片内容整体往左微调 */
@@ -17,7 +17,7 @@
 #gpu-section > .box-content,
 #mem-section > .box-content,
 #fps-section > .box-content {
-    padding-left: calc(12px * var(--density));
+    padding-left: 12px;
 }
 
 /* 小卡片（span 1）内容更偏左，避免右侧信息被挤压截断 */
@@ -25,7 +25,7 @@
 #gpu-section:not([data-span="2"]) > .box-content,
 #mem-section:not([data-span="2"]) > .box-content,
 #fps-section:not([data-span="2"]) > .box-content {
-    padding-left: calc(5px * var(--density));
+    padding-left: 5px;
 }
 
 #cpu-section .split-row,
@@ -49,7 +49,7 @@
     grid-template-columns: auto 1fr;
     grid-template-rows: auto auto;
     align-items: center;
-    gap: calc(8px * var(--density)) calc(32px * var(--density));
+    gap: 8px 32px;
     width: 100%;
 }
 
@@ -106,7 +106,7 @@
     grid-template-columns: auto 1fr;
     grid-template-rows: auto auto;
     align-items: center;
-    gap: 0 calc(32px * var(--density));
+    gap: 0 32px;
     width: 100%;
 }
 
@@ -137,7 +137,7 @@
 
 #net-section .arrow {
     text-align: center;
-    width: calc(22px * var(--density));
+    width: 22px;
     flex-shrink: 0;
 }
 
@@ -171,7 +171,7 @@
     grid-template-columns: auto 1fr;
     grid-template-rows: auto auto;
     align-items: center;
-    gap: calc(8px * var(--density)) calc(48px * var(--density));
+    gap: 8px 48px;
     width: 100%;
 }
 
@@ -205,7 +205,7 @@
 
 #disk-section .arrow {
     text-align: center;
-    width: calc(22px * var(--density));
+    width: 22px;
     flex-shrink: 0;
     color: var(--text-dim);
     font-size: calc(13px * var(--font-scale));

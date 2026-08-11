@@ -26,8 +26,7 @@ def test_normalize_fills_defaults():
     s = _normalize_settings({})
     assert s["schema_version"] == config_mod.SCHEMA_VERSION
     assert "general" in s and "layout" in s
-    # layout 是整体分组：未保存 rows/cols 时保持缺失，前端按视口自适应默认网格
-    assert "rows" not in s["layout"] and "cols" not in s["layout"]
+    assert s["layout"]["rows"] == 5 and s["layout"]["cols"] == 2
     assert s["general"]["language"] in ("zh", "en")
 
 

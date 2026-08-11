@@ -32,7 +32,7 @@
     z-index: 1;
     align-items: flex-start;
     justify-content: center;
-    gap: calc(9px * var(--density));
+    gap: 9px;
     width: 100%;
     min-width: 0;
     min-height: 0;
@@ -42,7 +42,7 @@
 .wx-card-hero {
     display: flex;
     align-items: flex-end;
-    gap: calc(14px * var(--density));
+    gap: 14px;
     width: 100%;
     min-width: 0;
 }
@@ -58,7 +58,7 @@
 .wx-card-temp-row {
     display: flex;
     align-items: baseline;
-    gap: calc(4px * var(--density));
+    gap: 4px;
     min-width: 0;
 }
 
@@ -76,7 +76,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: calc(2px * var(--density));
+    gap: 2px;
     min-width: 0;
 }
 
@@ -92,12 +92,12 @@
 
 .wx-card-sub {
     position: absolute;
-    top: calc(10px * var(--density));
-    right: calc(14px * var(--density));
+    top: 10px;
+    right: 14px;
     z-index: 2;
     display: flex;
     align-items: center;
-    gap: calc(12px * var(--density));
+    gap: 12px;
     max-width: 70%;
     min-width: 0;
     opacity: 0;
@@ -128,7 +128,7 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: calc(6px * var(--density));
+    gap: 6px;
     width: 100%;
     min-width: 0;
 }
@@ -136,8 +136,8 @@
 .wx-card-detail {
     display: flex;
     align-items: center;
-    gap: calc(6px * var(--density));
-    padding: calc(4px * var(--density)) calc(10px * var(--density));
+    gap: 6px;
+    padding: 4px 10px;
     border-radius: 999px;
     font-size: calc(12px * var(--font-scale));
     color: var(--text-dim);
@@ -160,7 +160,7 @@
 .wx-card-info {
     display: flex;
     align-items: stretch;
-    gap: calc(12px * var(--density));
+    gap: 12px;
     width: 100%;
     min-width: 0;
     min-height: 0;
@@ -174,7 +174,7 @@
     flex: 1 1 0;
     min-width: 0;
     border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-    padding-top: calc(8px * var(--density));
+    padding-top: 8px;
     /* Keep content bottom-aligned so the chart sits at the same height as the
        alert chips when the info row grows. */
     display: flex;
@@ -230,14 +230,14 @@
     min-width: 0;
     min-height: 0;
     border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-    padding-top: calc(8px * var(--density));
+    padding-top: 8px;
     display: flex;
     flex-direction: column;
 }
 
 #weather-section.has-precip .wx-card-alerts {
     border-left: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-    padding-left: calc(12px * var(--density));
+    padding-left: 12px;
 }
 
 .wx-card-alerts-title {
@@ -291,8 +291,8 @@
     position: relative;
     display: flex;
     align-items: center;
-    gap: calc(6px * var(--density));
-    padding: calc(3px * var(--density)) calc(8px * var(--density));
+    gap: 6px;
+    padding: 3px 8px;
     border-radius: 6px;
     background: color-mix(in srgb, var(--alert-color, var(--red)) 14%, transparent);
     border-left: 3px solid var(--alert-color, var(--red));
@@ -320,7 +320,7 @@
     width: max-content;
     max-width: min(440px, calc(100vw - 16px));
     min-width: 190px;
-    padding: calc(10px * var(--density)) calc(12px * var(--density)) calc(8px * var(--density));
+    padding: 10px 12px 8px;
     border-radius: 10px;
     background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 95%, var(--tip-color, var(--red)) 5%));
     border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
@@ -379,8 +379,8 @@
     flex-wrap: wrap;
     justify-content: flex-start;
     align-items: center;
-    gap: calc(4px * var(--density)) calc(12px * var(--density));
-    padding: calc(4px * var(--density)) calc(14px * var(--density));
+    gap: 4px 12px;
+    padding: 4px 14px;
 }
 
 /* Flatten nested wrappers so every stat flows in one row */
@@ -417,13 +417,13 @@
     flex-basis: 100%;
     flex-wrap: wrap;
     justify-content: flex-start;
-    gap: calc(4px * var(--density));
+    gap: 4px;
 }
 
 #weather-section:not([data-span="2"]) .wx-card-detail {
-    padding: calc(3px * var(--density)) calc(9px * var(--density));
+    padding: 3px 9px;
     font-size: calc(11px * var(--font-scale));
-    gap: calc(5px * var(--density));
+    gap: 5px;
 }
 
 #weather-section:not([data-span="2"]) .wx-card-detail .nf-icon {
@@ -456,8 +456,8 @@
 /* Weather big card (span 2): bottom-pinned hero, details below */
 #weather-section[data-span="2"] > .box-content {
     justify-content: flex-end;
-    gap: calc(10px * var(--density));
-    padding-bottom: calc(28px * var(--density));
+    gap: 10px;
+    padding-bottom: 28px;
 }
 
 /* No precipitation forecast and no alerts: the info row collapses, leaving the
@@ -467,7 +467,7 @@
 }
 
 #weather-section[data-span="2"] .wx-card-hero {
-    gap: calc(18px * var(--density));
+    gap: 18px;
     align-items: center;
 }
 
@@ -494,20 +494,20 @@
 
 #weather-section[data-span="2"] .wx-card-detail {
     font-size: calc(13px * var(--font-scale));
-    padding: calc(5px * var(--density)) calc(11px * var(--density));
+    padding: 5px 11px;
 }
 
 /* Weather big card compact mode when precipitation forecast is present:
    smaller hero, description below the temperature and within the icon's width */
 #weather-section[data-span="2"].wx-info > .box-content {
-    gap: calc(8px * var(--density));
+    gap: 8px;
     /* Compact mode shows precip/alerts: give the info row the freed padding
        so more alerts are visible before the list starts scrolling. */
-    padding-bottom: calc(10px * var(--density));
+    padding-bottom: 10px;
 }
 
 #weather-section[data-span="2"].wx-info .wx-card-hero {
-    gap: calc(12px * var(--density));
+    gap: 12px;
 }
 
 #weather-section[data-span="2"].wx-info .wx-card-icon {
@@ -542,11 +542,11 @@
 }
 
 #weather-section[data-span="2"].wx-info:hover > .box-content {
-    gap: calc(8px * var(--density));
+    gap: 8px;
 }
 
 #weather-section[data-span="2"].wx-info:hover .wx-card-hero {
-    gap: calc(10px * var(--density));
+    gap: 10px;
 }
 
 #weather-section[data-span="2"].wx-info:hover .wx-card-icon {
@@ -567,10 +567,10 @@
 }
 
 #weather-section[data-span="2"].wx-info:hover .wx-card-details {
-    gap: calc(5px * var(--density));
+    gap: 5px;
 }
 
 #weather-section[data-span="2"].wx-info:hover .wx-card-detail {
     font-size: calc(12px * var(--font-scale));
-    padding: calc(4px * var(--density)) calc(9px * var(--density));
+    padding: 4px 9px;
 }

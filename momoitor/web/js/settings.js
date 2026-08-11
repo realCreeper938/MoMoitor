@@ -24,9 +24,6 @@ function initSettings() {
     const fontsizeVal = document.getElementById('fontsize-val');
     const fontsizeUiRange = document.getElementById('opt-fontsize-ui');
     const fontsizeUiVal = document.getElementById('fontsize-ui-val');
-    const densityModeSel = document.getElementById('opt-density-mode');
-    const densityRange = document.getElementById('opt-density');
-    const densityVal = document.getElementById('density-val');
     const fullscreenChk = document.getElementById('opt-fullscreen');
     const autostartChk = document.getElementById('opt-autostart');
     const hoverHighlightChk = document.getElementById('opt-hover-highlight');
@@ -353,12 +350,6 @@ function initSettings() {
         fontsizeVal.textContent = (g.font_size || 100) + '%';
         fontsizeUiRange.value = g.font_size_ui || 100;
         fontsizeUiVal.textContent = (g.font_size_ui || 100) + '%';
-        const dm = g.density_mode === 'manual' ? 'manual' : 'auto';
-        densityModeSel.value = dm;
-        densityRange.value = g.density || 100;
-        densityVal.textContent = (g.density || 100) + '%';
-        densityRange.disabled = dm !== 'manual';
-        densityVal.classList.toggle('dimmed', dm !== 'manual');
         fullscreenChk.checked = g.fullscreen !== false;
         hoverHighlightChk.checked = g.hover_highlight !== false;
         applyHoverHighlight(g.hover_highlight !== false);
@@ -528,8 +519,6 @@ function initSettings() {
                 language: languageSel.value,
                 font_size: parseInt(fontsizeRange.value),
                 font_size_ui: parseInt(fontsizeUiRange.value),
-                density_mode: densityModeSel.value === 'manual' ? 'manual' : 'auto',
-                density: parseInt(densityRange.value),
                 fullscreen: fullscreenChk.checked,
                 hover_highlight: hoverHighlightChk.checked,
                 hover_animation: hoverAnimChk.checked,
@@ -622,7 +611,6 @@ function initSettings() {
 
         startPolling((s.general || {}).refresh_interval);
         applyLang((s.general || {}).language || 'en');
-        if (typeof applyDensity === 'function') applyDensity();
         applyFontSize((s.general || {}).font_size);
         applyUiFontSize((s.general || {}).font_size_ui);
         if ((s.general || {}).follow_system_theme) {
@@ -678,24 +666,6 @@ function initSettings() {
     fontsizeUiRange.addEventListener('input', () => {
         fontsizeUiVal.textContent = fontsizeUiRange.value + '%';
         applyUiFontSize(parseInt(fontsizeUiRange.value));
-    });
-    // Density: auto mode re-computes on the fly; manual mode lets the range drive it.
-    function _updateDensityControls() {
-        const manual = densityModeSel.value === 'manual';
-        densityRange.disabled = !manual;
-        densityVal.classList.toggle('dimmed', !manual);
-    }
-    densityModeSel.addEventListener('change', () => {
-        _updateDensityControls();
-        const next = { ...(window._appSettings || {}), general: { ...((window._appSettings || {}).general || {}), density_mode: densityModeSel.value === 'manual' ? 'manual' : 'auto' } };
-        window._appSettings = next;
-        applyDensity();
-    });
-    densityRange.addEventListener('input', () => {
-        densityVal.textContent = densityRange.value + '%';
-        const next = { ...(window._appSettings || {}), general: { ...((window._appSettings || {}).general || {}), density_mode: 'manual', density: parseInt(densityRange.value) } };
-        window._appSettings = next;
-        applyDensity();
     });
     // Clock sidebar background live preview
     clockBgOpacityRange.addEventListener('input', () => {

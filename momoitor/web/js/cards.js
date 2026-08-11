@@ -24,45 +24,20 @@ const GRID_ROWS_MIN = 2;
 const GRID_ROWS_MAX = 10;
 const GRID_COLS_MIN = 1;
 const GRID_COLS_MAX = 4;
-// Clock sidebar width in px at density 1.0; scaled up by applyDensity().
-let CLOCK_WIDTH = 150;
-
-/** Update the clock-column width so it stays proportional to the density.
- *  Called by applyDensity(); a no-op if the caller supplied no valid value. */
-function setClockWidth(px) {
-    if (typeof px === 'number' && isFinite(px) && px > 0) CLOCK_WIDTH = px;
-}
+const CLOCK_WIDTH = 150;
 
 const _cardRegistry = [];
 
-// Viewport-adaptive default grid, used ONLY when the saved layout omits
-// rows/cols (fresh first-run). Wide monitors get more columns, tall ones more
-// rows, always clamped to the allowed bounds.
-function _defaultGridForViewport() {
-    const w = window.innerWidth || 1920;
-    const h = window.innerHeight || 1080;
-    let cols = 2;
-    if (w >= 2100) cols = 4;
-    else if (w >= 1550) cols = 3;
-    let rows = 5;
-    if (h >= 1500) rows = 7;
-    else if (h >= 1200) rows = 6;
-    cols = Math.max(GRID_COLS_MIN, Math.min(cols, GRID_COLS_MAX));
-    rows = Math.max(GRID_ROWS_MIN, Math.min(rows, GRID_ROWS_MAX));
-    return { rows, cols };
-}
-
 /* Effective grid dimensions read from the current layout (fall back to the
-   viewport-adaptive defaults when the saved layout omits them or stores an
-   out-of-range value). */
+   defaults when the saved layout omits them or stores an out-of-range value). */
 function _gridRows() {
     const r = parseInt(_layout.rows, 10);
-    return r >= GRID_ROWS_MIN && r <= GRID_ROWS_MAX ? r : _defaultGridForViewport().rows;
+    return r >= GRID_ROWS_MIN && r <= GRID_ROWS_MAX ? r : DEFAULT_GRID.rows;
 }
 
 function _gridCols() {
     const c = parseInt(_layout.cols, 10);
-    return c >= GRID_COLS_MIN && c <= GRID_COLS_MAX ? c : _defaultGridForViewport().cols;
+    return c >= GRID_COLS_MIN && c <= GRID_COLS_MAX ? c : DEFAULT_GRID.cols;
 }
 
 /* Which side the clock column sits on (cards use abstract cols 2/3; the clock
