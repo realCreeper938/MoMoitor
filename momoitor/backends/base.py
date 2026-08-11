@@ -202,6 +202,36 @@ class BaseMonitor(abc.ABC):
         return {"name": self.__class__.__name__, "version": None}
 
     @staticmethod
+    def _battery_from_signals(percent, charging, plugged, rate_w) -> dict:
+        """由后端原始信号组装统一的 battery 字段。
+
+        - percent: 剩余电量百分比（0-100）或 None
+        - charging: 是否正在充电（None 表示该后端无法判断）
+        - plugged: 是否接上电源（None 表示无法判断）
+        - rate_w: 功率（瓦，正为充电、负为放电）或 None
+        """
+        status = "unknown"
+        if plugged is True:
+            if charging is None:
+                charging = rate_w is not None and rate_w > 0
+            status = "charging" if charging else "ac"
+        elif plugged is False:
+            status = "charging" if charging else "discharging"
+        elif charging is True:
+            status = "charging"
+        elif rate_w is not None and rate_w < 0:
+            status = "discharging"
+        elif rate_w is not None and rate_w > 0:
+            status = "charging"
+        return {
+            "percent": percent,
+            "charging": bool(charging) if charging is not None else False,
+            "plugged": plugged,
+            "rate_w": rate_w,
+            "status": status,
+        }
+
+    @staticmethod
     def _run_wmic(args, timeout=3):
         """运行 WMIC 命令并返回解码后的 stdout；失败时返回空字符串。"""
         import subprocess

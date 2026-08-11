@@ -9,7 +9,6 @@ import ctypes
 
 from loguru import logger
 
-from momoitor.services.battery import get_battery
 from momoitor.services.system import (clean_memory, get_sysinfo,
                                       get_system_theme_mode,
                                       get_top_processes, kill_process,
@@ -39,10 +38,6 @@ class HardwareMixin:
 
     def get_sysinfo(self):
         return get_sysinfo()
-
-    def get_battery(self):
-        """电池电量、充电状态与功率（电池卡片）。"""
-        return get_battery()
 
     def get_top_processes(self, sort_by="cpu", limit=1):
         return get_top_processes(sort_by, limit)

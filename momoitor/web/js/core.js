@@ -470,6 +470,7 @@ function updateUI(d) {
     updateMem(d);
     updateDisk(d);
     updateNet(d);
+    if (d.battery) updateBattery(d.battery);
     updateLivePopups(d);
     updateTempWarnings(d);
     updateDataError(d);
@@ -565,16 +566,9 @@ function _applyFpsSpan(el, span) {
     _applyFpsFontSize();
 }
 
-async function refreshBattery() {
-    if (!_sectionVisible('battery-section')) return;
-    try {
-        const b = await pywebview.api.get_battery();
-        updateBattery(b);
-    } catch (e) { console.warn('refreshBattery:', e); }
-}
-
 function updateBattery(b) {
     if (!b) return;
+    if (!_sectionVisible('battery-section')) return;
     setText('batt-pct', fmt(b.percent, 0));
     const icon = document.getElementById('batt-icon');
     if (icon) icon.style.display = b.charging ? 'inline-block' : 'none';

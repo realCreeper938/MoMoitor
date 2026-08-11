@@ -178,6 +178,19 @@ class HWiNFOMonitor(BaseMonitor):
             results.append(r)
         return results
 
+    def _extract_battery(self, readings):
+        """电池：Charge Level（%）、Charge Rate（W，负=放电）。"""
+        level = self._find_readings(readings, SENSOR_TYPE_OTHER, ["charge", "level"])
+        rate = self._find_readings(readings, SENSOR_TYPE_OTHER, ["charge", "rate"])
+        rate_w = rate[0]['value'] if rate else None
+        percent = level[0]['value'] if level else None
+        return self._battery_from_signals(
+            round(percent) if percent is not None else None,
+            rate_w is not None and rate_w > 0,
+            None,
+            rate_w,
+        )
+
     def snapshot(self, gpu_index=None, skip_net=False) -> dict:
         readings = self._read_shared_memory()
 
@@ -194,6 +207,7 @@ class HWiNFOMonitor(BaseMonitor):
             "cpu": cpu,
             "gpu": gpu,
             "mem": mem,
+            "battery": self._extract_battery(readings),
             "disks": self._get_disk_partitions(),
             "disk_status": disk_status,
             "net": self.get_network() if not skip_net else {"up": 0, "down": 0, "name": "N/A"},

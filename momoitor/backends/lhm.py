@@ -48,6 +48,7 @@ class LHMMonitor(BaseMonitor):
             computer.IsGpuEnabled = True
             computer.IsMemoryEnabled = True
             computer.IsStorageEnabled = True
+            computer.IsBatteryEnabled = True
             # 网络吞吐来自 BaseMonitor 中的 psutil。
             computer.IsNetworkEnabled = False
             computer.Open()
@@ -124,6 +125,7 @@ class LHMMonitor(BaseMonitor):
         mem_clock = None
         mem_volt = None
         disk_status = {"activity": None, "temp": None, "read": None, "write": None}
+        battery_data = self._battery_from_signals(None, None, None, None)
         gpu_candidates = []
 
         for hw in self._computer.Hardware:
@@ -173,6 +175,21 @@ class LHMMonitor(BaseMonitor):
                 if w is not None:
                     disk_status["write"] = float(w)
 
+            elif "attery" in ht:
+                battery_percent = self._find(sensors, "Level", ["charge"])
+                rate = self._find(sensors, "Power", ["charge"])
+                if rate is None:
+                    rate = self._find(sensors, "Power", ["discharge"])
+                if rate is not None:
+                    rate = float(rate)
+                # LHM 的 Charge/Discharge Rate：放电为负值，充电为正值。
+                battery_data = self._battery_from_signals(
+                    round(battery_percent) if battery_percent is not None else None,
+                    rate is not None and rate > 0,
+                    None,
+                    rate,
+                )
+
         # GPU
         if gpu_candidates:
             if gpu_index is not None and 0 <= gpu_index < len(gpu_candidates):
@@ -205,6 +222,7 @@ class LHMMonitor(BaseMonitor):
             "cpu": cpu_data,
             "gpu": gpu_data,
             "mem": mem,
+            "battery": battery_data,
             "disks": self._get_disk_partitions(),
             "disk_status": disk_status,
             "net": self.get_network() if not skip_net else {"up": 0, "down": 0, "name": "N/A"},
