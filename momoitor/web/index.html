@@ -675,10 +675,6 @@
                         <span class="nf-icon">&#xF233;</span>
                         <span data-i18n="nav-advanced">Advanced</span>
                     </button>
-                    <button class="nav-btn" data-tab="weather">
-                        <span class="nf-icon">&#xF0C2;</span>
-                        <span data-i18n="nav-weather">Weather</span>
-                    </button>
                     <button class="nav-btn" data-tab="monitor">
                         <span class="nf-icon">&#xF108;</span>
                         <span data-i18n="nav-monitor">Monitor</span>
@@ -762,6 +758,7 @@
                         <div class="subtab-bar">
                             <button type="button" class="subtab-btn active" data-subtab="source" data-i18n="subtab-source">Source</button>
                             <button type="button" class="subtab-btn" data-subtab="lyrics" data-i18n="subtab-lyrics">Lyrics</button>
+                            <button type="button" class="subtab-btn" data-subtab="weather" data-i18n="subtab-weather">Weather</button>
                         </div>
                         <div class="subtab-content active" id="subtab-source">
                             <div class="setting-group">
@@ -816,45 +813,44 @@
                                 <div class="setting-desc" data-i18n="desc-lyrics-translate">When a lyric line ends with a translation in parentheses, show the translation above the original.</div>
                             </div>
                         </div>
-                    </div>
-                    <!-- Weather Tab -->
-                    <div class="tab-content" id="tab-weather">
-                        <div class="setting-group">
-                            <div class="setting-group-title" data-i18n="settings-weather">Weather</div>
-                            <div class="setting-item">
-                                <span data-i18n="wx-enabled">Enable Weather</span>
-                                <label class="toggle">
-                                    <input type="checkbox" id="opt-wx-enabled" checked>
-                                    <span class="toggle-slider"></span>
-                                </label>
+                        <div class="subtab-content" id="subtab-weather">
+                            <div class="setting-group">
+                                <div class="setting-group-title" data-i18n="settings-weather">Weather</div>
+                                <div class="setting-item">
+                                    <span data-i18n="wx-enabled">Enable Weather</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-wx-enabled" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-wx-enabled">Turn off to stop fetching weather data</div>
                             </div>
-                            <div class="setting-desc" data-i18n="desc-wx-enabled">Turn off to stop fetching weather data</div>
-                        </div>
-                        <div class="setting-group">
-                            <div class="setting-group-title" data-i18n="settings-location">Location</div>
-                            <div class="setting-item">
-                                <span data-i18n="label-lat">Latitude</span>
-                                <input type="text" id="opt-wx-lat" placeholder="39.92">
+                            <div class="setting-group">
+                                <div class="setting-group-title" data-i18n="settings-location">Location</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-lat">Latitude</span>
+                                    <input type="text" id="opt-wx-lat" placeholder="39.92">
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-lon">Longitude</span>
+                                    <input type="text" id="opt-wx-lon" placeholder="116.41">
+                                </div>
                             </div>
-                            <div class="setting-item">
-                                <span data-i18n="label-lon">Longitude</span>
-                                <input type="text" id="opt-wx-lon" placeholder="116.41">
-                            </div>
-                        </div>
-                        <div class="setting-group">
-                            <div class="setting-group-title" data-i18n="settings-apikeys">API Keys</div>
-                            <div class="setting-desc" data-i18n="desc-apikeys">Credentials from QWeather console (EdDSA JWT authentication)</div>
-                            <div class="setting-item">
-                                <span data-i18n="label-kid">Key ID</span>
-                                <input type="text" id="opt-wx-kid" placeholder="Credential ID">
-                            </div>
-                            <div class="setting-item">
-                                <span data-i18n="label-project">Project ID</span>
-                                <input type="text" id="opt-wx-sub" placeholder="Project ID">
-                            </div>
-                            <div class="setting-item">
-                                <span data-i18n="label-pem">Private Key</span>
-                                <textarea id="opt-wx-key" rows="3" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+                            <div class="setting-group">
+                                <div class="setting-group-title" data-i18n="settings-apikeys">API Keys</div>
+                                <div class="setting-desc" data-i18n="desc-apikeys">Credentials from QWeather console (EdDSA JWT authentication)</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-kid">Key ID</span>
+                                    <input type="text" id="opt-wx-kid" placeholder="Credential ID">
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-project">Project ID</span>
+                                    <input type="text" id="opt-wx-sub" placeholder="Project ID">
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-pem">Private Key</span>
+                                    <textarea id="opt-wx-key" rows="3" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
