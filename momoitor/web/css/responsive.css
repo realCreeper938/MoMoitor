@@ -499,6 +499,30 @@ body.layout-mode .layout-toolbar {
     display: flex;
 }
 
+/* Icon-only buttons in the layout toolbar (Close / Save / Add Card) */
+.layout-toolbar .icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: calc(16px * var(--ui-scale));
+    line-height: 1;
+    color: var(--text);
+}
+
+.layout-toolbar .icon-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.layout-toolbar .icon-btn .nf-icon {
+    font-size: inherit;
+    width: auto;
+    line-height: 1;
+}
+
 /* Resize handle �?bottom-right corner of resizable cards, visible only in layout mode */
 .layout-resize-handle {
     display: none;
@@ -572,6 +596,46 @@ body.layout-mode .layout-control-group .layout-del-btn {
 .layout-control-group .layout-del-btn:hover {
     background: var(--red);
     color: var(--surface);
+}
+
+/* Per-card font-size stepper shown in layout mode */
+.layout-font-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    pointer-events: auto;
+}
+
+.layout-font-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    background: color-mix(in srgb, var(--surface) 80%, var(--accent) 20%);
+    font-size: calc(11px * var(--ui-scale));
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    line-height: 1;
+    padding: 0;
+}
+
+.layout-font-btn:hover {
+    background: var(--accent);
+    color: var(--surface);
+}
+
+.layout-font-val {
+    font-family: var(--font-data);
+    font-size: calc(11px * var(--ui-scale));
+    color: var(--text);
+    text-align: center;
+    min-width: 38px;
+    line-height: 1;
+    user-select: none;
 }
 
 .layout-toolbar-label {

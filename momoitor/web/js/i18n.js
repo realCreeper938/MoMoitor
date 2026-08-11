@@ -96,8 +96,8 @@ const LANGS = {
         "layout-rows": "Rows",
         "layout-cols": "Cols",
         "desc-layout-mode": "Drag cards in the main grid to rearrange. Some cards support multiple forms — drag the handle at their bottom-right corner to switch size.",
-        "layout-hint-clock": "Drag the clock to adjust its position",
         "btn-layout-reset": "Reset to Default",
+        "btn-font-reset": "Reset Font Sizes",
         "layout-reset-confirm": "Are you sure you want to reset to the default layout?",
         "layout-cards": "Add Card",
         "layout-cards-title": "Add Cards",
@@ -337,8 +337,8 @@ const LANGS = {
         "layout-rows": "行数",
         "layout-cols": "列数",
         "desc-layout-mode": "在主界面上拖动卡片即可进行排列。部分卡片支持多种形态，可拖曳其右下角的手柄切换大小。",
-        "layout-hint-clock": "拖曳时钟可调整位置",
         "btn-layout-reset": "恢复默认布局",
+        "btn-font-reset": "恢复字体大小",
         "layout-reset-confirm": "确定要恢复默认布局吗？",
         "layout-cards": "添加卡片",
         "layout-cards-title": "添加卡片",
@@ -531,6 +531,11 @@ function applyLang(lang) {
         const key = el.getAttribute("data-i18n-label");
         const text = t(key);
         if (text) el.label = text;
+    });
+    document.querySelectorAll("[data-i18n-title]").forEach(el => {
+        const key = el.getAttribute("data-i18n-title");
+        const text = t(key);
+        if (text) el.title = text;
     });
 }
 

@@ -15,7 +15,7 @@ function setLayout(layout) {
 }
 
 function setCardPos(id, pos) {
-    if (pos) _layout[id] = pos;
+    if (pos) _layout[id] = Object.assign({}, _layout[id] || {}, pos);
     else delete _layout[id];
 }
 
@@ -69,12 +69,51 @@ function _normLayout(id) {
     const col = saved.col || def.col;
     const row = saved.row || def.row;
     const span = saved.span != null ? saved.span : def.span;
+    let fs = parseFloat(saved.font_scale);
+    if (!(fs >= FONT_SCALE_MIN && fs <= FONT_SCALE_MAX)) fs = 100;
     return {
         col: Math.max(2, Math.min(col, cols + 1)),
         row: Math.max(1, Math.min(row, rows)),
         span: Math.max(1, Math.min(span, rows)),
         hidden: saved.hidden !== undefined ? saved.hidden === true : def.hidden === true,
+        font_scale: fs,
     };
+}
+
+const FONT_SCALE_MIN = 50;
+const FONT_SCALE_MAX = 200;
+
+function getCardFontScale(id) {
+    return _normLayout(id).font_scale;
+}
+
+/* Clock column font scale (the clock is not a registered card; its scale lives
+   in the clock-section layout entry next to `side`). */
+function getClockFontScale() {
+    const c = _layout['clock-section'] || {};
+    let fs = parseFloat(c.font_scale);
+    if (!(fs >= FONT_SCALE_MIN && fs <= FONT_SCALE_MAX)) fs = 100;
+    return fs;
+}
+
+/* Apply this card's font scale as an override of --font-scale on its element,
+   relative to the global scale (which lives on <html>). */
+function applyCardFontScale(id) {
+    const card = getCard(id);
+    if (!card || !card.el) return;
+    const global = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--font-scale'));
+    const scale = ((isFinite(global) ? global : 1) * getCardFontScale(id)) / 100;
+    card.el.style.setProperty('--font-scale', String(scale));
+}
+
+/* Apply the clock column's font scale the same way (its fonts all use
+   --font-scale via layout.css, so overriding the variable scales the clock). */
+function applyClockFontScale() {
+    const el = document.getElementById('clock-section');
+    if (!el) return;
+    const global = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--font-scale'));
+    const scale = ((isFinite(global) ? global : 1) * getClockFontScale()) / 100;
+    el.style.setProperty('--font-scale', String(scale));
 }
 
 function getLayoutSpan(id) {
@@ -108,6 +147,7 @@ function registerCard(id, opts) {
             el.style.display = _sectionVisible(id) ? '' : 'none';
             el.dataset.span = pos.span;
             if (id === 'fps-section') _applyFpsSpan(el, pos.span);
+            applyCardFontScale(id);
         },
     };
     _cardRegistry.push(card);
@@ -143,7 +183,7 @@ function resizableCards() {
 
 /* Default layout: clock on the left, every card at its default position. */
 function defaultLayout() {
-    const layout = { 'clock-section': { side: 'left' } };
+    const layout = { 'clock-section': { side: 'left', font_scale: 100 } };
     for (const card of allCards()) {
         layout[card.id] = Object.assign({}, card.def);
     }

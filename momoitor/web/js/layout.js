@@ -18,7 +18,7 @@ function applyLayout(layout) {
     }
     const clockEl = document.getElementById('clock-section');
     if (clockEl) clockEl.style.gridColumn = _clockSide() === 'right' ? String(cols + 1) : '1';
-    if (_layoutMode) _positionClockHint();
+    applyClockFontScale();
     applyLyricView();
 }
 
@@ -32,9 +32,10 @@ function readLayout() {
             row: el && el.style.gridRow ? parseInt(el.style.gridRow) || pos.row : pos.row,
             span: pos.span,
             hidden: pos.hidden,
+            font_scale: pos.font_scale,
         };
     });
-    layout['clock-section'] = { side: _clockSide() };
+    layout['clock-section'] = { side: _clockSide(), font_scale: getClockFontScale() };
     layout.rows = _gridRows();
     layout.cols = _gridCols();
     return layout;
@@ -73,7 +74,6 @@ function enterLayoutMode() {
         grid.addEventListener('dragleave', onGridDragLeave);
         grid.addEventListener('drop', onGridDrop);
     }
-    _positionClockHint();
 }
 
 function bindCardDrag(el) {
@@ -98,7 +98,6 @@ function unbindCardDrag(el) {
 function exitLayoutMode() {
     if (!_layoutMode) return;
     _layoutMode = false;
-    _hideClockHint();
     document.body.classList.remove('layout-mode');
     _removeLayoutControls();
     allCards().forEach(card => {
@@ -126,12 +125,16 @@ function _addLayoutControls() {
         if (!el) return;
         const group = document.createElement('div');
         group.className = 'layout-control-group';
+        const fontGroup = _createLayoutFontGroup(id);
+        group.appendChild(fontGroup);
         const delBtn = document.createElement('button');
         delBtn.type = 'button';
         delBtn.className = 'layout-del-btn';
         delBtn.textContent = '×';
         delBtn.addEventListener('click', function(e) { e.stopPropagation(); _deleteCard(id); });
         group.appendChild(delBtn);
+        group._fontVal = fontGroup._fontVal;
+        group._cardId = id;
         el.appendChild(group);
         if (card.resizable) {
             const handle = document.createElement('div');
@@ -150,7 +153,41 @@ function _addLayoutControls() {
             });
         }
     });
+    const clockEl = document.getElementById('clock-section');
+    if (clockEl) {
+        const group = document.createElement('div');
+        group.className = 'layout-control-group';
+        const fontGroup = _createLayoutFontGroup('clock-section');
+        group.appendChild(fontGroup);
+        group._fontVal = fontGroup._fontVal;
+        group._cardId = 'clock-section';
+        clockEl.appendChild(group);
+    }
     _updateCardsBtn();
+}
+
+/* Build the A- / value% / A+ font-size stepper for a card (or the clock). */
+function _createLayoutFontGroup(id) {
+    const fontGroup = document.createElement('div');
+    fontGroup.className = 'layout-font-group';
+    const minusBtn = document.createElement('button');
+    minusBtn.type = 'button';
+    minusBtn.className = 'layout-font-btn';
+    minusBtn.textContent = 'A-';
+    minusBtn.addEventListener('click', function(e) { e.stopPropagation(); _adjustCardFontScale(id, -10); });
+    const fontVal = document.createElement('span');
+    fontVal.className = 'layout-font-val';
+    fontVal.textContent = (id === 'clock-section' ? getClockFontScale() : getCardFontScale(id)) + '%';
+    const plusBtn = document.createElement('button');
+    plusBtn.type = 'button';
+    plusBtn.className = 'layout-font-btn';
+    plusBtn.textContent = 'A+';
+    plusBtn.addEventListener('click', function(e) { e.stopPropagation(); _adjustCardFontScale(id, 10); });
+    fontGroup.appendChild(minusBtn);
+    fontGroup.appendChild(fontVal);
+    fontGroup.appendChild(plusBtn);
+    fontGroup._fontVal = fontVal;
+    return fontGroup;
 }
 
 function _removeLayoutControls() {
@@ -235,6 +272,21 @@ function _deleteCard(id) {
     _repackColumn(col, null, null);
     _rebalanceOverflow();
     _updateCardsBtn();
+}
+
+/* Adjust a card's font scale by a step (e.g. +/-10) and live-apply it. The
+   stepper buttons live in the layout-mode control group. The clock column is
+   handled the same way even though it isn't a registered card. */
+function _adjustCardFontScale(id, step) {
+    const isClock = id === 'clock-section';
+    let fs = (isClock ? getClockFontScale() : getCardFontScale(id)) + step;
+    fs = Math.max(FONT_SCALE_MIN, Math.min(FONT_SCALE_MAX, fs));
+    setCardPos(id, { font_scale: fs });
+    if (isClock) applyClockFontScale(); else applyCardFontScale(id);
+    const groups = document.querySelectorAll('.layout-control-group');
+    for (const g of groups) {
+        if (g._cardId === id && g._fontVal) g._fontVal.textContent = fs + '%';
+    }
 }
 
 // Resize handle drag (toggle card size)
@@ -834,38 +886,6 @@ function _hideDropSlot() {
     if (_dropSlotEl) _dropSlotEl.classList.add('hide');
 }
 
-let _clockHintEl = null;
-
-function _ensureClockHint() {
-    _clockHintEl = _ensureGridChild(_clockHintEl, 'clock-drag-hint', 'clock-drag-hint');
-    return _clockHintEl;
-}
-
-/* Layout-mode bubble above the clock's date line: "拖曳时钟可调整位置".
-   Kept inside the window (grid starts at the window top, so a bubble floating
-   above the whole clock would overflow). Anchors to the date and clamps. */
-function _positionClockHint() {
-    const el = _ensureClockHint();
-    const grid = document.querySelector('.term-grid');
-    const clockEl = document.getElementById('clock-section');
-    const dateEl = document.getElementById('h-clock-date');
-    if (!grid || !clockEl || !dateEl) return;
-    el.textContent = t('layout-hint-clock');
-    el.classList.add('show');
-    const gRect = grid.getBoundingClientRect();
-    const cRect = clockEl.getBoundingClientRect();
-    const dRect = dateEl.getBoundingClientRect();
-    const left = Math.max(gRect.width / 2, Math.min(gRect.width - el.offsetWidth / 2, cRect.left - gRect.left + cRect.width / 2));
-    const desiredBottom = dRect.top - gRect.top - 5;
-    const visualTop = Math.max(4, desiredBottom - el.offsetHeight);
-    el.style.left = left + 'px';
-    el.style.top = (visualTop + el.offsetHeight) + 'px';
-}
-
-function _hideClockHint() {
-    if (_clockHintEl) _clockHintEl.classList.remove('show');
-}
-
 function onGridDragOver(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
@@ -1109,9 +1129,27 @@ function resetLayout() {
     applyLayout(defaultLayout());
 }
 
+/* Reset every card's font scale (and the clock column's) back to 100% and
+   persist. Called from the "恢复字体大小" button in the layout settings. */
+function resetCardFontScales() {
+    allCards().forEach(card => setCardPos(card.id, { font_scale: 100 }));
+    setCardPos('clock-section', { font_scale: 100 });
+    applyLayout(getLayout());
+    const layout = readLayout();
+    (async () => {
+        try {
+            const s = await pywebview.api.get_settings();
+            s.layout = layout;
+            await pywebview.api.save_settings(s);
+            window._appSettings = { ...(window._appSettings || {}), layout: layout };
+        } catch (e) { console.warn('reset font scales:', e); }
+    })();
+}
+
 function initLayoutControls() {
     const modeBtn = document.getElementById('btn-layout-mode');
     const resetBtn = document.getElementById('btn-layout-reset');
+    const fontResetBtn = document.getElementById('btn-font-reset');
     const saveBtn = document.getElementById('layout-save');
     const cancelBtn = document.getElementById('layout-cancel');
     const cardsBtn = document.getElementById('layout-cards');
@@ -1182,6 +1220,9 @@ function initLayoutControls() {
             } catch (e) { console.warn('reset layout:', e); }
         });
     });
+    if (fontResetBtn) fontResetBtn.addEventListener('click', () => {
+        resetCardFontScales();
+    });
     if (saveBtn) saveBtn.addEventListener('click', async () => {
         const layout = readLayout();
         try {
@@ -1217,8 +1258,9 @@ function _layoutChanged() {
         const a = cur[id], b = _layoutSaved[id];
         return !a || !b
             || a.col !== b.col || a.row !== b.row
-            || a.span !== b.span || a.hidden !== b.hidden;
+            || a.span !== b.span || a.hidden !== b.hidden
+            || a.font_scale !== b.font_scale;
     })) return true;
     const a = cur['clock-section'], b = _layoutSaved['clock-section'];
-    return !a || !b || a.side !== b.side;
+    return !a || !b || a.side !== b.side || a.font_scale !== b.font_scale;
 }

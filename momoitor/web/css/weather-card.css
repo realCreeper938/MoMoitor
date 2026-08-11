@@ -596,3 +596,22 @@
     background: linear-gradient(180deg, color-mix(in srgb, var(--wx-accent) 92%, white 8%), var(--wx-accent));
     box-shadow: 0 0 10px color-mix(in srgb, var(--wx-accent) 40%, transparent);
 }
+
+/* Compact mode: when both the precipitation forecast and alerts are shown, the
+   info row takes vertical space, so hero + chips are scaled down moderately to
+   keep the card dense on any screen size. */
+#weather-section[data-span="2"].has-precip.has-alerts .wx-card-icon {
+    font-size: calc(clamp(38px, 4vw, 58px) * var(--font-scale));
+}
+#weather-section[data-span="2"].has-precip.has-alerts .wx-card-hero .metric-value.big {
+    font-size: calc(clamp(36px, 4.4vw, 64px) * var(--font-scale));
+}
+#weather-section[data-span="2"].has-precip.has-alerts .wx-card-unit {
+    font-size: calc(15px * var(--font-scale));
+}
+#weather-section[data-span="2"].has-precip.has-alerts .wx-card-text {
+    font-size: calc(clamp(15px, 1.8vw, 22px) * var(--font-scale));
+}
+#weather-section[data-span="2"].has-precip.has-alerts .wx-card-detail {
+    font-size: calc(12px * var(--font-scale));
+}

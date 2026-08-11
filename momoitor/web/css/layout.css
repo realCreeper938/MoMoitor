@@ -67,36 +67,6 @@ body.layout-mode .drop-slot.hide {
     display: none;
 }
 
-/* Layout-mode hint bubble above the clock */
-.clock-drag-hint {
-    position: absolute;
-    z-index: 40;
-    display: none;
-    padding: 4px 10px;
-    border-radius: 7px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-size: calc(11px * var(--font-scale));
-    line-height: 1.3;
-    white-space: nowrap;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
-    pointer-events: none;
-    transform: translate(-50%, -100%);
-}
-.clock-drag-hint.show {
-    display: block;
-}
-.clock-drag-hint::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 100%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: var(--border);
-}
-
 /* Box �?subtle vertical gradient border: base color on top, accent-tinted at bottom */
 .term-box {
     position: relative;

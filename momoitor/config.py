@@ -246,20 +246,21 @@ DEFAULT_SETTINGS = {
         "auth_pass": "",
     },
     # 布局：各监控卡片在网格中的位置（col 列 / row 行 / span 行跨度 / hidden 是否隐藏）。
+    # font_scale 为该卡片独立的字体缩放百分比（相对全局字体大小，50–200，100 为默认）。
     # span=2 为大卡片（CPU/GPU 风格），span=1 为小卡片（内存风格）。CPU/GPU 固定大卡片。
     "layout": {
         # 网格行列数：rows/cols 为卡片区域的网格尺寸（时钟始终占一列），
         # 布局编辑器里可以随时调整；缺失时前端回退到 5 行 2 列。
         "rows": 5,
         "cols": 2,
-        "cpu-section": {"col": 2, "row": 1, "span": 2, "hidden": False},
-        "gpu-section": {"col": 3, "row": 1, "span": 2, "hidden": False},
-        "mem-section": {"col": 2, "row": 4, "span": 1, "hidden": False},
-        "disk-section": {"col": 3, "row": 3, "span": 1, "hidden": False},
-        "net-section": {"col": 2, "row": 3, "span": 1, "hidden": False},
-        "fps-section": {"col": 3, "row": 4, "span": 2, "hidden": False},
-        "proc-section": {"col": 3, "row": 5, "span": 1, "hidden": True},
-        "music-section": {"col": 2, "row": 5, "span": 1, "hidden": False},
+        "cpu-section": {"col": 2, "row": 1, "span": 2, "hidden": False, "font_scale": 100},
+        "gpu-section": {"col": 3, "row": 1, "span": 2, "hidden": False, "font_scale": 100},
+        "mem-section": {"col": 2, "row": 4, "span": 1, "hidden": False, "font_scale": 100},
+        "disk-section": {"col": 3, "row": 3, "span": 1, "hidden": False, "font_scale": 100},
+        "net-section": {"col": 2, "row": 3, "span": 1, "hidden": False, "font_scale": 100},
+        "fps-section": {"col": 3, "row": 4, "span": 2, "hidden": False, "font_scale": 100},
+        "proc-section": {"col": 3, "row": 5, "span": 1, "hidden": True, "font_scale": 100},
+        "music-section": {"col": 2, "row": 5, "span": 1, "hidden": False, "font_scale": 100},
     },
     # 自定义卡片：key 为卡片 id，type 区分类型（text 文本 / html 自定义 HTML）。
     # text 含内容与样式（字体名/加粗/斜体/字号/对齐/颜色）；html 含 html 字段。

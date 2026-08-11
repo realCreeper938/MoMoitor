@@ -596,6 +596,9 @@ function applyFontSize(pct) {
     // dimensions untouched. Previously this used body zoom, which resized
     // the whole layout along with the text.
     document.documentElement.style.setProperty('--font-scale', pct / 100);
+    // Re-apply each card's per-card font scale (relative to the global scale).
+    allCards().forEach(card => applyCardFontScale(card.id));
+    applyClockFontScale();
     // Fit the process list to the new font size (defer one frame so heights settle).
     setTimeout(recalcProcLimit, 0);
 }
