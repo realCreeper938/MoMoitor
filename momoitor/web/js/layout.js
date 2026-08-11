@@ -1171,14 +1171,16 @@ function initLayoutControls() {
         }
     });
     if (resetBtn) resetBtn.addEventListener('click', async () => {
-        resetLayout();
-        const layout = readLayout();
-        try {
-            const s = await pywebview.api.get_settings();
-            s.layout = layout;
-            await pywebview.api.save_settings(s);
-            window._appSettings = { ...(window._appSettings || {}), layout: layout };
-        } catch (e) { console.warn('reset layout:', e); }
+        showAppConfirm(t('layout-reset-confirm'), async () => {
+            resetLayout();
+            const layout = readLayout();
+            try {
+                const s = await pywebview.api.get_settings();
+                s.layout = layout;
+                await pywebview.api.save_settings(s);
+                window._appSettings = { ...(window._appSettings || {}), layout: layout };
+            } catch (e) { console.warn('reset layout:', e); }
+        });
     });
     if (saveBtn) saveBtn.addEventListener('click', async () => {
         const layout = readLayout();
