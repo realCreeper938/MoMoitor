@@ -362,7 +362,7 @@ async function refreshWeatherCard() {
             } else {
                 hideWxTip();
                 alertsList.innerHTML = '';
-                const maxShow = 30;
+                const maxShow = section.dataset.span === '1' ? 3 : 30;
                 for (const a of alerts.slice(0, maxShow)) {
                     const chip = document.createElement('div');
                     chip.className = 'wx-alert-chip';
@@ -390,10 +390,6 @@ async function refreshWeatherCard() {
                 updateAlertsFade();
             }
             if (section) section.classList.toggle('has-alerts', hasAlerts);
-        }
-
-        if (section) {
-            section.classList.toggle('wx-info', section.classList.contains('has-precip') || section.classList.contains('has-alerts'));
         }
     } catch (e) { console.warn('refreshWeatherCard:', e); }
 }
