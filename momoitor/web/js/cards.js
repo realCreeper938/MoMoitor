@@ -158,6 +158,11 @@ registerCard('cpu-section', {
     resizable: true,
     meta: { name: 'CPU', color: 'var(--cyan)', value: '88', pct: '%', lines: [['4200', 'MHz', '65', '°C'], ['120', 'W', '1.3', 'V']] },
 });
+registerCard('cpucore-section', {
+    def: { col: 2, row: 1, span: 2, hidden: true },
+    resizable: true,
+    meta: { name: 'CPU Cores', color: 'var(--cyan)', type: 'cpucore' },
+});
 registerCard('gpu-section', {
     def: { col: 3, row: 1, span: 2, hidden: false },
     resizable: true,

@@ -73,6 +73,7 @@
 }
 
 #cpu-section[data-span="2"]:hover .corner-label,
+#cpucore-section[data-span="2"]:hover .corner-label,
 #gpu-section[data-span="2"]:hover .corner-label,
 #mem-section[data-span="2"]:hover .corner-label,
 #net-section[data-span="2"]:hover .corner-label,
@@ -82,6 +83,7 @@
 
 /* CPU/GPU/MEM small card (span 1): hide the corner label �?it only fits the tall form */
 #cpu-section:not([data-span="2"]) .corner-label,
+#cpucore-section:not([data-span="2"]) .corner-label,
 #gpu-section:not([data-span="2"]) .corner-label,
 #mem-section:not([data-span="2"]) .corner-label,
 #net-section:not([data-span="2"]) .corner-label {
