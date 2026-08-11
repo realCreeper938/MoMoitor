@@ -322,19 +322,19 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding: 6px 0 14px;
+    gap: 18px;
+    padding: 10px 0 18px;
 }
 
 .about-icon {
-    width: 40px;
-    height: 40px;
+    width: 68px;
+    height: 68px;
     image-rendering: pixelated;
 }
 
 .about-name {
     font-family: "IoskeleyMono", monospace;
-    font-size: calc(22px * var(--ui-scale));
+    font-size: calc(32px * var(--ui-scale));
     font-weight: 700;
     color: var(--text);
 }
