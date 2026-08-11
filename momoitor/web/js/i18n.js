@@ -29,6 +29,7 @@ const LANGS = {
         "label-datasource": "Data Source",
         "label-gpu": "GPU",
         "desc-datasource": "HWiNFO needs its shared memory running in the background; WMI needs no extra software but lacks temperature and power data.",
+        "desc-datasource-aida64": "AIDA64: enable \"Allow Shared Memory\" in Settings → External Applications; it is recommended to check all monitoring items.",
         // Weather
         "settings-location": "Location",
         "settings-apikeys": "API Keys",
@@ -274,6 +275,7 @@ const LANGS = {
         "label-datasource": "数据源",
         "label-gpu": "GPU",
         "desc-datasource": "使用 HWiNFO 需要确保其在后台运行并开启共享内存；WMI 无需额外软件，但不提供温度与功耗数据。",
+        "desc-datasource-aida64": "AIDA64：需要在设置 → 外部程序中勾选\"允许共享内存\"，并建议将所有监控项全部勾选。",
         "settings-location": "位置",
         "settings-apikeys": "API 密钥",
         "label-lat": "纬度",

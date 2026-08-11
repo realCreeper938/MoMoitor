@@ -772,9 +772,11 @@
                                         <option value="lhm">LibreHardwareMonitor</option>
                                         <option value="hwinfo">HWiNFO</option>
                                         <option value="wmi">WMI</option>
+                                        <option value="aida64">AIDA64</option>
                                     </select>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-datasource">HWiNFO must be running for its shared memory to work; WMI needs no extra software but lacks temperature/power data</div>
+                                <div class="setting-desc" data-i18n="desc-datasource">HWiNFO needs its shared memory running; WMI needs no extra software but lacks temperature/power data</div>
+                                <div class="setting-desc" data-i18n="desc-datasource-aida64">AIDA64: enable "Allow Shared Memory" in Settings → External Applications, and it is recommended to check all monitoring items</div>
                                 <div class="setting-item">
                                     <span data-i18n="label-interval">Refresh Interval</span>
                                     <select id="opt-interval">

@@ -5,7 +5,7 @@ import threading
 
 from loguru import logger
 
-from momoitor.backends import LHMMonitor, HWiNFOMonitor, WMIMonitor
+from momoitor.backends import LHMMonitor, HWiNFOMonitor, WMIMonitor, AIDA64Monitor
 from momoitor.config import save_settings
 
 
@@ -23,6 +23,7 @@ _BACKENDS = {
     "lhm": LHMMonitor,
     "hwinfo": HWiNFOMonitor,
     "wmi": WMIMonitor,
+    "aida64": AIDA64Monitor,
 }
 
 
