@@ -13,15 +13,34 @@
     padding: calc(6px * var(--density)) calc(16px * var(--density));
 }
 
-#music-section .h-music-cover {
+#music-section .h-music-cover-wrap {
     width: calc(92px * var(--font-scale));
     height: calc(92px * var(--font-scale));
-    object-fit: cover;
     border-radius: var(--radius-sm);
     background: var(--nord1);
     display: block;
     flex: 0 0 auto;
+    position: relative;
+    overflow: hidden;
     transition: filter 0.15s ease, opacity 0.15s ease;
+}
+
+#music-section .h-music-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* 未在播放时的灰色音乐图标占位（占满封面框） */
+#music-section .h-music-cover-ph {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(36px * var(--font-scale));
+    color: var(--text-dim);
 }
 
 #music-section .music-main {
@@ -258,10 +277,14 @@
     padding: calc(12px * var(--density)) calc(20px * var(--density)) calc(24px * var(--density));
 }
 
-#music-section[data-span="2"] .h-music-cover {
+#music-section[data-span="2"] .h-music-cover-wrap {
     width: calc(clamp(84px, 7.8vw, 168px) * var(--font-scale));
     height: calc(clamp(84px, 7.8vw, 168px) * var(--font-scale));
     border-radius: var(--radius-md);
+}
+
+#music-section[data-span="2"] .h-music-cover-ph {
+    font-size: calc(52px * var(--font-scale));
 }
 
 #music-section[data-span="2"] .music-main {
@@ -345,7 +368,7 @@
    enough that the cover is below its max clamp size; on large screens the
    cover keeps its enlarged size and nothing shrinks. */
 @media (max-width: 2153px) {
-    #music-section[data-span="2"] .h-music-cover,
+    #music-section[data-span="2"] .h-music-cover-wrap,
     #music-section[data-span="2"] .h-music-title,
     #music-section[data-span="2"] .h-music-artist,
     #music-section[data-span="2"] .h-lyric-current,
@@ -354,7 +377,7 @@
         transition: width 0.2s ease, height 0.2s ease, font-size 0.2s ease, gap 0.2s ease, padding 0.2s ease;
     }
 
-    #music-section[data-span="2"]:hover .h-music-cover {
+    #music-section[data-span="2"]:hover .h-music-cover-wrap {
         width: calc(68px * var(--font-scale));
         height: calc(68px * var(--font-scale));
     }
@@ -382,33 +405,7 @@
 }
 
 
-/* 未在播放：将“未在播放”文案与播放控件水平、垂直居中到卡片正中�?*/
-#music-section[data-span="2"].not-playing .music-content {
-    align-items: center;
-    justify-content: center;
-}
-
-#music-section[data-span="2"].not-playing .music-main {
-    align-items: center;
-    gap: calc(14px * var(--density));
-}
-
-#music-section[data-span="2"].not-playing .h-music-meta {
-    align-items: center;
-}
-
-#music-section[data-span="2"].not-playing .h-music-title {
-    text-align: center;
-}
-
-#music-section[data-span="2"].not-playing .music-player-zone {
-    align-items: center;
-}
-
-#music-section[data-span="2"].not-playing .music-controls {
-    align-items: center;
-    margin-top: 0;
-}
+/* 未在播放时布局与播放时保持一致：仅封面框内显示灰色音乐图标占位 */
 
 /* 音乐大卡片：右上/右下角根据封面主色绘制的柔和渐变色。色值由 JS 采样
    封面后写入 --music-accent；无封面或采样失败时不显示。 */

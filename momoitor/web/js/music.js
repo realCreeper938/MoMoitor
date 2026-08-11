@@ -188,13 +188,16 @@ function setLyricHover(on) {
     applyLyricView();
 }
 
-/** Batch-update all cover images with the same source. */
+/** Batch-update all cover images with the same source. When there is no cover,
+ *  show the gray music-icon placeholder inside the cover box. */
 function _updateCovers(cover) {
     const ids = ['h-music-cover'];
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (el) { el.src = cover || ''; el.style.display = cover ? '' : 'none'; }
     });
+    const ph = document.getElementById('h-music-cover-ph');
+    if (ph) ph.style.display = cover ? 'none' : '';
     _applyCoverAccent(cover);
 }
 
@@ -262,7 +265,6 @@ async function refreshMusic() {
             if (section) {
                 section.style.display = _sectionVisible('music-section') ? 'flex' : 'none';
                 section.classList.toggle('paused', !m.playing);
-                section.classList.remove('not-playing');
             }
         } else {
             // No music playing: keep the section visible (visibility is controlled
@@ -275,7 +277,6 @@ async function refreshMusic() {
             if (procEl) procEl.textContent = '';
             if (section) {
                 section.classList.add('paused');
-                section.classList.add('not-playing');
             }
             if (_progressTimer) { clearInterval(_progressTimer); _progressTimer = null; }
             _musicDur = 0;
