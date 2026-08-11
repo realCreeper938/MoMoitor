@@ -39,16 +39,46 @@ def test_normalize_preserves_existing_values():
 
 
 def test_normalize_preserves_whole_groups():
-    """layout/custom_text/feature_toggles 是整体分组：内部键缺失时不能被默认值覆盖。"""
+    """layout/feature_toggles 是整体分组：内部键缺失时不能被默认值覆盖；
+    custom_cards 条目启动时自动补齐 type 字段（旧版条目迁移为 text）。"""
     raw = {
         "layout": {"rows": 8, "cols": 3, "cpu-section": {"col": 2, "row": 1, "span": 2}},
-        "custom_text": {"text-section": {"text": "hello"}},
+        "custom_cards": {"text-section": {"text": "hello"}},
         "feature_toggles": {"weather": False},
     }
     s = _normalize_settings(raw)
     assert s["layout"] == raw["layout"]
-    assert s["custom_text"] == raw["custom_text"]
     assert s["feature_toggles"] == raw["feature_toggles"]
+    assert s["custom_cards"]["text-section"]["text"] == "hello"
+    assert s["custom_cards"]["text-section"]["type"] == "text"
+
+
+def test_normalize_custom_cards_preserves_existing_types():
+    """已有 type 的自定义卡片条目原样保留，不被迁移改写；clock 类型已移除，被清除。"""
+    raw = {
+        "custom_cards": {
+            "custom-clock-1": {"type": "clock", "timezone": "Asia/Shanghai"},
+            "custom-html-1": {"type": "html", "html": "<b>x</b>"},
+        }
+    }
+    s = _normalize_settings(raw)
+    assert "custom-clock-1" not in s["custom_cards"]
+    assert s["custom_cards"]["custom-html-1"] == {"type": "html", "html": "<b>x</b>"}
+
+
+def test_normalize_migrates_legacy_custom_text_group():
+    """旧版 custom_text 分组启动时自动迁移为 custom_cards，内容原样保留。"""
+    raw = {
+        "custom_text": {
+            "text-section": {"text": "hello", "align": "center"},
+            "custom-clock-1": {"type": "clock", "timezone": "UTC"},
+        }
+    }
+    s = _normalize_settings(raw)
+    assert "custom_text" not in s
+    assert s["custom_cards"]["text-section"]["text"] == "hello"
+    assert s["custom_cards"]["text-section"]["align"] == "center"
+    assert "custom-clock-1" not in s["custom_cards"]
 
 
 def test_normalize_legacy_flat_migration():
@@ -100,12 +130,12 @@ def test_save_then_load_roundtrip(isolated_config, monkeypatch):
 def test_save_writes_utf8_json(isolated_config):
     s = isolated_config.load_settings()
     s["general"]["language"] = "zh"
-    s["custom_text"]["text-section"]["text"] = "自定义文本"
+    s["custom_cards"]["text-section"]["text"] = "自定义文本"
     isolated_config.save_settings(s)
 
     with open(isolated_config.SETTINGS_FILE, "r", encoding="utf-8") as f:
         raw = json.load(f)
-    assert raw["custom_text"]["text-section"]["text"] == "自定义文本"
+    assert raw["custom_cards"]["text-section"]["text"] == "自定义文本"
     assert raw["schema_version"] == config_mod.SCHEMA_VERSION
 
 
@@ -125,7 +155,7 @@ def test_save_preserves_unrelated_groups(isolated_config, monkeypatch):
     monkeypatch.setattr(config_mod, "_settings_cache", None)
     loaded = isolated_config.load_settings()
     for group in ("general", "display", "clock", "fonts", "weather", "music",
-                  "lyrics", "server", "layout", "custom_text", "feature_toggles"):
+                  "lyrics", "server", "layout", "custom_cards", "feature_toggles"):
         assert group in loaded
 
 

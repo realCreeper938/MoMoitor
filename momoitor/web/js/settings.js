@@ -586,7 +586,7 @@ function initSettings() {
                 auth_user: serverUserInput.value.trim(),
                 auth_pass: serverPassInput.value,
             },
-            custom_text: (window._appSettings && window._appSettings.custom_text) || {},
+            custom_cards: (window._appSettings && window._appSettings.custom_cards) || {},
         };
 
         // Feature toggles

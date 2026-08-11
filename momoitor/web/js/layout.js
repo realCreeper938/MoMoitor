@@ -141,12 +141,12 @@ function _addLayoutControls() {
             handle.addEventListener('pointerdown', function(e) { _resizeHandleDown(e, id); });
             el.appendChild(handle);
         }
-        if (id === 'text-section' && !el.dataset.ceBound) {
+        if ((id === 'text-section' || isCustomCard(id)) && !el.dataset.ceBound) {
             el.dataset.ceBound = '1';
             el.addEventListener('click', function(e) {
                 if (!_layoutMode) return;
                 if (e.target.closest('.layout-control-group') || e.target.closest('.layout-resize-handle')) return;
-                openTextEditor(id);
+                openCardEditor(id);
             });
         }
     });
@@ -222,6 +222,10 @@ function _flipCard(el, first) {
 }
 
 function _deleteCard(id) {
+    if (isCustomCard(id)) {
+        deleteCustomCard(id);
+        return;
+    }
     const pos = _normLayout(id);
     const el = getCard(id).el;
     const col = el && el.style.gridColumn ? _layoutColFor(parseInt(el.style.gridColumn) || pos.col) : pos.col;
@@ -305,11 +309,19 @@ function _cardPreviewHTML(id) {
             + '<span class="clp-unit">' + r[2] + '</span></div>').join('');
     }
     if (m.type === 'text') {
-        const cfg = _customTextCfg('text-section');
+        const cfg = _customTextCfg(id);
         const inner = escapeHtml(cfg.text || '');
         return '<div class="clp-text" style="text-align:' + (cfg.align || 'left') + '">'
             + (inner ? '<span class="clp-text-lines">' + inner + '</span>'
                 : '<span class="clp-text-empty">Aa</span>')
+            + '</div>';
+    }
+    if (m.type === 'html') {
+        const cfg = _customCardCfg(id);
+        const inner = escapeHtml(String(cfg.html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()).slice(0, 60);
+        return '<div class="clp-text">'
+            + (inner ? '<span class="clp-text-lines">' + inner + '</span>'
+                : '<span class="clp-html-glyph">&lt;/&gt;</span>')
             + '</div>';
     }
     return '<div class="clp-value-row"><span class="clp-value">' + m.value
@@ -322,10 +334,35 @@ function _cardPreviewHTML(id) {
             + '</div>').join('');
 }
 
+/* Preview shown for a not-yet-created custom card type (add-new section). */
+function _customTypePreviewHTML(type) {
+    if (type === 'html') {
+        return '<div class="clp-text"><span class="clp-html-glyph">&lt;/&gt;</span></div>';
+    }
+    return '<div class="clp-text"><span class="clp-text-empty">Aa</span></div>';
+}
+
 function _renderCardList() {
     const body = document.getElementById('card-list-body');
     if (!body) return;
     body.textContent = '';
+
+    // Text / html card types are listed like every other card in the grid;
+    // clicking one creates a brand new card of that type (addable repeatedly).
+    [['text', 'card-add-text'], ['html', 'card-add-html']].forEach(function(pair) {
+        const type = pair[0];
+        const item = document.createElement('div');
+        item.className = 'card-list-item card-add-item';
+        item.dataset.cardType = type;
+        item.setAttribute('draggable', 'false');
+        item.innerHTML = '<div class="card-list-preview" style="--card-accent:var(--accent)">'
+            + _customTypePreviewHTML(type) + '</div>'
+            + '<div class="card-list-name">' + t(pair[1])
+            + '<span class="card-list-sizes">1x1 · 1x2</span></div>';
+        item.addEventListener('click', () => createCustomCard(type));
+        body.appendChild(item);
+    });
+
     const hidden = layoutCards().filter(card => _normLayout(card.id).hidden);
     hidden.forEach(card => {
         const id = card.id;
@@ -343,10 +380,6 @@ function _renderCardList() {
         item.addEventListener('dragend', onLayoutDragEnd);
         body.appendChild(item);
     });
-    if (!hidden.length) {
-        const panel = document.getElementById('card-list-panel');
-        if (panel) panel.style.display = 'none';
-    }
 }
 
 /* Cards that support both sizes (resizable) list their options next to the
@@ -361,8 +394,9 @@ function _cardSizesHTML(id) {
 function _updateCardsBtn() {
     const cardsBtn = document.getElementById('layout-cards');
     if (!cardsBtn) return;
-    const hasHidden = layoutCards().some(card => _normLayout(card.id).hidden);
-    cardsBtn.classList.toggle('hidden', !hasHidden);
+    // The button is always available in layout mode: it also hosts the
+    // "add new card" entry point for text / html / clock cards.
+    cardsBtn.classList.remove('hidden');
     const panel = document.getElementById('card-list-panel');
     if (panel && panel.style.display === 'flex') _renderCardList();
 }
@@ -379,6 +413,7 @@ function _placeCard(id, col, row, span) {
         getCard(id).applyGrid();
         if (id === 'weather-section') refreshWeatherCard();
         if (id === 'text-section') applyCustomText(id);
+        if (isCustomCard(id)) applyCustomCard(id);
     }
     _repackColumn(col, id, row);
     _rebalanceOverflow();
@@ -469,14 +504,16 @@ function _addCard(id) {
 
 function _customTextCfg(id) {
     const defaults = { text: '', font: '', bold: false, italic: false, size: 18, align: 'left', color: '' };
-    const stored = ((window._appSettings || {}).custom_text || {})[id] || {};
+    const stored = ((window._appSettings || {}).custom_cards || {})[id] || {};
     return Object.assign({}, defaults, stored);
 }
 
 function applyCustomText(id, cfgOverride) {
-    const el = document.getElementById('custom-text-el');
-    if (!el) return;
     const cfg = cfgOverride || _customTextCfg(id);
+    const el = id === 'text-section'
+        ? document.getElementById('custom-text-el')
+        : (getCard(id) ? getCard(id).el.querySelector('.custom-text') : null);
+    if (!el) return;
     const empty = !cfg.text;
     el.textContent = empty ? t('text-edit-hint') : cfg.text;
     el.classList.toggle('empty', empty);
@@ -529,6 +566,7 @@ function readTextEditorForm() {
     const italicEl = document.getElementById('ce-italic');
     const sizeEl = document.getElementById('ce-size');
     return {
+        type: _customTextCfg(_ceEditId).type || 'text',
         text: textEl ? textEl.value : '',
         font: fontEl ? fontEl.value.trim() : '',
         bold: boldEl ? boldEl.checked : false,
@@ -546,8 +584,8 @@ function previewTextCard() {
 async function saveTextCard() {
     const cfg = readTextEditorForm();
     window._appSettings = window._appSettings || {};
-    window._appSettings.custom_text = window._appSettings.custom_text || {};
-    window._appSettings.custom_text[_ceEditId] = cfg;
+    window._appSettings.custom_cards = window._appSettings.custom_cards || {};
+    window._appSettings.custom_cards[_ceEditId] = cfg;
     applyCustomText(_ceEditId, cfg);
     closeTextEditor();
     try { await pywebview.api.save_settings(window._appSettings); } catch (e) { console.warn('save custom text:', e); }
@@ -557,7 +595,7 @@ function initTextCardEditor() {
     const closeBtn = document.getElementById('card-edit-close');
     if (closeBtn) closeBtn.addEventListener('click', closeTextEditor);
     const saveBtn = document.getElementById('card-edit-save');
-    if (saveBtn) saveBtn.addEventListener('click', saveTextCard);
+    if (saveBtn) saveBtn.addEventListener('click', saveCardEditor);
     const cancelBtn = document.getElementById('card-edit-cancel');
     if (cancelBtn) cancelBtn.addEventListener('click', closeTextEditor);
     const alignBox = document.getElementById('ce-align');

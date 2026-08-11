@@ -43,6 +43,11 @@
     color: var(--text-dim);
 }
 
+/* 未在播放时封面框有明确的背景色，灰色音乐图标浮于其上 */
+#music-section.paused .h-music-cover-wrap {
+    background: linear-gradient(160deg, var(--nord2), var(--nord1));
+}
+
 #music-section .music-main {
     display: flex;
     flex-direction: column;
@@ -401,6 +406,14 @@
     #music-section[data-span="2"]:hover .music-content {
         gap: calc(10px * var(--density));
         padding: calc(10px * var(--density)) calc(18px * var(--density)) calc(22px * var(--density));
+    }
+}
+
+/* 空间足够大时（封面已达最大 clamp 尺寸，见上方注释）：有进度时不自动隐藏进度条，
+   始终显示；悬停也不再缩小封面/歌词等元素（缩小规则仅在 @media (max-width:2153px) 生效）。 */
+@media (min-width: 2154px) {
+    #music-section[data-span="2"].progress-active .music-progress {
+        display: flex;
     }
 }
 

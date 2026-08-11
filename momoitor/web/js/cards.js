@@ -121,6 +121,13 @@ function getCard(id) {
     return null;
 }
 
+/* Remove a dynamically-created card from the registry. Safe to call when the
+   card was never registered. */
+function unregisterCard(id) {
+    const idx = _cardRegistry.findIndex(c => c.id === id);
+    if (idx >= 0) _cardRegistry.splice(idx, 1);
+}
+
 function allCards() {
     return _cardRegistry.slice();
 }

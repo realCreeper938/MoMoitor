@@ -80,6 +80,7 @@ function initSettingsAndPolling(g, s) {
     initSettings();
     initLayoutControls();
     initTextCardEditor();
+    initCustomCardEditor();
     setupTopControl();
     // Disk partition hover: populate details on mouseenter
     const diskSection = document.getElementById('disk-section');
@@ -96,6 +97,7 @@ function initSettingsAndPolling(g, s) {
 
     // Apply feature toggles - hide UI elements for disabled features
     applyFeatureToggles(s.feature_toggles || {});
+    initCustomCards(s);
     applyLayout(s.layout);
     applyCustomText('text-section');
     const ft = s.feature_toggles || {};

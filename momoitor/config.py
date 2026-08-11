@@ -1,7 +1,7 @@
 """应用程序设置管理：加载/保存 schema 版本化的 settings.json，并提供路径与版本常量。
 
 设置按功能分组（general/display/clock/fonts/weather/music/lyrics/server/layout/
-custom_text/feature_toggles）；旧版扁平结构会在加载时自动检测并迁移回写。
+custom_cards/feature_toggles）；旧版扁平结构会在加载时自动检测并迁移回写。
 """
 
 import json
@@ -167,7 +167,7 @@ _LEGACY_KEY_MAP = {
 }
 
 # 本身就是完整字典、整体替换的分组键（迁移/合并时按整体处理）
-_WHOLE_GROUPS = ("layout", "custom_text", "feature_toggles")
+_WHOLE_GROUPS = ("layout", "custom_cards", "feature_toggles")
 
 DEFAULT_SETTINGS = {
     "schema_version": SCHEMA_VERSION,
@@ -261,9 +261,12 @@ DEFAULT_SETTINGS = {
         "proc-section": {"col": 3, "row": 5, "span": 1, "hidden": True},
         "music-section": {"col": 2, "row": 5, "span": 1, "hidden": False},
     },
-    # 自定义文本卡片：key 为卡片 id，包含内容与样式（字体名/加粗/斜体/字号/对齐/颜色）
-    "custom_text": {
+    # 自定义卡片：key 为卡片 id，type 区分类型（text 文本 / html 自定义 HTML）。
+    # text 含内容与样式（字体名/加粗/斜体/字号/对齐/颜色）；html 含 html 字段。
+    # 旧版本（custom_text 分组）写入的条目启动时统一迁移。
+    "custom_cards": {
         "text-section": {
+            "type": "text",
             "text": "",
             "font": "",
             "bold": False,
@@ -293,11 +296,16 @@ def _normalize_settings(raw: dict) -> dict:
         return copy.deepcopy(DEFAULT_SETTINGS)
 
     # 判断是否为旧版扁平结构：schema_version 为 SCHEMA_VERSION 是"新版"的强信号，
-    # 否则若存在任何旧版扁平键（layout/custom_text/feature_toggles 与新版组名重合，
+    # 否则若存在任何旧版扁平键（layout/custom_cards/feature_toggles 与新版组名重合，
     # 不能作为判定依据），则为旧版需要迁移。
     is_old = raw.get("schema_version") != SCHEMA_VERSION and any(
         k in raw for k in _LEGACY_KEY_MAP
     )
+
+    # 自定义卡片分组更名迁移：旧版使用 custom_text 分组，统一迁移为 custom_cards。
+    if "custom_cards" not in raw and isinstance(raw.get("custom_text"), dict):
+        raw = dict(raw)
+        raw["custom_cards"] = raw.pop("custom_text")
 
     new = {}
     if not is_old:
@@ -321,7 +329,7 @@ def _normalize_settings(raw: dict) -> dict:
             if group == "schema_version":
                 continue
             if group in _WHOLE_GROUPS:
-                # layout/custom_text/feature_toggles 本身就是顶层组，旧版即已存在，原样沿用
+                # layout/custom_cards/feature_toggles 本身就是顶层组，旧版即已存在，原样沿用
                 new[group] = copy.deepcopy(raw.get(group, defaults))
             elif isinstance(defaults, dict):
                 merged = dict(defaults)
@@ -333,6 +341,18 @@ def _normalize_settings(raw: dict) -> dict:
                 new[group] = copy.deepcopy(defaults)
 
     new["schema_version"] = SCHEMA_VERSION
+
+    # 自定义卡片自动迁移：旧版本写入的卡片没有 type 字段，
+    # 下次启动时统一补充为 text；已移除的 clock 类型卡片一并清除。
+    custom_cards = new.get("custom_cards")
+    if isinstance(custom_cards, dict):
+        for card_id, entry in list(custom_cards.items()):
+            if isinstance(entry, dict):
+                if entry.get("type") == "clock":
+                    del custom_cards[card_id]
+                else:
+                    entry.setdefault("type", "text")
+
     return new
 
 
@@ -351,10 +371,13 @@ def load_settings() -> dict:
             with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
                 raw = json.load(f)
             s = _normalize_settings(raw)
-            # 若磁盘上仍是旧版扁平结构，回写为新版分组结构（下次启动即为新版）
+            # 若磁盘上仍是旧版扁平结构，或仍在使用旧版 custom_text 分组名，
+            # 回写为新版结构（下次启动即为新版）。
             if raw.get("schema_version") != SCHEMA_VERSION and any(
                 k in raw for k in _LEGACY_KEY_MAP
             ):
+                save_settings(s)
+            elif isinstance(raw.get("custom_text"), dict) and "custom_cards" not in raw:
                 save_settings(s)
             _settings_cache = copy.deepcopy(s)
             return s

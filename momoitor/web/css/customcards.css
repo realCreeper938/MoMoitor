@@ -1,0 +1,74 @@
+﻿/* ---- Dynamically added custom cards (text / html) ----
+   These cards are created at runtime by customcards.js; the built-in
+   text-section card is styled in layout.css / text-card.css. */
+
+/* Custom cards keep the same look as other cards: no box-header, content fills. */
+.custom-card > .box-header { display: none; }
+.custom-card .box-content { padding: 10px 14px; }
+
+/* ---- Text card (mirrors #text-section rules) ---- */
+.custom-card .custom-text {
+    width: 100%;
+    min-width: 0;
+    max-height: 100%;
+    overflow: hidden;
+    color: var(--text);
+    font-size: calc(18px * var(--font-scale));
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+.custom-card .custom-text.empty {
+    color: var(--text-dim);
+    opacity: 0.6;
+}
+.custom-card:not([data-span="2"]) .box-content {
+    align-items: center;
+    justify-content: center;
+}
+.custom-card:not([data-span="2"]) .custom-text { text-align: center; }
+
+/* ---- HTML card ---- */
+.custom-html {
+    width: 100%;
+    min-width: 0;
+    max-height: 100%;
+    overflow: auto;
+    font-size: calc(13px * var(--font-scale));
+    line-height: 1.5;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+.custom-html :first-child { margin-top: 0; }
+.custom-html :last-child { margin-bottom: 0; }
+
+/* ---- Card editor: extra fields for html type ---- */
+#ce-html {
+    width: 100%;
+    resize: vertical;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: var(--font-data);
+    font-size: calc(12px * var(--font-scale));
+    line-height: 1.5;
+    padding: 6px 8px;
+    box-sizing: border-box;
+}
+
+/* ---- Card list panel: add-new-card entries ---- */
+.card-add-item {
+    cursor: pointer;
+}
+.card-add-item:hover {
+    border-color: var(--accent);
+}
+/* Preview glyph for the add-new HTML card entry. */
+.card-list-preview .clp-html-glyph {
+    font-family: var(--font-data);
+    font-size: calc(16px * var(--font-scale));
+    font-weight: 700;
+    color: var(--text-dim);
+}
