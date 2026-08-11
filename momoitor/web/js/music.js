@@ -103,7 +103,18 @@ function _scrollCurrentLine(curEl, cur, next, pos) {
     const dur = (next ? next.time : pos + 4) - cur.time;  // 本句时长（秒）
     const span = Math.max(dur, 2.5);                       // 至少 2.5s 滚完
     const p = Math.min(Math.max((pos - cur.time) / span, 0), 1);
-    curEl.scrollLeft = p * over;
+    const target = p * over;
+    // 超长歌词始终跟随播放进度滚动；开启平滑时每帧缓动逼近，
+    // 关闭时按 ~500ms 步进直接跳动（生硬无动画，减少连续布局开销）。
+    if (_lyricAnimEnabled) {
+        curEl.scrollLeft += (target - curEl.scrollLeft) * 0.12;
+    } else {
+        const now = Date.now();
+        if (now - _lyricScrollStepT >= 500) {
+            _lyricScrollStepT = now;
+            curEl.scrollLeft = target;
+        }
+    }
 }
 
 /* 歌词动画循环（每帧 rAF）：
@@ -113,6 +124,7 @@ function _scrollCurrentLine(curEl, cur, next, pos) {
      _scrollCurrentLine 向右平滑推进，实现单行长歌词的水平滚动。
    - 切句动画：不做向上/向下滚动过渡，直接替换文本（简单、省性能）。 */
 let _lyricRaf = null;      // requestAnimationFrame 句柄
+let _lyricScrollStepT = 0; // 关闭平滑滚动时的步进时间戳（~500ms 一跳）
 
 function _lyricAnimLoop() {
     _lyricRaf = requestAnimationFrame(_lyricAnimLoop);
@@ -128,9 +140,14 @@ function _lyricAnimLoop() {
         const prev = curIdx > 0 ? _lyricLines[curIdx - 1] : null;
         _setLyricTexts(prevEl, curEl, nextEl, prev, cur, next);
         curEl.scrollLeft = 0;
+        nextEl.scrollLeft = 0;
+        _lyricScrollStepT = 0;
     }
-    if (!_lyricAnimEnabled) { if (curEl.scrollLeft) curEl.scrollLeft = 0; return; }
-    _scrollCurrentLine(curEl, cur, next, pos);
+    // 翻译模式：当前行是翻译、下一行是同时间戳的原文。滚动只作用于当前行（翻译），
+    // 进度边界取下一组翻译的时间，避免因同时间戳原文把 span 压成固定 2.5s。
+    const paceNext = (_lyricAutoTranslate && cur && cur.trans === true && next && next.time === cur.time
+        && curIdx + 2 < _lyricLines.length) ? _lyricLines[curIdx + 2] : next;
+    _scrollCurrentLine(curEl, cur, paceNext, pos);
 }
 
 /* Apply current view: controls shown either when not in lyric mode, or when

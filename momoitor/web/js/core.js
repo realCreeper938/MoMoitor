@@ -129,15 +129,13 @@ function applyHoverAnim(enabled) {
     document.body.classList.toggle('no-hover-anim', !enabled);
 }
 
-/* Enable/disable lyric horizontal scroll animation (歌词过长时的滚动动画).
-   Only gates the single-line horizontal scroll; line switching is always instant. */
-let _lyricAnimEnabled = false; // settings-driven: horizontal scroll only
+/* Toggle smooth eased scroll for over-long lyrics (歌词过长时的平滑滚动).
+   Overlong lyrics are always auto-scrolled horizontally; this setting only
+   controls whether the scroll uses a smooth ease (on) or instant follow (off). */
+let _lyricAnimEnabled = false;
 
 function applyLyricAnim(enabled) {
     _lyricAnimEnabled = !!enabled;
-    if (!_lyricAnimEnabled) {
-        document.querySelectorAll('.h-lyric-current, .h-lyric-next').forEach(el => el.scrollLeft = 0);
-    }
 }
 
 /* Enable/disable auto-detection of translations in lyric lines.

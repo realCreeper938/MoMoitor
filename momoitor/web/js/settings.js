@@ -88,6 +88,11 @@ function initSettings() {
         renderThemePicker();
     });
 
+    // 歌词平滑滚动：拨动开关立即生效，无需保存
+    lyricAnimChk.addEventListener('change', () => {
+        applyLyricAnim(lyricAnimChk.checked);
+    });
+
     // Clock (personalization > Time subtab)
     const clockFormatSel = document.getElementById('opt-clockformat');
     let clockFormatValue = '24';
@@ -623,6 +628,7 @@ function initSettings() {
         applyHoverHighlight((s.general || {}).hover_highlight !== false);
         applyHoverAnim((s.general || {}).hover_animation !== false);
         applyLyricAutoTranslate((s.lyrics || {}).auto_translate === true);
+        applyLyricAnim((s.lyrics || {}).animation === true);
         const fnt = s.fonts || {};
         applyFonts(fnt.ui, fnt.data, fnt.clock);
         const ckc = s.clock || {};
