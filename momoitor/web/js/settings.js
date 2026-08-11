@@ -73,6 +73,7 @@ function initDataSourceDrag() {
         const after = (e.clientY - rect.top) > rect.height / 2;
         list.insertBefore(_dragSourceEl, after ? target.nextSibling : target);
         _dragSourceEl = null;
+        applyDataSourceList();
     });
     list.addEventListener('dragend', () => {
         list.querySelectorAll('.datasource-row').forEach(r => r.classList.remove('dragging', 'drop-after', 'drop-before'));
@@ -82,8 +83,23 @@ function initDataSourceDrag() {
         const row = e.target.closest('.datasource-row');
         if (row && e.target.classList.contains('datasource-enable')) {
             row.classList.toggle('disabled', !e.target.checked);
+            applyDataSourceList();
         }
     });
+}
+
+function applyDataSourceList() {
+    const list = document.getElementById('datasource-list');
+    if (!list) return;
+    const items = collectDataSourceList();
+    if (!items.length) return;
+    if (window._appSettings && window._appSettings.general) {
+        window._appSettings.general.data_sources = items;
+        window._appSettings.general.data_source = items.find(d => d.enabled)?.source || 'lhm';
+    }
+    if (window.pywebview && window.pywebview.api && window.pywebview.api.change_backend) {
+        pywebview.api.change_backend(items);
+    }
 }
 
 function refreshAllWeather() {
