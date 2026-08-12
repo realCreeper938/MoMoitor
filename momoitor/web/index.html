@@ -10,11 +10,11 @@
     <link rel="stylesheet" href="css/base.css?v=37">
     <link rel="stylesheet" href="css/weather.css?v=37">
     <link rel="stylesheet" href="css/weather-card.css?v=37">
-    <link rel="stylesheet" href="css/layout.css?v=40">
+    <link rel="stylesheet" href="css/layout.css?v=41">
     <link rel="stylesheet" href="css/music.css?v=37">
-    <link rel="stylesheet" href="css/cards.css?v=40">
+    <link rel="stylesheet" href="css/cards.css?v=41">
     <link rel="stylesheet" href="css/values.css?v=37">
-    <link rel="stylesheet" href="css/settings.css?v=37">
+    <link rel="stylesheet" href="css/settings.css?v=38">
     <link rel="stylesheet" href="css/popups.css?v=37">
     <link rel="stylesheet" href="css/responsive.css?v=37">
     <link rel="stylesheet" href="css/text-card.css?v=38">
@@ -203,6 +203,19 @@
                             <div class="value-row"><span class="arrow">↑</span><span class="metric-value mono" id="net-up">--</span><span class="unit" id="net-up-unit">KB/s</span></div>
                             <div class="info-line net-host-row"><span class="mono" id="sysinfo-ip">--</span><span class="host-dim" id="sysinfo-host">--</span></div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Heart Rate -->
+            <div class="term-box" id="hr-section">
+                <div class="layout-drag-handle">⠿</div>
+                <div class="box-header">Heart Rate</div>
+                <div class="box-content">
+                    <div class="hr-row">
+                        <span class="nf-icon hr-heart" id="hr-heart">&#xF004;</span>
+                        <span class="metric-value big mono" id="hr-val">--</span>
+                        <span class="pct">BPM</span>
                     </div>
                 </div>
             </div>
@@ -763,6 +776,7 @@
                             <button type="button" class="subtab-btn active" data-subtab="source" data-i18n="subtab-source">Source</button>
                             <button type="button" class="subtab-btn" data-subtab="lyrics" data-i18n="subtab-lyrics">Lyrics</button>
                             <button type="button" class="subtab-btn" data-subtab="weather" data-i18n="subtab-weather">Weather</button>
+                            <button type="button" class="subtab-btn" data-subtab="hr" data-i18n="subtab-hr">Heart Rate</button>
                         </div>
                         <div class="subtab-content active" id="subtab-source">
                             <div class="setting-group">
@@ -855,6 +869,30 @@
                                     <span data-i18n="label-pem">Private Key</span>
                                     <textarea id="opt-wx-key" rows="3" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="subtab-content" id="subtab-hr">
+                            <div class="setting-group">
+                                <div class="setting-group-title" data-i18n="settings-hr">Heart Rate</div>
+                                <div class="setting-item setting-item-block">
+                                    <span data-i18n="label-hr-device">Bluetooth Device</span>
+                                    <div class="hr-device-row">
+                                        <select id="opt-hr-device">
+                                            <option value="">--</option>
+                                        </select>
+                                        <button type="button" class="text-btn" id="btn-hr-scan" data-i18n="btn-hr-scan">Scan</button>
+                                    </div>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-hr-device">Scan for nearby Bluetooth devices that broadcast heart rate (BLE Heart Rate Service). Keep the phone (Mi Fitness) disconnected from the band while using it.</div>
+                                <div class="setting-desc hr-status" id="hr-status"></div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-hr-anim">Heart rate animation</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-hr-anim">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-hr-anim">Animate the heart icon beating in sync with your current heart rate.</div>
                             </div>
                         </div>
                     </div>

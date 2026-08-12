@@ -25,6 +25,8 @@ const GRID_ROWS_MAX = 10;
 const GRID_COLS_MIN = 1;
 const GRID_COLS_MAX = 4;
 const CLOCK_WIDTH = 150;
+const CLOCK_WIDTH_MIN = 110;
+const CLOCK_WIDTH_MAX = 400;
 
 const _cardRegistry = [];
 
@@ -94,6 +96,15 @@ function getClockFontScale() {
     let fs = parseFloat(c.font_scale);
     if (!(fs >= FONT_SCALE_MIN && fs <= FONT_SCALE_MAX)) fs = 100;
     return fs;
+}
+
+/* User-set clock column width in px, or null when the default CSS --clock-col
+   formula (which scales with --font-scale) should be used. */
+function getClockWidth() {
+    const c = _layout['clock-section'] || {};
+    let w = parseFloat(c.width);
+    if (!(w >= CLOCK_WIDTH_MIN && w <= CLOCK_WIDTH_MAX)) w = null;
+    return w;
 }
 
 /* Apply this card's font scale as an override of --font-scale on its element,
@@ -230,6 +241,11 @@ registerCard('music-section', {
     resizable: true,
     feature: 'music',
     meta: { name: 'Music', color: 'var(--accent)', type: 'music' },
+});
+registerCard('hr-section', {
+    def: { col: 2, row: 6, span: 1, hidden: true },
+    resizable: false,
+    meta: { name: 'Heart Rate', color: '#ff5c8a', value: '72', pct: 'BPM', lines: [] },
 });
 registerCard('weather-section', {
     def: { col: 2, row: 1, span: 1, hidden: true },

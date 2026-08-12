@@ -17,6 +17,9 @@ function applyLayout(layout) {
             ? 'repeat(' + cols + ', minmax(0, 1fr)) var(--clock-col)'
             : 'var(--clock-col) repeat(' + cols + ', minmax(0, 1fr))';
         grid.style.gridTemplateRows = 'repeat(' + rows + ', minmax(0, 1fr))';
+        const cw = getClockWidth();
+        if (cw !== null) grid.style.setProperty('--clock-col', cw + 'px');
+        else grid.style.removeProperty('--clock-col');
     }
     const clockEl = document.getElementById('clock-section');
     if (clockEl) clockEl.style.gridColumn = _clockSide() === 'right' ? String(cols + 1) : '1';
@@ -37,7 +40,7 @@ function readLayout() {
             font_scale: pos.font_scale,
         };
     });
-    layout['clock-section'] = { side: _clockSide(), font_scale: getClockFontScale() };
+    layout['clock-section'] = { side: _clockSide(), font_scale: getClockFontScale(), width: getClockWidth() };
     layout.rows = _gridRows();
     layout.cols = _gridCols();
     return layout;
@@ -469,5 +472,5 @@ function _layoutChanged() {
             || a.font_scale !== b.font_scale;
     })) return true;
     const a = cur['clock-section'], b = _layoutSaved['clock-section'];
-    return !a || !b || a.side !== b.side || a.font_scale !== b.font_scale;
+    return !a || !b || a.side !== b.side || a.font_scale !== b.font_scale || a.width !== b.width;
 }

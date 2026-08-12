@@ -624,6 +624,33 @@ async function refreshFps() {
     } catch (e) { console.warn('refreshFps:', e); }
 }
 
+async function refreshHr() {
+    if (!_sectionVisible('hr-section')) return;
+    try {
+        const d = await pywebview.api.get_hr();
+        const bpm = d && d.connected && Number(d.bpm) > 0 ? Math.round(Number(d.bpm)) : null;
+
+        const valEl = document.getElementById('hr-val');
+        if (valEl) {
+            const hrStr = bpm != null ? String(bpm) : '--';
+            if (valEl.textContent !== hrStr) {
+                valEl.textContent = hrStr;
+            }
+        }
+
+        const heartEl = document.getElementById('hr-heart');
+        if (heartEl) {
+            const animOn = !!(window._appSettings && window._appSettings.hr && window._appSettings.hr.animation);
+            if (bpm != null && animOn) {
+                heartEl.style.animationDuration = (60 / bpm).toFixed(3) + 's';
+                heartEl.classList.add('beat');
+            } else {
+                heartEl.classList.remove('beat');
+            }
+        }
+    } catch (e) { console.warn('refreshHr:', e); }
+}
+
 /* Top process (CPU/memory) */
 let procMode = 'cpu'; // 'cpu' or 'mem'
 let procLimit = 5; // how many processes to show — recomputed from font scale + box height

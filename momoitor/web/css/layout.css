@@ -226,6 +226,7 @@ body.no-hover-anim .term-box:hover {
 #music-section { grid-column: 2;         grid-row: 5; }
 #weather-section { grid-column: 2;       grid-row: 5; }
 #text-section { grid-column: 3;          grid-row: 1; }
+#hr-section  { grid-column: 2;          grid-row: 6; }
 
 /* Hide box headers */
 #cpu-section > .box-header,
@@ -236,7 +237,8 @@ body.no-hover-anim .term-box:hover {
 #disk-section > .box-header,
 #music-section > .box-header,
 #weather-section > .box-header,
-#text-section > .box-header {
+#text-section > .box-header,
+#hr-section > .box-header {
     display: none;
 }
 

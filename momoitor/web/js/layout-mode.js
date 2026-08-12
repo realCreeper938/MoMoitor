@@ -90,6 +90,13 @@ function _addLayoutControls() {
         group._fontVal = fontGroup._fontVal;
         group._cardId = 'clock-section';
         clockEl.appendChild(group);
+        if (!clockEl.querySelector('.layout-clock-resize')) {
+            const handle = document.createElement('div');
+            handle.className = 'layout-clock-resize';
+            handle.setAttribute('draggable', 'false');
+            handle.addEventListener('pointerdown', _clockResizeDown);
+            clockEl.appendChild(handle);
+        }
     }
     _updateCardsBtn();
 }
@@ -161,7 +168,17 @@ function _removeLayoutControls() {
     _layoutControlsAdded = false;
     document.querySelectorAll('.layout-control-group').forEach(el => el.remove());
     document.querySelectorAll('.layout-resize-handle').forEach(el => el.remove());
+    document.querySelectorAll('.layout-clock-resize').forEach(el => el.remove());
     document.body.classList.remove('resizing');
+    const clockEl = document.getElementById('clock-section');
+    if (clockEl) clockEl.classList.remove('resizing');
+    window.removeEventListener('pointermove', _clockResizeMove);
+    window.removeEventListener('pointerup', _clockResizeUp);
+    window.removeEventListener('pointermove', _resizeHandleMove);
+    window.removeEventListener('pointerup', _resizeHandleUp);
+    _clockResizing = null;
+    _resizingCard = null;
+    _resizeDelta = 0;
     const cardsBtn = document.getElementById('layout-cards');
     if (cardsBtn) cardsBtn.classList.add('hidden');
     const panel = document.getElementById('card-list-panel');
@@ -299,4 +316,52 @@ function _resizeHandleUp() {
     if (el) el.classList.remove('resizing');
     window.removeEventListener('pointermove', _resizeHandleMove);
     window.removeEventListener('pointerup', _resizeHandleUp);
+}
+
+// Clock column width drag handle (horizontal resize in layout mode). Dragging
+// right widens the clock column (left of the grid) or narrows it when the clock
+// sits on the right, keeping the cards at a stable width.
+let _clockResizing = null;
+let _clockResizeDelta = 0;
+
+function _clockResizeDown(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (_clockResizing) return;
+    const grid = document.querySelector('.term-grid');
+    const right = _clockSide() === 'right';
+    _clockResizing = { startW: _clockColumnPx(grid, right), right: right };
+    _clockResizeDelta = 0;
+    document.body.classList.add('resizing');
+    const el = document.getElementById('clock-section');
+    if (el) el.classList.add('resizing');
+    window.addEventListener('pointermove', _clockResizeMove);
+    window.addEventListener('pointerup', _clockResizeUp);
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+}
+
+function _clockResizeMove(e) {
+    if (!_clockResizing) return;
+    _clockResizeDelta += e.movementX || 0;
+    const delta = _clockResizing.right ? -_clockResizeDelta : _clockResizeDelta;
+    const w = Math.max(CLOCK_WIDTH_MIN, Math.min(CLOCK_WIDTH_MAX, _clockResizing.startW + delta));
+    const grid = document.querySelector('.term-grid');
+    if (grid) grid.style.setProperty('--clock-col', w + 'px');
+    _clockResizing.w = w;
+}
+
+function _clockResizeUp() {
+    if (!_clockResizing) return;
+    const info = _clockResizing;
+    _clockResizing = null;
+    _clockResizeDelta = 0;
+    document.body.classList.remove('resizing');
+    const el = document.getElementById('clock-section');
+    if (el) el.classList.remove('resizing');
+    window.removeEventListener('pointermove', _clockResizeMove);
+    window.removeEventListener('pointerup', _clockResizeUp);
+    if (info.w) {
+        setCardPos('clock-section', { width: info.w });
+        applyLayout(getLayout());
+    }
 }

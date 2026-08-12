@@ -557,6 +557,47 @@ body.layout-mode .term-box .layout-resize-handle {
     display: flex;
 }
 
+/* Horizontal resize handle on the clock column edge, visible only in layout
+   mode. Sits on the card-side edge of the clock so dragging widens/narrows the
+   clock column. */
+.layout-clock-resize {
+    display: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    width: 18px;
+    height: 18px;
+    cursor: ew-resize;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    padding: 3px;
+}
+.layout-clock-resize::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-left: 2px solid var(--text-dim);
+    border-right: 2px solid var(--text-dim);
+    opacity: 0.5;
+    transition: opacity 0.15s;
+    box-sizing: border-box;
+}
+.layout-clock-resize:hover::before {
+    opacity: 0.8;
+}
+body.layout-mode #clock-section .layout-clock-resize {
+    display: flex;
+    right: -9px;
+}
+body.layout-mode .term-grid.clock-right #clock-section .layout-clock-resize {
+    right: auto;
+    left: -9px;
+}
+
 body.layout-mode .layout-control-group {
     display: flex;
 }

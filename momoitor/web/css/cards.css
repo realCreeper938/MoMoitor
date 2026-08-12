@@ -488,3 +488,41 @@
     opacity: 0.85;
 }
 
+/* Heart Rate card */
+#hr-section > .box-content {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 20px;
+}
+#hr-section .hr-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(22px * var(--font-scale));
+}
+#hr-section .hr-heart {
+    color: #ff5c8a;
+    font-size: calc(clamp(26px, 2.6vw, 36px) * var(--font-scale));
+    line-height: 1;
+}
+#hr-section .hr-heart.beat {
+    animation: hr-beat 1s ease-in-out infinite;
+    transform-origin: center;
+}
+@keyframes hr-beat {
+    0%, 100% { transform: scale(1); }
+    14% { transform: scale(1.28); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.18); }
+    56% { transform: scale(1); }
+}
+#hr-section .metric-value.big {
+    font-size: calc(clamp(40px, 4.5vw, 60px) * var(--font-scale));
+}
+#hr-section .pct {
+    font-size: calc(clamp(12px, 1.4vw, 18px) * var(--font-scale));
+    margin-left: 4px;
+}
+

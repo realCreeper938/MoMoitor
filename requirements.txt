@@ -14,3 +14,9 @@ cnlunar>=0.2
 plyer>=2.1
 winrt-Windows.Media.Control; sys_platform == "win32"
 winrt-Windows.Storage.Streams; sys_platform == "win32"
+# 心率卡片：BLE 心率服务读取
+winrt-Windows.Devices.Bluetooth; sys_platform == "win32"
+winrt-Windows.Devices.Bluetooth.GenericAttributeProfile; sys_platform == "win32"
+winrt-Windows.Devices.Enumeration; sys_platform == "win32"
+winrt-Windows.Foundation.Collections; sys_platform == "win32"
+winrt-Windows.Devices.Bluetooth.Advertisement; sys_platform == "win32"

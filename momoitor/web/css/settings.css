@@ -736,3 +736,19 @@
     color: var(--red);
     text-decoration: underline;
 }
+
+/* Heart rate device selection */
+.hr-device-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+.hr-device-row select {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+}
+.hr-status {
+    color: var(--accent);
+}

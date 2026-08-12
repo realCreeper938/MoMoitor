@@ -5,6 +5,7 @@
 - api.weather.WeatherMixin: 天气 / 黄历 / 节假日
 - api.media.MediaMixin: 音乐 / 歌词 / FPS / 流量 / 壁纸 / 音量亮度
 - api.backup.BackupMixin: 数据备份 / 还原
+- api.hr.HrMixin: 心率（BLE）
 
 用法（对外唯一入口，保持向后兼容）:
     from momoitor.api import create_monitor, create_window, create_api
@@ -20,13 +21,14 @@ from momoitor.services import window as win_svc
 from .backup import BackupMixin
 from .core import ApiCore
 from .hardware import HardwareMixin
+from .hr import HrMixin
 from .media import MediaMixin
 from .weather import WeatherMixin
 
 __all__ = ["Api", "create_monitor", "create_window", "create_api"]
 
 
-class Api(ApiCore, HardwareMixin, WeatherMixin, MediaMixin, BackupMixin):
+class Api(ApiCore, HardwareMixin, WeatherMixin, MediaMixin, HrMixin, BackupMixin):
     """面向前端 JS 的 pywebview API 门面（组合各能力 mixin）。"""
 
 
@@ -38,8 +40,10 @@ def create_monitor():
 
 def _start_background_services():
     from momoitor.services import fps as _fps
+    from momoitor.services import hr as _hr
     from momoitor.services import music as _music
     _fps.start()
+    _hr.start()
     _music.start()
 
 

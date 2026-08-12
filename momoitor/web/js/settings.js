@@ -136,6 +136,10 @@ function initSettings() {
     const metingUrlInput = document.getElementById('opt-meting-url');
     const lyricsWhitelistInput = document.getElementById('opt-lyrics-whitelist');
     const lyricsTranslateChk = document.getElementById('opt-lyrics-translate');
+    const hrDeviceSel = document.getElementById('opt-hr-device');
+    const hrScanBtn = document.getElementById('btn-hr-scan');
+    const hrStatusEl = document.getElementById('hr-status');
+    const hrAnimChk = document.getElementById('opt-hr-anim');
 
     // Weather
     const wxEnabledChk = document.getElementById('opt-wx-enabled');
@@ -178,6 +182,56 @@ function initSettings() {
     // 歌词平滑滚动：拨动开关立即生效，无需保存
     lyricAnimChk.addEventListener('change', () => {
         applyLyricAnim(lyricAnimChk.checked);
+    });
+
+    // 心率：设备扫描 / 连接
+    function hrSelectedName() {
+        const opt = hrDeviceSel.selectedOptions[0];
+        return opt ? opt.textContent.replace(/\s+\(\-?\d+ dBm\)$/, '').trim() : '';
+    }
+    hrScanBtn.addEventListener('click', async () => {
+        hrScanBtn.disabled = true;
+        hrStatusEl.textContent = t('hr-scanning');
+        try {
+            const devices = await pywebview.api.scan_hr_devices(8) || [];
+            hrDeviceSel.innerHTML = '<option value="">' + escapeHtml(t('hr-no-device')) + '</option>';
+            devices.forEach((d) => {
+                const opt = document.createElement('option');
+                opt.value = String(d.address);
+                const name = d.name || '0x' + Number(d.address).toString(16);
+                opt.textContent = name + (d.rssi != null ? '  (' + d.rssi + ' dBm)' : '');
+                hrDeviceSel.appendChild(opt);
+            });
+            if (devices.length === 1) {
+                hrStatusEl.textContent = t('hr-scan-done');
+                hrDeviceSel.selectedIndex = 1;
+                hrDeviceSel.dispatchEvent(new Event('change'));
+            } else if (devices.length > 0) {
+                hrStatusEl.textContent = t('hr-scan-done');
+            } else {
+                hrStatusEl.textContent = t('hr-scan-empty');
+            }
+        } catch (e) {
+            console.warn('scan_hr_devices:', e);
+            hrStatusEl.textContent = t('hr-scan-failed');
+        } finally {
+            hrScanBtn.disabled = false;
+        }
+    });
+    hrDeviceSel.addEventListener('change', async () => {
+        const addr = hrDeviceSel.value;
+        if (!addr) {
+            await pywebview.api.disconnect_hr();
+            hrStatusEl.textContent = t('hr-disconnected');
+            refreshHr();
+            return;
+        }
+        hrStatusEl.textContent = t('hr-connecting');
+        const res = await pywebview.api.connect_hr(addr);
+        hrStatusEl.textContent = (res && res.ok)
+            ? t('hr-connected')
+            : t('hr-connect-failed') + (res && res.error ? ' (' + res.error + ')' : '');
+        refreshHr();
     });
 
     // Clock (personalization > Time subtab)
@@ -470,6 +524,28 @@ function initSettings() {
         lyricsTranslateChk.checked = ly.auto_translate === true;
         applyLyricAutoTranslate(ly.auto_translate === true);
 
+        // Heart rate
+        const hr = s.hr || {};
+        hrAnimChk.checked = hr.animation === true;
+        const hrAddr = String(hr.device_address || '');
+        hrDeviceSel.innerHTML = '<option value="">' + escapeHtml(t('hr-no-device')) + '</option>';
+        if (hrAddr) {
+            const opt = document.createElement('option');
+            opt.value = hrAddr;
+            opt.textContent = hr.device_name || '0x' + Number(hrAddr).toString(16);
+            hrDeviceSel.appendChild(opt);
+            hrDeviceSel.value = hrAddr;
+        }
+        try {
+            const st = await pywebview.api.get_hr();
+            hrStatusEl.textContent = st && st.connected
+                ? t('hr-connected')
+                : (hrAddr ? t('hr-disconnected') : t('hr-no-config'));
+        } catch (e) {
+            console.warn('get_hr:', e);
+            hrStatusEl.textContent = '';
+        }
+
         // GPU list
         try {
             const gpus = await pywebview.api.get_gpu_list();
@@ -684,6 +760,12 @@ function initSettings() {
                 process_whitelist: lyricsWhitelistInput.value.trim(),
                 auto_translate: lyricsTranslateChk.checked,
                 animation: lyricAnimChk.checked,
+            },
+            hr: {
+                ...(existing.hr || {}),
+                device_address: hrDeviceSel.value || '',
+                device_name: hrSelectedName() || (existing.hr || {}).device_name || '',
+                animation: hrAnimChk.checked,
             },
             server: {
                 ...(existing.server || {}),

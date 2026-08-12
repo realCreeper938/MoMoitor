@@ -243,6 +243,12 @@ DEFAULT_SETTINGS = {
         "auto_translate": False,  # 自动检测歌词行末尾括号内的翻译（原文在下，翻译在上）
         "animation": False,  # 歌词滚动动画
     },
+    # 心率：BLE 设备地址/名称，animation 为心图标随心率跳动动画
+    "hr": {
+        "device_address": "",
+        "device_name": "",
+        "animation": False,
+    },
     # 服务端模式
     "server": {
         "mode": False,
@@ -268,6 +274,7 @@ DEFAULT_SETTINGS = {
         "fps-section": {"col": 3, "row": 4, "span": 2, "hidden": False, "font_scale": 100},
         "proc-section": {"col": 3, "row": 5, "span": 1, "hidden": True, "font_scale": 100},
         "music-section": {"col": 2, "row": 5, "span": 1, "hidden": False, "font_scale": 100},
+        "hr-section": {"col": 2, "row": 6, "span": 1, "hidden": True, "font_scale": 100},
     },
     # 自定义卡片：key 为卡片 id，type 区分类型（text 文本 / html 自定义 HTML）。
     # text 含内容与样式（字体名/加粗/斜体/字号/对齐/颜色）；html 含 html 字段。
