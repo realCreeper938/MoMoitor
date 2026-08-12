@@ -48,6 +48,10 @@ hiddenimports = [
     "winrt.system",
     "winrt.windows.media.control",
     "winrt.windows.storage.streams",
+    # plyer 用动态 __import__ 分派平台模块，需显式声明
+    "plyer.platforms.win.notification",
+    "plyer.platforms.win.libs.balloontip",
+    "plyer.platforms.win.libs.win_api_defs",
 ]
 
 _icon = os.path.join(ROOT, "assets", "app.ico")
@@ -68,6 +72,8 @@ a = Analysis(
         "unittest", "test", "ensurepip", "idlelib", "turtle", "turtledemo",
         "xmlrpc", "curses", "venv", "pydoc_data",
         "doctest", "pydoc", "smtplib", "imaplib", "nntplib", "mailbox", "telnetlib",
+        # comtypes 的 numpy 互操作仅在显式 enable 时使用，本项目未启用，排除可省约 6MB
+        "numpy", "scipy",
     ],
     noarchive=False,
 )
@@ -82,7 +88,8 @@ exe = EXE(
     name="MoMoitor",
     debug=False,
     strip=False,
-    upx=False,
+    # 启用 UPX 压缩（机器上无 upx 时 PyInstaller 自动跳过，不影响打包）
+    upx=True,
     console=False,
     disable_windowed_traceback=False,
     icon=_icon if os.path.exists(_icon) else None,
@@ -95,6 +102,7 @@ coll = COLLECT(
     a.binaries,
     a.datas,
     strip=False,
-    upx=False,
+    # 启用 UPX 压缩（机器上无 upx 时 PyInstaller 自动跳过，不影响打包）
+    upx=True,
     name="MoMoitor",
 )

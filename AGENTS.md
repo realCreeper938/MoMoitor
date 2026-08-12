@@ -111,7 +111,13 @@ For deeper architectural detail, consult `docs/` (backends, config, services, js
   - Substantial real-world evidence that the approach is mature and widely used, backed by concrete references (documentation, official examples, established projects using the same technique).
 - Do not ship a feature built on an unverified, speculative, or newly-invented approach. If you cannot prove the approach works or that it is mature, stop and present the uncertainty to the user before proceeding.
 
-## 14. Conventions (Follow the Existing Style)
+## 14. Branching and Merging Workflow
+
+- All development and commits happen on the `dev` branch. Never commit directly to `main`.
+- Keep `main`'s commit history clean: never create merge commits or push dev commits directly to `main`. Only merge to `main` when the user explicitly requests it, and always use squash merge (`git checkout main; git merge --squash dev; git commit`) so `main` keeps one clean commit per feature/change.
+- After a merge, if the user requests, reset `dev` to point at the new `main`.
+
+## 15. Conventions (Follow the Existing Style)
 
 - Code style: match surrounding code. Python targets >= 3.10, uses `loguru` logging, module docstrings, and type-agnostic plain functions/classes consistent with the codebase.
 - The codebase and docs are primarily written in Chinese; keep that consistency for docs and commit messages.
@@ -122,7 +128,7 @@ For deeper architectural detail, consult `docs/` (backends, config, services, js
 - When adding settings options, you must update all of: `config.py` defaults, `settings.js` read/write, `i18n.js` bilingual keys, and the `index.html` control.
 - Windows-only code is expected; use `sys.platform == "win32"` guards for anything not Windows-specific.
 
-## 15. What Not to Do
+## 16. What Not to Do
 
 - Do not modify `momoitor/libs/` (third-party .NET DLLs, unmodified distribution).
 - Do not commit secrets or API keys.

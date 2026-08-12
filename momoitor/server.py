@@ -146,6 +146,25 @@ class ServerBackend:
             threading.Thread(target=self._server.shutdown, daemon=True).start()
 
 
+def _notify_server_started(urls):
+    """服务端模式启动时通过 plyer 发送系统通知（在后台线程中调用）。"""
+    try:
+        from plyer import notification
+    except Exception as e:
+        logger.warning("无法导入 plyer，跳过服务端模式启动通知: {}", e)
+        return
+    address = next((u for u in urls if "127.0.0.1" not in u), urls[0] if urls else "http://localhost")
+    try:
+        notification.notify(
+            title="MoMoitor 服务端模式已启动",
+            message="地址为 {}。如需关闭服务端模式，请在设置中关闭。".format(address),
+            app_name="MoMoitor",
+            timeout=10,
+        )
+    except Exception as e:
+        logger.warning("发送服务端模式启动通知失败: {}", e)
+
+
 def run_server(api, settings: dict):
     """根据设置启动 HTTP 服务器（阻塞）。返回后端实例供外部管理。"""
     backend = ServerBackend(
@@ -157,5 +176,10 @@ def run_server(api, settings: dict):
         auth_pass=settings.get("server", {}).get("auth_pass", ""),
     )
     api.set_server_backend(backend)
+    try:
+        urls = api.get_server_info().get("urls", [])
+    except Exception:
+        urls = []
+    threading.Thread(target=_notify_server_started, args=(urls,), daemon=True).start()
     backend.start()
     return backend

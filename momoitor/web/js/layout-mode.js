@@ -141,7 +141,7 @@ function _createLayoutFontGroup(id) {
     minusBtn.type = 'button';
     minusBtn.className = 'layout-font-btn';
     minusBtn.textContent = 'A-';
-    minusBtn.addEventListener('click', function(e) { e.stopPropagation(); _adjustCardFontScale(id, -10); });
+    minusBtn.addEventListener('click', function(e) { e.stopPropagation(); _adjustCardFontScale(id, -5); });
     const fontVal = document.createElement('span');
     fontVal.className = 'layout-font-val';
     fontVal.textContent = (id === 'clock-section' ? getClockFontScale() : getCardFontScale(id)) + '%';
@@ -149,7 +149,7 @@ function _createLayoutFontGroup(id) {
     plusBtn.type = 'button';
     plusBtn.className = 'layout-font-btn';
     plusBtn.textContent = 'A+';
-    plusBtn.addEventListener('click', function(e) { e.stopPropagation(); _adjustCardFontScale(id, 10); });
+    plusBtn.addEventListener('click', function(e) { e.stopPropagation(); _adjustCardFontScale(id, 5); });
     fontGroup.appendChild(minusBtn);
     fontGroup.appendChild(fontVal);
     fontGroup.appendChild(plusBtn);
