@@ -38,18 +38,24 @@ _current = {
 }
 _lock = threading.Lock()
 _running = False
+_thread = None
 _last_track_key = ""
 _cover_key = ""  # 已抓取过封面的曲目标识
 _last_player = {"name": "", "path": ""}  # 上次播放音乐的进程信息
+_mgr = None  # 复用的 SessionManager（每轮新建会产生大量 winrt 对象）
 
 
 def _get_session():
+    global _mgr
     if not _have_smtc:
         return None
     try:
-        mgr = SessionManager.request_async().get()
-        return mgr.get_current_session()
+        if _mgr is None:
+            _mgr = SessionManager.request_async().get()
+        return _mgr.get_current_session()
     except Exception:
+        # 管理器可能已失效，丢弃后下一轮重建
+        _mgr = None
         return None
 
 
@@ -361,13 +367,17 @@ def refresh_cover():
 
 
 def start():
-    global _running
+    global _running, _thread
     if not _have_smtc:
         return
     if _running:
         return
     _running = True
-    threading.Thread(target=_poll, daemon=True).start()
+    if _thread and _thread.is_alive():
+        # stop() 后立即 start() 时旧线程仍在运行，直接复用避免重复轮询
+        return
+    _thread = threading.Thread(target=_poll, daemon=True)
+    _thread.start()
     logger.info("Music polling started")
 
 

@@ -163,6 +163,76 @@ function clockPeriodLabel(h) {
     return t('period-midnight');                             // 午夜
 }
 
+// 时钟卡片背景：按时段变化的渐变。每个时段给出顶部/底部两个强调色，
+// CSS 将其混合进 --surface 以保持低调，与天气/音乐卡片的氛围色一致。
+const CLOCK_TIME_ACCENTS = {
+    dawn:          { a: '#0d3b6e', b: '#1890c4' },   // 凌晨 深蓝→青
+    'morning-early': { a: '#6a4a7a', b: '#d97b4a' }, // 早上 紫→橙
+    morning:       { a: '#3d7aa6', b: '#7fc0d8' },   // 上午 蓝青
+    noon:          { a: '#2e6fa8', b: '#a8dce8' },   // 中午 天蓝
+    afternoon:     { a: '#6ba3c9', b: '#9fcfdd' },   // 下午 浅蓝
+    dusk:          { a: '#8a5a6e', b: '#e8a04a' },   // 傍晚 紫红→橙黄
+    night:         { a: '#2c2a5e', b: '#4a3f7a' },   // 晚上 深靛→紫
+    midnight:      { a: '#141736', b: '#232457' },   // 午夜 近黑→深蓝
+};
+
+let _clockTimeGradientEnabled = false;
+let _clockTimeGradientHour = -1;
+let _clockTimeGradientForce = '';
+
+function _clockGradientKey(h) {
+    if (h >= 0 && h < 5) return 'dawn';
+    if (h >= 5 && h < 8) return 'morning-early';
+    if (h >= 8 && h < 11) return 'morning';
+    if (h >= 11 && h < 13) return 'noon';
+    if (h >= 13 && h < 17) return 'afternoon';
+    if (h >= 17 && h < 19) return 'dusk';
+    if (h >= 19 && h < 23) return 'night';
+    return 'midnight';
+}
+
+function _setClockTimeGradient(layer, key) {
+    const c = CLOCK_TIME_ACCENTS[key];
+    if (c) {
+        layer.style.setProperty('--clock-time-a', c.a);
+        layer.style.setProperty('--clock-time-b', c.b);
+    }
+}
+
+/** 应用时钟卡片的时间渐变背景。开启时按当前小时刷新，仅在跨时段时更新。 */
+function applyClockTimeGradient(enabled) {
+    _clockTimeGradientEnabled = !!enabled;
+    _clockTimeGradientHour = -1;
+    const layer = document.getElementById('clock-time-gradient');
+    if (!layer) return;
+    if (!enabled) {
+        layer.style.opacity = '0';
+        return;
+    }
+    const key = _clockTimeGradientForce || _clockGradientKey(new Date().getHours());
+    _setClockTimeGradient(layer, key);
+    layer.style.opacity = '';
+}
+
+/** 调试：强制渐变显示为指定时段（空串恢复为按当前时间自动）。 */
+function forceClockTimeGradient(key) {
+    _clockTimeGradientForce = key || '';
+    const layer = document.getElementById('clock-time-gradient');
+    if (!layer || !_clockTimeGradientEnabled) return;
+    _setClockTimeGradient(layer, _clockTimeGradientForce || _clockGradientKey(new Date().getHours()));
+}
+
+/** 时钟 tick 中调用：仅当小时变化时更新渐变背景。 */
+function updateClockTimeGradient() {
+    if (!_clockTimeGradientEnabled) return;
+    const h = new Date().getHours();
+    if (h === _clockTimeGradientHour) return;
+    _clockTimeGradientHour = h;
+    const layer = document.getElementById('clock-time-gradient');
+    if (!layer) return;
+    _setClockTimeGradient(layer, _clockTimeGradientForce || _clockGradientKey(h));
+}
+
 function startClock() {
     // 从持久化设置读取 12/24 小时制与显秒（startClock 在设置加载完成后调用）
     _clock24 = (window._appSettings && window._appSettings.clock && window._appSettings.clock.clock_24h) !== false;
@@ -183,6 +253,7 @@ function startClock() {
         setText('h-clock-s', sec);
         const periodEl = document.getElementById('h-clock-period');
         if (periodEl) periodEl.textContent = _clock24 ? '' : clockPeriodLabel(h24);
+        updateClockTimeGradient();
         const secEl = document.getElementById('h-clock-s');
         if (secEl) secEl.style.display = _clockShowSeconds ? '' : 'none';
         const block = document.getElementById('h-clock-block');

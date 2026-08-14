@@ -38,13 +38,19 @@ def create_monitor():
     return build_monitor(_sources_from_settings(settings))
 
 
-def _start_background_services():
+def _start_background_services(api):
+    """按 feature_toggles 启动后台服务，避免未启用的功能每秒空转。
+
+    fps / music 受对应功能开关控制；hr 无独立开关且无设备时近乎零开销，始终启动。
+    """
     from momoitor.services import fps as _fps
     from momoitor.services import hr as _hr
     from momoitor.services import music as _music
-    _fps.start()
+    if api._feature_on("fps"):
+        _fps.start()
     _hr.start()
-    _music.start()
+    if api._feature_on("music"):
+        _music.start()
 
 
 def create_window(monitor):
@@ -67,12 +73,12 @@ def create_window(monitor):
         x=wx, y=wy, width=ww, height=wh,
     )
     api.set_window(window)
-    _start_background_services()
+    _start_background_services(api)
     return window, api
 
 
 def create_api(monitor):
     """服务端模式：仅创建 Api 实例，不创建 webview 窗口。"""
     api = Api(monitor)
-    _start_background_services()
+    _start_background_services(api)
     return api

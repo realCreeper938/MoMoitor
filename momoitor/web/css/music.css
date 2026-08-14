@@ -438,7 +438,7 @@
     top: 0;
     left: 0;
     background:
-        radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--music-accent, transparent) 42%, transparent) 0%, transparent 72%);
+        radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--music-accent, transparent) 26%, transparent) 0%, transparent 72%);
 }
 
 /* 封面左下角光晕 */
@@ -446,7 +446,13 @@
     bottom: 0;
     left: 0;
     background:
-        radial-gradient(ellipse at 0% 100%, color-mix(in srgb, var(--music-accent, transparent) 42%, transparent) 0%, transparent 72%);
+        radial-gradient(ellipse at 0% 100%, color-mix(in srgb, var(--music-accent, transparent) 26%, transparent) 0%, transparent 72%);
+}
+
+/* 设置「卡片渐变」关闭时：隐藏音乐卡片的渐变光晕 */
+body.no-card-grad #music-section[data-span="2"]::before,
+body.no-card-grad #music-section[data-span="2"]::after {
+    display: none;
 }
 
 /* Click ripple spawned from the pointer position */
@@ -510,4 +516,20 @@
 #clock-section > .box-content {
     position: relative;
     z-index: 1;
+}
+
+/* ---- Clock time-of-day gradient layer ----
+   强调色经 color-mix 混入 --surface，形成低调氛围渐变（与天气卡片一致）。 */
+.clock-time-gradient {
+    opacity: 1;
+    background:
+        radial-gradient(90% 130% at 16% -6%, color-mix(in srgb, var(--clock-time-a, transparent) 32%, transparent) 0%, transparent 62%),
+        linear-gradient(180deg,
+            color-mix(in srgb, var(--clock-time-a, transparent) 20%, var(--surface)) 0%,
+            color-mix(in srgb, var(--clock-time-b, transparent) 11%, var(--surface)) 55%,
+            color-mix(in srgb, var(--clock-time-b, transparent) 22%, var(--surface)) 100%);
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 100% 100%;
+    transition: opacity 0.2s ease;
 }

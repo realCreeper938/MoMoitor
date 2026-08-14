@@ -29,6 +29,7 @@ _process_name = ""
 _history_fps = deque([0.0] * HISTORY_SIZE, maxlen=HISTORY_SIZE)
 _lock = threading.Lock()
 _running = False
+_thread = None
 
 
 def get_current():
@@ -136,12 +137,15 @@ def _poll():
 
 
 def start():
-    global _running
+    global _running, _thread
     if _running:
         return
     _running = True
-    t = threading.Thread(target=_poll, daemon=True)
-    t.start()
+    if _thread and _thread.is_alive():
+        # stop() 后立即 start() 时旧线程仍在运行，直接复用避免重复轮询
+        return
+    _thread = threading.Thread(target=_poll, daemon=True)
+    _thread.start()
     logger.info("RTSS FPS tracking started")
 
 

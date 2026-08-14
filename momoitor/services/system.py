@@ -1,6 +1,7 @@
 """系统信息服务 —— 时间、主机名、运行时长、空闲时间、进程与监听端口。"""
 
 import ctypes
+import getpass
 import os
 import socket
 import time
@@ -20,6 +21,26 @@ _sysinfo_cache = {"hostname": None, "ip": None, "boot": None, "ts": 0.0}
 
 def get_time() -> str:
     return time.strftime("%H:%M:%S")
+
+
+def get_run_identity() -> dict:
+    """返回当前程序运行身份：是否以管理员权限运行 + 当前用户名。
+
+    is_admin 通过 IsUserAnAdmin 判断当前进程是否已提升（管理员权限）。
+    username 取当前 Windows 登录用户。返回 {"is_admin": bool, "username": str}。
+    """
+    is_admin = False
+    if os.name == "nt":
+        try:
+            is_admin = bool(ctypes.windll.shell32.IsUserAnAdmin())
+        except Exception as e:
+            logger.warning("IsUserAnAdmin failed: {}", e)
+    try:
+        username = getpass.getuser() or os.environ.get("USERNAME", "")
+    except Exception as e:
+        logger.warning("getpass.getuser failed: {}", e)
+        username = os.environ.get("USERNAME", "")
+    return {"is_admin": is_admin, "username": username}
 
 
 def get_system_theme_mode() -> str:

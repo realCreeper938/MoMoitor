@@ -12,6 +12,7 @@ from loguru import logger
 from momoitor.config import (APP_AUTHOR, APP_GITHUB_REPO, APP_HOMEPAGE, APP_VERSION,
                              SETTINGS_FILE, load_settings, save_settings)
 from momoitor.services import autostart, window as win_svc
+from momoitor.services.system import get_run_identity
 from momoitor.services.calendar import HolidayService
 from momoitor.services.hardware import HardwareService
 from momoitor.services.lyrics import LyricsService
@@ -76,6 +77,19 @@ class ApiCore:
         """对应功能开关是否开启（feature_toggles 中未配置时默认开启）。"""
         return self._settings.get("feature_toggles", {}).get(name, True)
 
+    def _sync_background_services(self):
+        """按 feature_toggles 同步 fps / music 后台服务的启停。"""
+        from momoitor.services import fps as _fps
+        from momoitor.services import music as _music
+        if self._feature_on("fps"):
+            _fps.start()
+        else:
+            _fps.stop()
+        if self._feature_on("music"):
+            _music.start()
+        else:
+            _music.stop()
+
     def get_settings(self):
         return self._settings
 
@@ -87,6 +101,7 @@ class ApiCore:
         if self._weather is not None:
             self._weather.invalidate()
         save_settings(settings)
+        self._sync_background_services()
         if self._window:
             mon_idx = settings.get("display", {}).get("monitor", 0)
             monitor_changed = mon_idx != old_monitor
@@ -142,6 +157,18 @@ class ApiCore:
             "pywebview": pywebview_ver,
             "backend": self._hw.get_backend_info(),
         }
+
+    def get_run_identity(self):
+        """调试用：返回程序当前运行身份（是否管理员 + 当前用户名）。"""
+        return get_run_identity()
+
+    def reload_ui(self):
+        """调试用：重新加载 webview 界面（重新执行前端全部初始化逻辑）。"""
+        logger.info("Reloading webview UI (requested from debug settings)")
+        if self._window:
+            self._window.evaluate_js("window.location.reload()")
+            return True
+        return False
 
     def get_server_info(self):
         """服务端模式信息：配置文件路径 + 浏览器可访问地址（用于保存时的提示框）。"""

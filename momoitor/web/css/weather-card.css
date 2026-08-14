@@ -21,10 +21,16 @@
     pointer-events: none;
     border-radius: inherit;
     background:
-        radial-gradient(150% 110% at 10% -12%, color-mix(in srgb, var(--wx-accent) 26%, transparent), transparent 60%),
-        radial-gradient(130% 100% at 105% 115%, color-mix(in srgb, var(--wx-accent-soft) 16%, transparent), transparent 55%);
+        radial-gradient(150% 110% at 10% -12%, color-mix(in srgb, var(--wx-accent) 16%, transparent), transparent 60%),
+        radial-gradient(130% 100% at 105% 115%, color-mix(in srgb, var(--wx-accent-soft) 10%, transparent), transparent 55%);
     opacity: var(--wx-bg-opacity, 0.5);
     transition: opacity 0.8s ease;
+}
+
+/* 设置「卡片渐变」关闭时：隐藏天气卡片的渐变背景 */
+body.no-card-grad .wx-bg,
+body.no-card-grad #weather-section[data-span="2"] .wx-bg {
+    background: none;
 }
 
 #weather-section .box-content {
@@ -500,11 +506,11 @@
 #weather-section[data-span="2"] .wx-bg {
     opacity: clamp(0.4, var(--wx-bg-opacity, 0.8), 1);
     background:
-        radial-gradient(90% 130% at 16% -6%, color-mix(in srgb, var(--wx-accent) 42%, transparent), transparent 62%),
+        radial-gradient(90% 130% at 16% -6%, color-mix(in srgb, var(--wx-accent) 26%, transparent), transparent 62%),
         linear-gradient(180deg,
-            color-mix(in srgb, var(--wx-accent) 26%, var(--surface)) 0%,
-            color-mix(in srgb, var(--wx-accent-soft) 13%, var(--surface)) 52%,
-            color-mix(in srgb, var(--wx-accent-soft) 30%, var(--surface)) 100%);
+            color-mix(in srgb, var(--wx-accent) 16%, var(--surface)) 0%,
+            color-mix(in srgb, var(--wx-accent-soft) 8%, var(--surface)) 52%,
+            color-mix(in srgb, var(--wx-accent-soft) 18%, var(--surface)) 100%);
 }
 
 /* Column order: hero on top, detail chips in the middle, precip/alerts fill the

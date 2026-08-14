@@ -288,6 +288,7 @@
 
             <!-- Clock -->
             <div class="term-box" id="clock-section">
+                <div class="clock-bg-layer clock-time-gradient" id="clock-time-gradient" aria-hidden="true"></div>
                 <div class="clock-bg-layer" id="clock-bg-image" aria-hidden="true"></div>
                 <div class="layout-drag-handle">⠿</div>
                 <div class="box-content">
@@ -944,7 +945,7 @@
                             <button type="button" class="subtab-btn" data-subtab="fonts" data-i18n="subtab-fonts">Fonts</button>
                             <button type="button" class="subtab-btn" data-subtab="time" data-i18n="subtab-time">Time</button>
                             <button type="button" class="subtab-btn" data-subtab="layout" data-i18n="subtab-layout">Layout</button>
-                            <button type="button" class="subtab-btn" data-subtab="misc" data-i18n="subtab-misc">Misc</button>
+                            <button type="button" class="subtab-btn" data-subtab="animation" data-i18n="subtab-animation">Animation</button>
                         </div>
                         <div class="subtab-content active" id="subtab-appearance">
                             <div class="setting-group">
@@ -1114,9 +1115,33 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="subtab-content" id="subtab-misc">
+                        <div class="subtab-content" id="subtab-animation">
                             <div class="setting-group">
-                                <div class="setting-group-title" data-i18n="settings-misc">Miscellaneous</div>
+                                <div class="setting-group-title" data-i18n="settings-animation">Animation</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-settings-blur">Settings background blur</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-settings-blur" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-settings-blur">Blur the content behind the settings window</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-settings-shadow">Settings panel shadow</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-settings-shadow" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-settings-shadow">Add a drop shadow to the settings panel to lift it from the background</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-settings-anim">Settings animation</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-settings-anim" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-settings-anim">Animate tab switching, panel transitions and hover effects inside settings</div>
                                 <div class="setting-item">
                                     <span data-i18n="label-hover-anim">Hover animation</span>
                                     <label class="toggle">
@@ -1139,6 +1164,22 @@
                                     </label>
                                 </div>
                                 <div class="setting-desc" data-i18n="desc-lyric-anim">Smooth scroll for over-long lyrics. On: eased scrolling; Off: direct instant scroll (saves GPU).</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-clock-time-gradient">Clock time gradient</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-clock-time-gradient" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-clock-time-gradient">Background gradient of the clock card that shifts with the current time, e.g. deep blue to cyan in the early hours</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-card-gradient">Card gradients</span>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-card-gradient" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-card-gradient">Ambient background gradients on the music and weather cards</div>
                             </div>
                         </div>
                     </div>
@@ -1188,6 +1229,13 @@
                         <div class="setting-group">
                             <div class="setting-group-title" data-i18n="settings-diagnostics">Diagnostics</div>
                             <div class="setting-item">
+                                <span data-i18n="label-run-identity">Run As</span>
+                                <span class="setting-value" id="run-identity">--</span>
+                            </div>
+                            <div class="setting-item setting-item-block">
+                                <button type="button" class="text-btn" id="btn-reload-ui" data-i18n="btn-reload-ui">Reload UI</button>
+                            </div>
+                            <div class="setting-item">
                                 <span data-i18n="label-debug-logs">Debug Logs</span>
                                 <label class="toggle">
                                     <input type="checkbox" id="opt-debug-logs">
@@ -1211,6 +1259,20 @@
                                 </label>
                             </div>
                             <div class="setting-desc" data-i18n="desc-force-welcome">Show the first-launch welcome wizard again on next app start.</div>
+                            <div class="setting-item">
+                                <span data-i18n="label-debug-clock-gradient">Force Clock Gradient</span>
+                                <select id="opt-clock-grad-force">
+                                    <option value="" data-i18n="grad-auto">Auto</option>
+                                    <option value="dawn" data-i18n="period-dawn">Dawn</option>
+                                    <option value="morning-early" data-i18n="period-morning-early">Early Morning</option>
+                                    <option value="morning" data-i18n="period-morning">Morning</option>
+                                    <option value="noon" data-i18n="period-noon">Noon</option>
+                                    <option value="afternoon" data-i18n="period-afternoon">Afternoon</option>
+                                    <option value="dusk" data-i18n="period-dusk">Dusk</option>
+                                    <option value="night" data-i18n="period-night">Night</option>
+                                    <option value="midnight" data-i18n="period-midnight">Midnight</option>
+                                </select>
+                            </div>
                         </div>
                         </div>
                     </div>

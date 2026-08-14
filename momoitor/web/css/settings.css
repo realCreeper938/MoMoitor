@@ -120,7 +120,31 @@
     animation: fadeIn 0.15s ease;
 }
 
-/* Setting group �?卡片式分�?*/
+/* ── Settings window glass effects (设置 → 个性化 → 动画) ── */
+
+/* 背景模糊：模糊设置窗口背后的内容 */
+body.settings-blur #settings-overlay {
+    background: rgba(var(--bg-rgb), 0.45);
+    backdrop-filter: blur(20px) saturate(1.2);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+}
+
+/* 面板阴影：让设置面板从背景中浮现 */
+body.settings-shadow .modal-panel.settings-panel {
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* 关闭设置界面动画：标签切换 / 面板过渡 / 悬停效果全部禁用 */
+body.settings-anim-off .modal-overlay,
+body.settings-anim-off .modal-panel.settings-panel,
+body.settings-anim-off .settings-panel *,
+body.settings-anim-off .nav-btn,
+body.settings-anim-off .subtab-btn {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* ── Setting group �?卡片式分�?*/
 .setting-group {
     margin-bottom: 14px;
     background: color-mix(in srgb, var(--surface) 45%, transparent);
@@ -157,6 +181,18 @@
 
 .setting-item:last-child {
     border-bottom: none;
+}
+
+/* Read-only value shown on the right of a setting-item (e.g. run identity) */
+.setting-value {
+    font-size: calc(12px * var(--ui-scale));
+    color: var(--text);
+    opacity: 0.9;
+    flex-shrink: 0;
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .setting-item select,

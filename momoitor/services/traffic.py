@@ -14,6 +14,7 @@ from momoitor.services.db import get_conn, init_db
 DB_PATH = os.path.join(DATA_DIR, "traffic.db")
 POLL_INTERVAL = 30  # 每30秒记录一次
 SAVE_INTERVAL = 60  # 每60秒持久化一次
+PRUNE_SAMPLES = 30  # 进程记录连续30个采样周期（约1小时）未出现则清理
 
 _SCHEMA = """
     CREATE TABLE IF NOT EXISTS daily_traffic (
@@ -49,6 +50,8 @@ class TrafficService:
 
         # 进程流量采样缓存（内存）
         self._proc_samples = defaultdict(lambda: {"up": 0, "down": 0, "name": ""})
+        self._proc_last_seen = {}  # pid -> 最近一次出现的采样序号
+        self._sample_seq = 0
 
         self._init_db()
         self._load_today()
@@ -181,9 +184,12 @@ class TrafficService:
 
             # 更新进程缓存
             with self._lock:
+                self._sample_seq += 1
                 # 按连接数排序，取前10个
                 sorted_pids = sorted(pid_conns.items(), key=lambda x: -x[1])[:10]
+                seen = set()
                 for pid, count in sorted_pids:
+                    seen.add(pid)
                     try:
                         p = psutil.Process(pid)
                         name = p.name() or "unknown"
@@ -201,6 +207,26 @@ class TrafficService:
                             "down": count * 1024,
                             "name": name,
                         }
+                    self._proc_last_seen[pid] = self._sample_seq
+
+                # 清理长时间未出现的进程记录，防止 _proc_samples 无限增长
+                stale = [
+                    pid for pid, last in self._proc_last_seen.items()
+                    if pid not in seen and self._sample_seq - last >= PRUNE_SAMPLES
+                ]
+                for pid in stale:
+                    self._proc_samples.pop(pid, None)
+                    self._proc_last_seen.pop(pid, None)
+                if stale:
+                    try:
+                        with get_conn(DB_PATH) as conn:
+                            conn.executemany(
+                                "DELETE FROM proc_cache WHERE pid = ?",
+                                [(pid,) for pid in stale],
+                            )
+                            conn.commit()
+                    except Exception as e:
+                        logger.debug("Failed to prune proc cache: {}", e)
 
                 # 写入 SQLite
                 self._save_proc_cache()

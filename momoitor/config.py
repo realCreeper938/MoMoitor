@@ -192,11 +192,16 @@ DEFAULT_SETTINGS = {
         "autostart": False,
         "hover_highlight": True,  # 鼠标悬停监控项时高亮该项、其余降低透明度
         "hover_animation": True,  # 鼠标悬停卡片时的边框高亮动画
+        "settings_blur": True,  # 设置页面背景模糊
+        "settings_shadow": True,  # 设置面板阴影
+        "settings_animation": True,  # 设置界面动画（标签/面板过渡）
+        "card_gradient": True,  # 音乐/天气卡片的背景渐变效果
         "hint_dismissed": False,   # 首次启动提示是否已忽略
         "force_welcome": False,  # 下次启动时是否强制显示欢迎向导
         "update_check_enabled": True,  # 是否检查 GitHub 新版本并弹窗提示
         "debug_logs": False,  # 是否输出 debug 级别日志（设置 → 高级 可开启），默认关闭
         "debug": False,  # 是否启用 pywebview 调试模式（F12 打开 DevTools），默认关闭
+        "debug_clock_gradient": "",  # 调试：强制时钟渐变显示为某时段，空串为按当前时间自动
     },
     # 显示/监视器
     "display": {
@@ -210,6 +215,7 @@ DEFAULT_SETTINGS = {
     "clock": {
         "clock_24h": True,  # 时钟默认 24 小时制，可在设置中切换为 12 小时制
         "clock_show_seconds": True,  # 时钟是否显示秒
+        "time_gradient": True,  # 时钟卡片背景随当前时间变化的渐变效果
         "bg_image": "",
         "bg_opacity": 80,
         "bg_blur": 0,

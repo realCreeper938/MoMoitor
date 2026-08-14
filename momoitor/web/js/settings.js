@@ -114,7 +114,12 @@ function initSettings() {
     const autostartChk = document.getElementById('opt-autostart');
     const hoverHighlightChk = document.getElementById('opt-hover-highlight');
     const hoverAnimChk = document.getElementById('opt-hover-anim');
+    const settingsBlurChk = document.getElementById('opt-settings-blur');
+    const settingsShadowChk = document.getElementById('opt-settings-shadow');
+    const settingsAnimChk = document.getElementById('opt-settings-anim');
     const lyricAnimChk = document.getElementById('opt-lyric-anim');
+    const clockTimeGradChk = document.getElementById('opt-clock-time-gradient');
+    const cardGradChk = document.getElementById('opt-card-gradient');
     const updateNotifyChk = document.getElementById('opt-update-notify');
 
     // Server mode
@@ -127,6 +132,7 @@ function initSettings() {
     const debugLogsChk = document.getElementById('opt-debug-logs');
     const debugChk = document.getElementById('opt-debug');
     const forceWelcomeChk = document.getElementById('opt-force-welcome');
+    const clockGradForceSel = document.getElementById('opt-clock-grad-force');
     const autoLaunchChk = document.getElementById('opt-auto-launch');
 
     // Data
@@ -183,6 +189,33 @@ function initSettings() {
     lyricAnimChk.addEventListener('change', () => {
         applyLyricAnim(lyricAnimChk.checked);
     });
+
+    // 时钟时段渐变：拨动开关立即生效，无需保存
+    clockTimeGradChk.addEventListener('change', () => {
+        applyClockTimeGradient(clockTimeGradChk.checked);
+    });
+
+    // 卡片渐变（音乐/天气）：拨动开关立即生效，无需保存
+    cardGradChk.addEventListener('change', () => {
+        applyCardGradient(cardGradChk.checked);
+    });
+
+    // 调试：强制时钟渐变时段，立即生效，无需保存
+    if (clockGradForceSel) {
+        clockGradForceSel.addEventListener('change', () => {
+            forceClockTimeGradient(clockGradForceSel.value);
+        });
+    }
+
+    // 设置面板效果：拨动开关立即生效，无需保存
+    function applySettingsEffects() {
+        applySettingsBlur(settingsBlurChk.checked);
+        applySettingsShadow(settingsShadowChk.checked);
+        applySettingsAnim(settingsAnimChk.checked);
+    }
+    settingsBlurChk.addEventListener('change', applySettingsEffects);
+    settingsShadowChk.addEventListener('change', applySettingsEffects);
+    settingsAnimChk.addEventListener('change', applySettingsEffects);
 
     // 心率：设备扫描 / 连接
     function hrSelectedName() {
@@ -488,6 +521,38 @@ function initSettings() {
         }).join('');
     }
 
+    /* Debug subtab — current process run identity (admin? / username) */
+    async function loadRunIdentity() {
+        const el = document.getElementById('run-identity');
+        if (!el) return;
+        try {
+            const info = await pywebview.api.get_run_identity();
+            const role = info.is_admin ? t('run-identity-admin') : t('run-identity-user');
+            el.textContent = role + ' · ' + (info.username || '--');
+        } catch (e) {
+            console.warn('get_run_identity:', e);
+            el.textContent = '--';
+        }
+    }
+
+    /* Debug subtab — reload the webview UI */
+    function initReloadUiButton() {
+        const btn = document.getElementById('btn-reload-ui');
+        if (!btn) return;
+        btn.addEventListener('click', async () => {
+            const origText = btn.textContent;
+            btn.textContent = t('reload-ui-done');
+            btn.disabled = true;
+            try {
+                await pywebview.api.reload_ui();
+            } catch (e) {
+                console.warn('reload_ui:', e);
+                btn.textContent = origText;
+                btn.disabled = false;
+            }
+        });
+    }
+
     async function openSettings() {
         const s = await pywebview.api.get_settings();
 
@@ -511,8 +576,16 @@ function initSettings() {
         applyHoverHighlight(g.hover_highlight !== false);
         hoverAnimChk.checked = g.hover_animation !== false;
         applyHoverAnim(g.hover_animation !== false);
+        settingsBlurChk.checked = g.settings_blur !== false;
+        settingsShadowChk.checked = g.settings_shadow !== false;
+        settingsAnimChk.checked = g.settings_animation !== false;
+        applySettingsEffects();
         lyricAnimChk.checked = ly.animation === true;
         applyLyricAnim(ly.animation === true);
+        clockTimeGradChk.checked = ck.time_gradient !== false;
+        applyClockTimeGradient(ck.time_gradient !== false);
+        cardGradChk.checked = g.card_gradient !== false;
+        applyCardGradient(g.card_gradient !== false);
         autostartChk.checked = await pywebview.api.get_autostart();
         updateNotifyChk.checked = g.update_check_enabled !== false;
 
@@ -666,6 +739,10 @@ function initSettings() {
         debugLogsChk.checked = g.debug_logs === true;
         if (debugChk) debugChk.checked = g.debug === true;
         if (forceWelcomeChk) forceWelcomeChk.checked = g.force_welcome === true;
+        if (clockGradForceSel) {
+            clockGradForceSel.value = g.debug_clock_gradient || '';
+            forceClockTimeGradient(clockGradForceSel.value);
+        }
 
         // Behavior
         if (autoLaunchChk) autoLaunchChk.checked = m.auto_launch_music_player !== false;
@@ -679,6 +756,8 @@ function initSettings() {
 
         // About tab
         loadAboutInfo();
+        // Debug subtab: run identity
+        loadRunIdentity();
 
         // Show overlay
         _deactivateSettingsTabs(sidebar);
@@ -704,6 +783,10 @@ function initSettings() {
                 fullscreen: fullscreenChk.checked,
                 hover_highlight: hoverHighlightChk.checked,
                 hover_animation: hoverAnimChk.checked,
+                settings_blur: settingsBlurChk.checked,
+                settings_shadow: settingsShadowChk.checked,
+                settings_animation: settingsAnimChk.checked,
+                card_gradient: cardGradChk.checked,
                 update_check_enabled: updateNotifyChk.checked,
                 refresh_interval: parseInt(intervalSel.value),
                 data_sources: collectDataSourceList(),
@@ -715,6 +798,7 @@ function initSettings() {
                 debug_logs: debugLogsChk.checked,
                 debug: debugChk ? debugChk.checked : false,
                 force_welcome: forceWelcomeChk ? forceWelcomeChk.checked : false,
+                debug_clock_gradient: clockGradForceSel ? clockGradForceSel.value : '',
             },
             display: {
                 ...(existing.display || {}),
@@ -727,6 +811,7 @@ function initSettings() {
                 ...(existing.clock || {}),
                 clock_24h: clockFormatValue !== '12',
                 clock_show_seconds: clockShowSecondsChk.checked,
+                time_gradient: clockTimeGradChk.checked,
                 bg_image: clockBgImgValue,
                 bg_opacity: parseInt(clockBgOpacityRange.value) || 0,
                 bg_blur: parseInt(clockBgBlurRange.value) || 0,
@@ -812,11 +897,14 @@ function initSettings() {
         }
         applyHoverHighlight((s.general || {}).hover_highlight !== false);
         applyHoverAnim((s.general || {}).hover_animation !== false);
+        applySettingsEffects();
         applyLyricAutoTranslate((s.lyrics || {}).auto_translate === true);
         applyLyricAnim((s.lyrics || {}).animation === true);
         const fnt = s.fonts || {};
         applyFonts(fnt.ui, fnt.data, fnt.clock);
         const ckc = s.clock || {};
+        applyClockTimeGradient(ckc.time_gradient !== false);
+        applyCardGradient((s.general || {}).card_gradient !== false);
         await applyClockBackgroundSetting(ckc.bg_image, ckc.bg_opacity, ckc.bg_blur, ckc.bg_gradient !== false, ckc.bg_fit || 'fit', ckc.bg_offset_x ?? 50, ckc.bg_offset_y ?? 50);
         applyHwNames(true);
         applyFeatureToggles(s.feature_toggles || {});
@@ -884,6 +972,7 @@ function initSettings() {
     saveBtn.addEventListener('click', saveSettings);
     closeBtn.addEventListener('click', closeSettings);
     initDataSourceDrag();
+    initReloadUiButton();
 
     // Backup
     const backupExportBtn = document.getElementById('btn-backup-export');

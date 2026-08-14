@@ -129,6 +129,26 @@ function applyHoverAnim(enabled) {
     document.body.classList.toggle('no-hover-anim', !enabled);
 }
 
+/* Enable/disable the ambient background gradients on music and weather cards */
+function applyCardGradient(enabled) {
+    document.body.classList.toggle('no-card-grad', !enabled);
+}
+
+/* Settings panel background blur */
+function applySettingsBlur(enabled) {
+    document.body.classList.toggle('settings-blur', !!enabled);
+}
+
+/* Settings panel drop shadow */
+function applySettingsShadow(enabled) {
+    document.body.classList.toggle('settings-shadow', !!enabled);
+}
+
+/* Settings panel animations (tab switching, panel transitions, hover effects) */
+function applySettingsAnim(enabled) {
+    document.body.classList.toggle('settings-anim-off', !enabled);
+}
+
 /* Toggle smooth eased scroll for over-long lyrics (歌词过长时的平滑滚动).
    Overlong lyrics are always auto-scrolled horizontally; this setting only
    controls whether the scroll uses a smooth ease (on) or instant follow (off). */
