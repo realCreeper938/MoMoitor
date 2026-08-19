@@ -55,8 +55,6 @@ function resetWeatherDisplays() {
         section.style.setProperty('--wx-bg-opacity', '0.5');
         section.classList.remove('has-precip', 'has-alerts');
     }
-    const cardIcon = document.getElementById('wx-card-icon');
-    if (cardIcon) cardIcon.textContent = wxIcon('999');
     setText('wx-card-temp', '--');
     setText('wx-card-text', '--');
     setText('wx-card-city', '--');
@@ -316,8 +314,7 @@ async function refreshWeatherCard() {
             pywebview.api.get_alerts(),
         ]);
 
-        // Main block: icon + temperature + condition + city
-        const cardIcon = document.getElementById('wx-card-icon');
+        // Main block: temperature + condition + city
         const cardTemp = document.getElementById('wx-card-temp');
         const cardText = document.getElementById('wx-card-text');
         const cardCity = document.getElementById('wx-card-city');
@@ -328,7 +325,6 @@ async function refreshWeatherCard() {
                 section.dataset.wx = cat;
                 section.style.setProperty('--wx-bg-opacity', String(wxGradFactor(w.temp, cat, d)));
             }
-            if (cardIcon) cardIcon.textContent = wxIcon(w.icon);
             if (cardTemp) cardTemp.textContent = fmt(w.temp, 0);
             if (cardText) cardText.textContent = w.text || '--';
             if (cardCity) cardCity.textContent = w.city || '--';
@@ -338,7 +334,6 @@ async function refreshWeatherCard() {
                 section.dataset.wx = '';
                 section.style.setProperty('--wx-bg-opacity', '0.5');
             }
-            if (cardIcon) cardIcon.textContent = wxIcon('999');
             if (cardTemp) cardTemp.textContent = '--';
             if (cardText) cardText.textContent = '--';
             if (cardCity) cardCity.textContent = '--';

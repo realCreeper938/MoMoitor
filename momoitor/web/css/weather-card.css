@@ -67,18 +67,11 @@
     min-height: 0;
 }
 
-/* Top row: icon + temp + condition */
+/* Top row: temp + condition */
 .wx-top {
     display: flex;
     align-items: flex-start;
     gap: 10px;
-}
-
-.wx-icon-wrap {
-    font-size: calc(clamp(36px, 4vw, 52px) * var(--font-scale));
-    color: var(--wx-accent);
-    line-height: 1;
-    flex-shrink: 0;
 }
 
 .wx-main {
@@ -94,22 +87,22 @@
 }
 
 .wx-temp {
-    font-size: calc(clamp(40px, 5vw, 60px) * var(--font-scale));
+    font-size: calc(clamp(48px, 6vw, 72px) * var(--font-scale));
     font-weight: 300;
     color: var(--text);
     letter-spacing: -.02em;
 }
 
 .wx-temp-unit {
-    font-size: calc(14px * var(--font-scale));
+    font-size: calc(16px * var(--font-scale));
     color: var(--text-dim);
     font-weight: 400;
 }
 
 .wx-condition {
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(16px * var(--font-scale));
     color: var(--text-dim);
-    margin-top: 4px;
+    margin-top: 6px;
 }
 
 .wx-meta {
@@ -325,8 +318,7 @@
 
 @media (max-width: 320px) {
     .wx-meta { display: none; }
-    .wx-icon-wrap { font-size: calc(30px * var(--font-scale)); }
-    .wx-temp { font-size: calc(36px * var(--font-scale)); }
+    .wx-temp { font-size: calc(40px * var(--font-scale)); }
 }
 
 /* ==================== SMALL CARD ==================== */
@@ -347,21 +339,17 @@
     border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
 }
 
-#weather-section:not([data-span="2"]) .wx-icon-wrap {
-    font-size: calc(26px * var(--font-scale));
-}
-
 #weather-section:not([data-span="2"]) .wx-temp {
-    font-size: calc(26px * var(--font-scale));
+    font-size: calc(32px * var(--font-scale));
 }
 
 #weather-section:not([data-span="2"]) .wx-temp-unit {
-    font-size: calc(11px * var(--font-scale));
+    font-size: calc(12px * var(--font-scale));
 }
 
 #weather-section:not([data-span="2"]) .wx-condition {
-    font-size: calc(11px * var(--font-scale));
-    margin-top: 2px;
+    font-size: calc(13px * var(--font-scale));
+    margin-top: 3px;
 }
 
 #weather-section:not([data-span="2"]) .wx-meta { display: none; }
