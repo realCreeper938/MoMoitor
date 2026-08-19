@@ -161,28 +161,27 @@ function initSettings() {
     const onTopChk = document.getElementById('opt-ontop');
 
     // Theme
-    const colorschemeSel = document.getElementById('opt-colorscheme');
-    const followThemeChk = document.getElementById('opt-follow-theme');
-    let colorschemeDark = 'gruvbox';
-    let colorschemeLight = 'gruvbox-light';
+    const materialSourceSel = document.getElementById('opt-material-source');
+    const materialModeSel = document.getElementById('opt-material-mode');
+    let materialSource = 'blue';
+    let materialMode = 'dark';
 
-    function renderThemePicker() {
-        if (followThemeChk.checked) {
-            renderThemeCards(colorschemeDark || 'gruvbox', colorschemeLight || 'gruvbox-light',
-                (v) => { colorschemeDark = v; if (_sysThemeMode !== 'light') applyColorscheme(v); renderThemePicker(); },
-                (v) => { colorschemeLight = v; if (_sysThemeMode === 'light') applyColorscheme(v); renderThemePicker(); });
+    materialSourceSel?.addEventListener('change', () => {
+        materialSource = materialSourceSel.value;
+        if (materialMode === 'system') {
+            _checkSystemTheme(true).then(() => applyMaterialTheme(materialSource, 'system'));
         } else {
-            renderThemeCards(colorschemeSel.value || 'gruvbox', colorschemeSel.value || 'gruvbox',
-                (v) => { colorschemeSel.value = v; applyColorscheme(v); renderThemePicker(); },
-                (v) => { colorschemeSel.value = v; applyColorscheme(v); renderThemePicker(); });
+            applyMaterialTheme(materialSource, materialMode);
         }
-    }
-
-    followThemeChk.addEventListener('change', () => {
-        setFollowSystemTheme(followThemeChk.checked);
-        if (followThemeChk.checked) _checkSystemTheme(true);
-        else applyColorscheme(colorschemeSel.value || 'gruvbox');
-        renderThemePicker();
+    });
+    materialModeSel?.addEventListener('change', () => {
+        materialMode = materialModeSel.value;
+        setFollowSystemTheme(materialMode === 'system');
+        if (materialMode === 'system') {
+            _checkSystemTheme(true).then(() => applyMaterialTheme(materialSource, 'system'));
+        } else {
+            applyMaterialTheme(materialSource, materialMode);
+        }
     });
 
     // 歌词平滑滚动：拨动开关立即生效，无需保存
@@ -662,13 +661,13 @@ function initSettings() {
         onTopChk.checked = d.on_top !== false;
 
         // Theme
-        colorschemeSel.value = g.colorscheme || 'gruvbox';
-        colorschemeDark = g.colorscheme_dark || 'gruvbox';
-        colorschemeLight = g.colorscheme_light || 'gruvbox-light';
-        followThemeChk.checked = g.follow_system_theme === true;
-        setFollowSystemTheme(followThemeChk.checked);
-        if (followThemeChk.checked) _checkSystemTheme(true);
-        renderThemePicker();
+        materialSource = g.material_source || 'blue';
+        materialMode = g.material_mode || (g.follow_system_theme ? 'system' : 'dark');
+        if (materialSourceSel) materialSourceSel.value = materialSource;
+        if (materialModeSel) materialModeSel.value = materialMode;
+        setFollowSystemTheme(materialMode === 'system');
+        if (materialMode === 'system') _checkSystemTheme(true);
+        applyMaterialTheme(materialSource, materialMode);
         // Fonts
         fontUiValue = f.ui || 'JetBrains Maple Mono';
         fontDataValue = f.data || 'IoskeleyMono';
@@ -791,10 +790,10 @@ function initSettings() {
                 refresh_interval: parseInt(intervalSel.value),
                 data_sources: collectDataSourceList(),
                 data_source: collectDataSourceList().find(d => d.enabled)?.source || 'lhm',
-                colorscheme: colorschemeSel.value,
-                colorscheme_dark: colorschemeDark || 'gruvbox',
-                colorscheme_light: colorschemeLight || 'gruvbox-light',
-                follow_system_theme: followThemeChk.checked,
+                colorscheme: 'material-you',
+                material_source: materialSource,
+                material_mode: materialMode,
+                follow_system_theme: materialMode === 'system',
                 debug_logs: debugLogsChk.checked,
                 debug: debugChk ? debugChk.checked : false,
                 force_welcome: forceWelcomeChk ? forceWelcomeChk.checked : false,

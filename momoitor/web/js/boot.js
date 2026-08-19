@@ -21,11 +21,12 @@ function initConsoleForwarding() {
 
 async function initDisplay(s, g, f, ck, ly) {
     applyLang(g.language || 'en');
-    if (g.follow_system_theme) {
+    if (g.material_mode === 'system' || g.follow_system_theme) {
         setFollowSystemTheme(true);
         await _checkSystemTheme(true);
+        await applyMaterialTheme(g.material_source || 'blue', 'system');
     } else {
-        applyColorscheme(g.colorscheme || 'gruvbox');
+        await applyMaterialTheme(g.material_source || 'blue', g.material_mode || 'dark');
     }
     applyFonts(f.ui, f.data, f.clock);
     applyClockTimeGradient(ck.time_gradient !== false);

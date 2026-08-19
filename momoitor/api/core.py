@@ -19,6 +19,7 @@ from momoitor.services.lyrics import LyricsService
 from momoitor.services.traffic import TrafficService
 from momoitor.services.update import check_latest as check_latest_release
 from momoitor.services.weather import WeatherService
+from momoitor.services.material_theme import get_theme as get_material_theme
 
 
 class ApiCore:
@@ -92,6 +93,9 @@ class ApiCore:
 
     def get_settings(self):
         return self._settings
+
+    def get_material_theme(self, source="blue", mode="dark"):
+        return get_material_theme(str(source), str(mode))
 
     def save_settings(self, settings):
         old_monitor = self._settings.get("display", {}).get("monitor", 0)

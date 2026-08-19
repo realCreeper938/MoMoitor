@@ -1,4 +1,4 @@
-/* MoMoitor Nord Theme */
+/* MoMoitor Material You base tokens */
 @font-face {
     font-family: "JetBrains Maple Mono";
     src: url("../fonts/JetBrainsMapleMono-Regular.woff2") format("woff2");
@@ -62,22 +62,22 @@
     --ui-scale: 1;
     /* Layout density multiplier (1 = baseline). */
     --density: 1;
-    /* Gruvbox Dark Palette (default) */
-    --nord0: #282828;
-    --nord1: #3c3836;
-    --nord2: #504945;
-    --nord3: #665c54;
-    --nord4: #ebdbb2;
-    --nord5: #d5c4a1;
-    --nord6: #fbf1c7;
-    --nord7: #8ec07c;
-    --nord8: #83a598;
-    --nord9: #fb4934;
-    --nord10: #458588;
-    --nord11: #fe8019;
-    --nord12: #fabd2f;
-    --nord13: #b8bb26;
-    --nord14: #d3869b;
+    /* Material You blue fallback; runtime values come from the official utility. */
+    --nord0: #1a1b20;
+    --nord1: #1e1f25;
+    --nord2: #44474f;
+    --nord3: #c5c6d0;
+    --nord4: #e2e2e9;
+    --nord5: #c5c6d0;
+    --nord6: #ffffff;
+    --nord7: #bfc6dc;
+    --nord8: #aec6ff;
+    --nord9: #ffb4ab;
+    --nord10: #aec6ff;
+    --nord11: #debcdf;
+    --nord12: #debcdf;
+    --nord13: #aec6ff;
+    --nord14: #debcdf;
     /* Theme variables */
     --bg: var(--nord0);
     --surface: var(--nord1);

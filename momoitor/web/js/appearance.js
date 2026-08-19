@@ -1,12 +1,50 @@
 /* Settings */
 let _themeTransitionTimer = null;
 
+const MATERIAL_SOURCES = [
+    ['blue', 'Blue'], ['gray', 'Gray'], ['red', 'Red'], ['purple', 'Purple'],
+    ['brown', 'Brown'], ['green', 'Green'], ['yellow', 'Yellow'],
+    ['wallpaper', 'System wallpaper'],
+];
+
 function applyColorscheme(scheme) {
     document.documentElement.classList.add('theme-transition');
     document.documentElement.setAttribute('data-colorscheme', scheme);
     clearTimeout(_themeTransitionTimer);
     _themeTransitionTimer = setTimeout(
         () => document.documentElement.classList.remove('theme-transition'), 400);
+}
+
+async function applyMaterialTheme(source, mode) {
+    try {
+        const effectiveMode = mode === 'system' ? _sysThemeMode : (mode || 'dark');
+        const theme = await pywebview.api.get_material_theme(source || 'blue', effectiveMode);
+        const root = document.documentElement;
+        const c = theme.colors || {};
+        const vars = {
+            '--bg': c.bg, '--surface': c.surface, '--border': c.border,
+            '--text': c.text, '--text-dim': c.text_dim, '--accent': c.accent,
+            '--green': c.green, '--yellow': c.yellow, '--red': c.red,
+            '--cyan': c.cyan, '--blue': c.blue, '--orange': c.orange,
+            '--magenta': c.magenta, '--bg-rgb': c.bg_rgb,
+            '--metric-contrast': c.metric_contrast, '--metric-cpu': c.metric_cpu,
+            '--metric-gpu': c.metric_gpu, '--metric-mem': c.metric_mem,
+            '--metric-fps': c.metric_fps,
+            '--nord0': c.bg, '--nord1': c.surface, '--nord2': c.border,
+            '--nord3': c.text_dim, '--nord4': c.text, '--nord7': c.cyan,
+            '--nord8': c.accent, '--nord9': c.red, '--nord10': c.blue,
+            '--nord11': c.orange, '--nord12': c.yellow, '--nord13': c.green,
+            '--nord14': c.magenta,
+        };
+        Object.entries(vars).forEach(([name, value]) => {
+            if (value) root.style.setProperty(name, value);
+        });
+        root.dataset.colorscheme = 'material-you';
+        root.dataset.materialSource = theme.source || source || 'blue';
+        root.dataset.materialMode = effectiveMode;
+    } catch (e) {
+        console.warn('material theme:', e);
+    }
 }
 
 // Follow system light/dark mode
@@ -16,9 +54,7 @@ let _sysThemeTimer = null;
 
 function _applyFollowScheme(grp) {
     const g = grp || (window._appSettings && window._appSettings.general) || {};
-    applyColorscheme(_sysThemeMode === 'light'
-        ? (g.colorscheme_light || 'gruvbox-light')
-        : (g.colorscheme_dark || 'gruvbox'));
+    applyMaterialTheme(g.material_source || 'blue', _sysThemeMode);
 }
 
 async function _checkSystemTheme(force) {
@@ -173,100 +209,6 @@ window.addEventListener('resize', () => {
     if (_clockBgResizeTimer) clearTimeout(_clockBgResizeTimer);
     _clockBgResizeTimer = setTimeout(applyClockBackgroundGradient, 200);
 });
-
-// Theme picker cards
-const THEME_LIST = {
-    dark: [
-        { value: '3024-night', name: '3024 Night' },
-        { value: 'aizen-dark', name: 'Aizen Dark' },
-        { value: 'atom-one-dark', name: 'Atom One Dark' },
-        { value: 'belafonte-night', name: 'Belafonte Night' },
-        { value: 'bluloco-dark', name: 'Bluloco Dark' },
-        { value: 'builtin-dark', name: 'Builtin Dark' },
-        { value: 'catppuccin', name: 'Catppuccin Mocha' },
-        { value: 'ember-dark', name: 'Ember Dark' },
-        { value: 'everforest-dark', name: 'Everforest Dark' },
-        { value: 'farmhouse-dark', name: 'Farmhouse Dark' },
-        { value: 'flexoki-dark', name: 'Flexoki Dark' },
-        { value: 'github-dark', name: 'GitHub Dark' },
-        { value: 'gruvbox', name: 'Gruvbox Dark' },
-        { value: 'neutral-dark', name: 'Neutral Dark' },
-        { value: 'rose-pine', name: 'Rosé Pine' },
-        { value: 'solarized-dark', name: 'Solarized Dark' },
-        { value: 'tomorrow-night', name: 'Tomorrow Night' },
-        { value: 'default-dark', name: 'Base16 Default Dark' },
-        { value: 'material-dark', name: 'Material Dark' },
-        { value: 'spacemacs-dark', name: 'Spacemacs Dark' },
-    ],
-    light: [
-        { value: '3024-day', name: '3024 Day' },
-        { value: 'aizen-light', name: 'Aizen Light' },
-        { value: 'atom-one-light', name: 'Atom One Light' },
-        { value: 'belafonte-day', name: 'Belafonte Day' },
-        { value: 'bluloco-light', name: 'Bluloco Light' },
-        { value: 'builtin-light', name: 'Builtin Light' },
-        { value: 'catppuccin-latte', name: 'Catppuccin Latte' },
-        { value: 'ember-light', name: 'Ember Light' },
-        { value: 'everforest-light', name: 'Everforest Light' },
-        { value: 'farmhouse-light', name: 'Farmhouse Light' },
-        { value: 'flexoki-light', name: 'Flexoki Light' },
-        { value: 'github-light', name: 'GitHub Light' },
-        { value: 'gruvbox-light', name: 'Gruvbox Light' },
-        { value: 'neutral-light', name: 'Neutral Light' },
-        { value: 'rose-pine-dawn', name: 'Rosé Pine Dawn' },
-        { value: 'solarized-light', name: 'Solarized Light' },
-        { value: 'tomorrow-day', name: 'Tomorrow Day' },
-        { value: 'default-light', name: 'Base16 Default Light' },
-        { value: 'material-light', name: 'Material Light' },
-        { value: 'spacemacs-light', name: 'Spacemacs Light' },
-    ],
-};
-
-function getThemeColors(scheme) {
-    const tester = document.createElement('div');
-    tester.setAttribute('data-colorscheme', scheme);
-    tester.style.cssText = 'position:absolute;left:-9999px;visibility:hidden;pointer-events:none;';
-    document.body.appendChild(tester);
-    const cs = getComputedStyle(tester);
-    // Read raw palette tokens — derived vars like --bg resolve var() at :root scope
-    const colors = {
-        bg: cs.getPropertyValue('--nord0').trim(),
-        surface: cs.getPropertyValue('--nord1').trim(),
-        accent: cs.getPropertyValue('--nord8').trim(),
-        text: cs.getPropertyValue('--nord4').trim(),
-    };
-    document.body.removeChild(tester);
-    return colors;
-}
-
-function renderThemeCards(darkSel, lightSel, onSelectDark, onSelectLight) {
-    const darkGrid = document.getElementById('theme-grid-dark');
-    const lightGrid = document.getElementById('theme-grid-light');
-    if (!darkGrid || !lightGrid) return;
-    darkGrid.innerHTML = '';
-    lightGrid.innerHTML = '';
-
-    const makeCard = (theme, activeSel, onSelect) => {
-        const c = getThemeColors(theme.value);
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'theme-card' + (theme.value === activeSel ? ' active' : '');
-        card.dataset.scheme = theme.value;
-        card.innerHTML =
-            `<div class="theme-swatches">` +
-            `<span class="swatch" style="background:${c.bg}"></span>` +
-            `<span class="swatch" style="background:${c.surface}"></span>` +
-            `<span class="swatch" style="background:${c.accent}"></span>` +
-            `<span class="swatch" style="background:${c.text}"></span>` +
-            `</div>` +
-            `<span class="theme-name">${theme.name}</span>`;
-        card.addEventListener('click', () => onSelect(theme.value));
-        return card;
-    };
-
-    THEME_LIST.dark.forEach(t => darkGrid.appendChild(makeCard(t, darkSel, onSelectDark)));
-    THEME_LIST.light.forEach(t => lightGrid.appendChild(makeCard(t, lightSel, onSelectLight)));
-}
 
 // Font picker
 // Each entry: { value: <css family name>, name: <display name>, preview: <text shown in the card> }

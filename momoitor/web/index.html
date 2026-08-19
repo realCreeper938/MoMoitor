@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoMoitor</title>
     <link rel="stylesheet" href="css/themes.css?v=37">
-    <link rel="stylesheet" href="css/themes-dark.css?v=37">
-    <link rel="stylesheet" href="css/themes-light.css?v=37">
     <link rel="stylesheet" href="css/base.css?v=37">
     <link rel="stylesheet" href="css/weather.css?v=37">
     <link rel="stylesheet" href="css/weather-card.css?v=37">
@@ -64,13 +62,26 @@
                 </div>
                 <div class="welcome-step" data-step="theme">
                     <div class="welcome-title" data-i18n="wizard-theme-title">Pick a color scheme you like</div>
-                    <div class="welcome-theme-group">
-                        <div class="theme-picker-label" data-i18n="theme-group-dark">Dark</div>
-                        <div class="theme-card-grid welcome-theme-grid" id="welcome-theme-dark"></div>
+                    <div class="setting-item">
+                        <span data-i18n="label-material-source">Color source</span>
+                        <select id="welcome-material-source">
+                            <option value="blue" data-i18n="theme-material-blue">Blue</option>
+                            <option value="gray" data-i18n="theme-material-gray">Gray</option>
+                            <option value="red" data-i18n="theme-material-red">Red</option>
+                            <option value="purple" data-i18n="theme-material-purple">Purple</option>
+                            <option value="brown" data-i18n="theme-material-brown">Brown</option>
+                            <option value="green" data-i18n="theme-material-green">Green</option>
+                            <option value="yellow" data-i18n="theme-material-yellow">Yellow</option>
+                            <option value="wallpaper" data-i18n="theme-material-wallpaper">System wallpaper</option>
+                        </select>
                     </div>
-                    <div class="welcome-theme-group">
-                        <div class="theme-picker-label" data-i18n="theme-group-light">Light</div>
-                        <div class="theme-card-grid welcome-theme-grid" id="welcome-theme-light"></div>
+                    <div class="setting-item">
+                        <span data-i18n="label-material-mode">Theme mode</span>
+                        <select id="welcome-material-mode">
+                            <option value="dark" data-i18n="theme-mode-dark">Dark</option>
+                            <option value="light" data-i18n="theme-mode-light">Light</option>
+                            <option value="system" data-i18n="theme-mode-system">Follow Windows</option>
+                        </select>
                     </div>
                 </div>
                 <div class="welcome-step" data-step="done">
@@ -962,69 +973,27 @@
                             <div class="setting-group">
                                 <div class="setting-group-title" data-i18n="settings-appearance">Appearance</div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-follow-theme">Follow system theme</span>
-                                    <label class="toggle">
-                                        <input type="checkbox" id="opt-follow-theme">
-                                        <span class="toggle-slider"></span>
-                                    </label>
+                                    <span data-i18n="label-material-source">Color source</span>
+                                    <select id="opt-material-source">
+                                        <option value="blue" data-i18n="theme-material-blue">Blue</option>
+                                        <option value="gray" data-i18n="theme-material-gray">Gray</option>
+                                        <option value="red" data-i18n="theme-material-red">Red</option>
+                                        <option value="purple" data-i18n="theme-material-purple">Purple</option>
+                                        <option value="brown" data-i18n="theme-material-brown">Brown</option>
+                                        <option value="green" data-i18n="theme-material-green">Green</option>
+                                        <option value="yellow" data-i18n="theme-material-yellow">Yellow</option>
+                                        <option value="wallpaper" data-i18n="theme-material-wallpaper">System wallpaper</option>
+                                    </select>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-follow-theme">Automatically switch between your chosen dark and light color schemes to match Windows</div>
-                                <div class="theme-picker">
-                                    <div class="theme-picker-section">
-                                        <div class="theme-picker-label" data-i18n="theme-group-dark">Dark</div>
-                                        <div class="theme-card-grid" id="theme-grid-dark"></div>
-                                    </div>
-                                    <div class="theme-picker-section">
-                                        <div class="theme-picker-label" data-i18n="theme-group-light">Light</div>
-                                        <div class="theme-card-grid" id="theme-grid-light"></div>
-                                    </div>
+                                <div class="setting-desc" data-i18n="desc-material-source">Generate Material You colors from a preset or the current Windows wallpaper</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-material-mode">Theme mode</span>
+                                    <select id="opt-material-mode">
+                                        <option value="dark" data-i18n="theme-mode-dark">Dark</option>
+                                        <option value="light" data-i18n="theme-mode-light">Light</option>
+                                        <option value="system" data-i18n="theme-mode-system">Follow Windows</option>
+                                    </select>
                                 </div>
-                                <select id="opt-colorscheme" style="display:none">
-                                    <optgroup label="Dark">
-                                        <option value="3024-night">3024 Night</option>
-                                        <option value="aizen-dark">Aizen Dark</option>
-                                        <option value="atom-one-dark">Atom One Dark</option>
-                                        <option value="belafonte-night">Belafonte Night</option>
-                                        <option value="bluloco-dark">Bluloco Dark</option>
-                                        <option value="builtin-dark">Builtin Dark</option>
-                                        <option value="catppuccin">Catppuccin Mocha</option>
-                                        <option value="ember-dark">Ember Dark</option>
-                                        <option value="everforest-dark">Everforest Dark</option>
-                                        <option value="farmhouse-dark">Farmhouse Dark</option>
-                                        <option value="flexoki-dark">Flexoki Dark</option>
-                                        <option value="github-dark">GitHub Dark</option>
-                                        <option value="gruvbox">Gruvbox Dark</option>
-                                        <option value="neutral-dark">Neutral Dark</option>
-                                        <option value="rose-pine">Rosé Pine</option>
-                                        <option value="solarized-dark">Solarized Dark</option>
-                                        <option value="tomorrow-night">Tomorrow Night</option>
-                                        <option value="default-dark">Base16 Default Dark</option>
-                                        <option value="material-dark">Material Dark</option>
-                                        <option value="spacemacs-dark">Spacemacs Dark</option>
-                                    </optgroup>
-                                    <optgroup label="Light">
-                                        <option value="3024-day">3024 Day</option>
-                                        <option value="aizen-light">Aizen Light</option>
-                                        <option value="atom-one-light">Atom One Light</option>
-                                        <option value="belafonte-day">Belafonte Day</option>
-                                        <option value="bluloco-light">Bluloco Light</option>
-                                        <option value="builtin-light">Builtin Light</option>
-                                        <option value="catppuccin-latte">Catppuccin Latte</option>
-                                        <option value="ember-light">Ember Light</option>
-                                        <option value="everforest-light">Everforest Light</option>
-                                        <option value="farmhouse-light">Farmhouse Light</option>
-                                        <option value="flexoki-light">Flexoki Light</option>
-                                        <option value="github-light">GitHub Light</option>
-                                        <option value="gruvbox-light">Gruvbox Light</option>
-                                        <option value="neutral-light">Neutral Light</option>
-                                        <option value="rose-pine-dawn">Rosé Pine Dawn</option>
-                                        <option value="solarized-light">Solarized Light</option>
-                                        <option value="tomorrow-day">Tomorrow Day</option>
-                                        <option value="default-light">Base16 Default Light</option>
-                                        <option value="material-light">Material Light</option>
-                                        <option value="spacemacs-light">Spacemacs Light</option>
-                                    </optgroup>
-                                </select>
                             </div>
                         </div>
                         <div class="subtab-content" id="subtab-background">
