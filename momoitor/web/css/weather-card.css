@@ -1,623 +1,431 @@
-/* ---- Weather card (grid) ---- */
+/* ==================== WEATHER CARD - COMPLETE REDESIGN ==================== */
+
 #weather-section {
     --wx-accent: var(--orange);
-    --wx-accent-soft: var(--orange);
 }
 
-/* Weather-condition accent palette (set by JS via data-wx on the section) */
-#weather-section[data-wx="sun"]      { --wx-accent: #fabd2f; --wx-accent-soft: #fe8019; }
-#weather-section[data-wx="cloud"]    { --wx-accent: #f2b05e; --wx-accent-soft: #e8893f; }
-#weather-section[data-wx="overcast"] { --wx-accent: #8a939c; --wx-accent-soft: #757f88; }
-#weather-section[data-wx="rain"]     { --wx-accent: #6cb3d9; --wx-accent-soft: #4592bd; }
-#weather-section[data-wx="snow"]     { --wx-accent: #b7d8ea; --wx-accent-soft: #8cc3e0; }
-#weather-section[data-wx="fog"]      { --wx-accent: #9b9489; --wx-accent-soft: #82796c; }
-#weather-section[data-wx="storm"]    { --wx-accent: #b48ead; --wx-accent-soft: #8f6f9e; }
+#weather-section[data-wx="sun"]      { --wx-accent: #fabd2f; }
+#weather-section[data-wx="cloud"]    { --wx-accent: #f2b05e; }
+#weather-section[data-wx="overcast"] { --wx-accent: #8a939c; }
+#weather-section[data-wx="rain"]     { --wx-accent: #6cb3d9; }
+#weather-section[data-wx="snow"]     { --wx-accent: #b7d8ea; }
+#weather-section[data-wx="fog"]      { --wx-accent: #9b9489; }
+#weather-section[data-wx="storm"]    { --wx-accent: #b48ead; }
 
-/* Ambient background tint keyed to the current weather condition */
-.wx-bg {
+#weather-section {
+    position: relative;
+    overflow: hidden !important;
+}
+
+#weather-section > .box-header { display: none; }
+
+.wx-bg { display: none; }
+
+/* Precipitation line chart as background layer */
+.wx-precip-chart {
     position: absolute;
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    border-radius: inherit;
-    background:
-        radial-gradient(150% 110% at 10% -12%, color-mix(in srgb, var(--wx-accent) 16%, transparent), transparent 60%),
-        radial-gradient(130% 100% at 105% 115%, color-mix(in srgb, var(--wx-accent-soft) 10%, transparent), transparent 55%);
-    opacity: var(--wx-bg-opacity, 0.5);
-    transition: opacity 0.8s ease;
+    opacity: 0.4;
+    overflow: hidden;
 }
 
-/* 设置「卡片渐变」关闭时：隐藏天气卡片的渐变背景 */
-body.no-card-grad .wx-bg,
-body.no-card-grad #weather-section[data-span="2"] .wx-bg {
-    background: none;
+.wx-precip-chart svg {
+    width: 100%;
+    height: 100%;
 }
 
-#weather-section .box-content {
+.wx-precip-line {
+    fill: none;
+    stroke: var(--blue);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.wx-precip-area {
+    fill: var(--blue);
+    opacity: 0.2;
+}
+
+/* Ensure content sits above the chart */
+#weather-section > .box-content {
     position: relative;
     z-index: 1;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 9px;
-    width: 100%;
-    min-width: 0;
+}
+
+/* ==================== BIG CARD ==================== */
+#weather-section[data-span="2"] > .box-content {
+    position: relative;
+    z-index: 1;
+    padding: 14px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
     min-height: 0;
 }
 
-/* Hero: icon + temperature on one line */
-.wx-card-hero {
+/* Top row: icon + temp + condition */
+.wx-top {
     display: flex;
-    align-items: flex-end;
-    gap: 14px;
-    width: 100%;
-    min-width: 0;
+    align-items: flex-start;
+    gap: 10px;
 }
 
-.wx-card-icon {
-    font-size: calc(40px * var(--font-scale));
-    line-height: 1;
+.wx-icon-wrap {
+    font-size: calc(clamp(36px, 4vw, 52px) * var(--font-scale));
     color: var(--wx-accent);
-    text-shadow: 0 4px 20px color-mix(in srgb, var(--wx-accent) 45%, transparent);
+    line-height: 1;
     flex-shrink: 0;
 }
 
-.wx-card-temp-row {
+.wx-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.wx-temp-row {
     display: flex;
     align-items: baseline;
-    gap: 4px;
-    min-width: 0;
-}
-
-#weather-section .metric-value.big {
-    color: var(--text);
-}
-
-.wx-card-unit {
-    font-weight: 600;
-    color: var(--text-dim);
-}
-
-/* Condition text, below the temperature */
-.wx-card-temp-col {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
     gap: 2px;
-    min-width: 0;
+    line-height: 1;
 }
 
-.wx-card-text {
-    font-size: calc(16px * var(--font-scale));
-    font-weight: 600;
-    color: var(--wx-accent);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+.wx-temp {
+    font-size: calc(clamp(40px, 5vw, 60px) * var(--font-scale));
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: -.02em;
 }
 
-.wx-card-sub {
-    position: absolute;
-    top: 10px;
-    right: 14px;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    max-width: 70%;
-    min-width: 0;
-    opacity: 0;
-    text-align: right;
-    pointer-events: none;
-    user-select: none;
-    transition: opacity 0.2s ease;
-}
-
-#weather-section:hover .wx-card-sub {
-    opacity: 0.85;
-}
-
-.wx-card-city,
-.wx-card-updated {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: calc(11px * var(--font-scale));
+.wx-temp-unit {
+    font-size: calc(14px * var(--font-scale));
     color: var(--text-dim);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-weight: 400;
 }
 
-/* Details: pill chips */
-.wx-card-details {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-    width: 100%;
-    min-width: 0;
-}
-
-.wx-card-detail {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: calc(12px * var(--font-scale));
-    color: var(--text-dim);
-    white-space: nowrap;
-    background: color-mix(in srgb, var(--text) 6%, transparent);
-    border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-}
-
-.wx-card-detail .nf-icon {
+.wx-condition {
     font-size: calc(13px * var(--font-scale));
-    color: var(--wx-accent);
+    color: var(--text-dim);
+    margin-top: 4px;
 }
 
-.wx-card-detail .mono {
-    color: var(--text);
-    font-weight: 600;
-}
-
-/* Precipitation + alerts share a row when both present; alerts fill the row when no precip */
-.wx-card-info {
-    display: flex;
-    align-items: stretch;
-    gap: 12px;
-    width: 100%;
-    min-width: 0;
-    min-height: 0;
-    /* Fill the remaining card height so the alerts list gets as much room as
-       possible (up to its own max-height) before it starts scrolling. */
-    flex: 1 1 auto;
-}
-
-/* Precipitation forecast �?big card only */
-.wx-card-precip {
-    flex: 1 1 0;
-    min-width: 0;
-    border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-    padding-top: 8px;
-    /* Keep content bottom-aligned so the chart sits at the same height as the
-       alert chips when the info row grows. */
+.wx-meta {
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    align-items: flex-end;
+    gap: 3px;
+    flex-shrink: 0;
 }
 
-.wx-card-precip-title {
+.wx-city,
+.wx-time {
+    font-size: calc(10px * var(--font-scale));
+    color: var(--text-dim);
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: calc(11px * var(--font-scale));
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
+    gap: 3px;
+}
+
+.wx-city .nf-icon,
+.wx-time .nf-icon {
+    width: auto;
+    font-size: calc(10px * var(--font-scale));
+}
+
+/* Metrics: 4 columns, label above value */
+.wx-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    padding: 8px 0;
+}
+
+.wx-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 8px;
+}
+
+.wx-metric:first-child {
+    padding-left: 0;
+}
+
+.wx-metric:last-child {
+    padding-right: 0;
+}
+
+.wx-metric-label {
+    font-size: calc(9px * var(--font-scale));
     color: var(--text-dim);
-    margin-bottom: 4px;
+    font-weight: 500;
 }
 
-.wx-card-precip-title .nf-icon {
-    color: var(--wx-accent);
-}
-
-.wx-card-precip-text {
+.wx-metric-value {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
     font-size: calc(12px * var(--font-scale));
     color: var(--text);
-    margin-bottom: 6px;
-}
-
-.wx-card-precip-chart {
-    display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    height: calc(32px * var(--font-scale));
-    width: 100%;
-    overflow: hidden;
-    padding: 0 1px;
-}
-
-.wx-precip-bar {
-    flex: 1 1 0;
-    min-width: 2px;
-    max-width: 8px;
-    border-radius: 2px 2px 0 0;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--wx-accent) 92%, white 8%), var(--wx-accent));
-    opacity: 0.85;
-    transition: height 0.3s ease;
-}
-
-/* Alerts �?big card only */
-.wx-card-alerts {
-    flex: 1 1 0;
+    font-weight: 500;
     min-width: 0;
-    min-height: 0;
-    border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-    padding-top: 8px;
+}
+
+.wx-metric-value .nf-icon {
+    width: auto;
+    font-size: calc(10px * var(--font-scale));
+    color: var(--text-dim);
+}
+
+.wx-metric-value .unit {
+    font-size: calc(10px * var(--font-scale));
+    color: var(--text-dim);
+    font-weight: 400;
+}
+
+/* Bottom row: precip + alerts */
+.wx-bottom {
     display: flex;
-    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    overflow: hidden;
 }
 
-#weather-section.has-precip .wx-card-alerts {
-    border-left: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-    padding-left: 12px;
+.wx-precip-section,
+.wx-alerts-section {
+    flex: 1;
+    min-width: 0;
 }
 
-.wx-card-alerts-title {
+.wx-section-title {
+    font-size: calc(9px * var(--font-scale));
+    color: var(--text-dim);
+    font-weight: 600;
+    letter-spacing: .05em;
+    margin-bottom: 5px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
+}
+
+.wx-section-title .nf-icon {
+    width: auto;
+    font-size: calc(10px * var(--font-scale));
+}
+
+.wx-precip-text {
     font-size: calc(11px * var(--font-scale));
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 4px;
+    color: var(--text);
+    line-height: 1.4;
+    margin-bottom: 6px;
+    opacity: 0.6;
+    text-align: left;
 }
 
-.wx-card-alerts-title .nf-icon {
-    color: var(--red);
-}
-
-.wx-card-alerts-list {
-    flex: 1 1 auto;
-    min-height: 0;
-    max-height: clamp(56px, 26vh, 180px);
+.wx-alerts-list {
+    max-height: clamp(36px, 15vh, 100px);
     overflow-y: auto;
     overflow-x: hidden;
-    display: block;
 }
 
-.wx-card-alerts-list .wx-alert-chip {
-    display: inline-flex;
-    vertical-align: top;
-    margin: 2px 4px;
-}
+.wx-alerts-list::-webkit-scrollbar { width: 0; }
 
-.wx-card-alerts-list .wx-alert-more {
-    display: inline-block;
-    margin: 2px 4px;
-}
-
-.wx-card-alerts-list::-webkit-scrollbar {
-    width: 0;
-    height: 0;
-}
-
-.wx-card-alerts.wx-alerts-fade .wx-card-alerts-list {
-    -webkit-mask-image: linear-gradient(to bottom, black 84%, transparent 100%);
-    mask-image: linear-gradient(to bottom, black 84%, transparent 100%);
-}
-
-/* Compact alert chip: name only, hover shows a tooltip with the details */
 .wx-alert-chip {
-    position: relative;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 3px 8px;
-    border-radius: 6px;
-    background: color-mix(in srgb, var(--alert-color, var(--red)) 14%, transparent);
-    border-left: 3px solid var(--alert-color, var(--red));
-    font-size: calc(12px * var(--font-scale));
+    gap: 4px;
+    padding: 2px 6px;
+    margin: 2px 3px 2px 0;
+    font-size: calc(10px * var(--font-scale));
     color: var(--text);
     cursor: help;
-    min-width: 0;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--alert-color, var(--red)) 8%, transparent);
+    border-left: 2px solid var(--alert-color, var(--red));
 }
 
 .wx-alert-chip .nf-icon {
+    width: auto;
     color: var(--alert-color, var(--red));
-    flex-shrink: 0;
+    font-size: calc(9px * var(--font-scale));
 }
 
-.wx-alert-chip-name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.wx-alert-more {
+    font-size: calc(9px * var(--font-scale));
+    color: var(--text-dim);
+    font-style: italic;
+    margin-left: 4px;
 }
 
-/* Floating alert tooltip �?appended to <body>, never clipped by the card */
+/* Alert tooltip */
 .wx-tip {
     position: fixed;
     z-index: 1000;
-    width: max-content;
-    max-width: min(440px, calc(100vw - 16px));
-    min-width: 190px;
-    padding: 10px 12px 8px;
-    border-radius: 10px;
-    background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--surface) 95%, var(--tip-color, var(--red)) 5%));
-    border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
-    border-left: 3px solid var(--tip-color, var(--red));
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
-    color: var(--text);
-    font-size: calc(12px * var(--font-scale));
-    animation: wxTipIn 0.15s ease;
+    max-width: min(400px, calc(100vw - 16px));
+    padding: 8px 10px 6px;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 2px solid var(--tip-color, var(--red));
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+    font-size: calc(10px * var(--font-scale));
     pointer-events: none;
+    animation: wxTipIn .12s ease;
 }
 
 @keyframes wxTipIn {
-    from { opacity: 0; transform: translateY(4px); }
+    from { opacity: 0; transform: translateY(3px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 .wx-tip-head {
-    display: flex;
-    align-items: center;
-    gap: 6px;
     font-weight: 700;
-    font-size: calc(13px * var(--font-scale));
     color: var(--tip-color, var(--red));
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+    font-size: calc(11px * var(--font-scale));
 }
 
-.wx-tip-headline {
-    font-weight: 600;
-    line-height: 1.45;
-}
+.wx-tip-headline { font-weight: 600; line-height: 1.35; }
 
 .wx-tip-desc {
-    margin-top: 4px;
+    margin-top: 2px;
     color: var(--text-dim);
-    line-height: 1.55;
+    line-height: 1.4;
+    font-size: calc(9px * var(--font-scale));
 }
 
 .wx-tip-foot {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-top: 8px;
-    padding-top: 6px;
-    border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-    font-size: calc(11px * var(--font-scale));
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
     color: var(--text-dim);
+    font-size: calc(9px * var(--font-scale));
 }
 
-/* Small card (span 1): one stat row + a summary line; alerts shown as their own
-   wrapping row (only when they exist), no precip chart. */
-#weather-section:not([data-span="2"]) .wx-card-alerts {
-    order: 3;
-    flex-basis: 100%;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    border-top: 1px solid color-mix(in srgb, var(--wx-accent) 26%, var(--border));
-    padding-top: 5px;
-}
+/* Responsive: narrow big card */
+@media (max-width: 480px) {
+    #weather-section[data-span="2"] > .box-content { padding: 10px 12px 8px; gap: 8px; }
 
-#weather-section:not([data-span="2"]) .wx-card-alerts-title {
-    display: none;
-}
+    .wx-metrics {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px 0;
+    }
 
-#weather-section:not([data-span="2"]) .wx-card-alerts-list {
-    flex: none;
-    min-width: 0;
-    max-height: none;
-    overflow: visible;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
+    .wx-metric:nth-child(odd) { padding-left: 0; }
+    .wx-metric:nth-child(even) { padding-right: 0; }
 
-#weather-section:not([data-span="2"]) .wx-card-alerts-list .wx-alert-chip {
-    margin: 0;
-}
-
-#weather-section:not([data-span="2"]).has-precip .wx-card-alerts {
-    border-left: none;
-    padding-left: 0;
-}
-
-#weather-section:not([data-span="2"]) > .box-content {
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 4px 12px;
-    padding: 4px 14px;
-}
-
-/* Flatten nested wrappers so every stat flows in one row */
-#weather-section:not([data-span="2"]) .wx-card-hero,
-#weather-section:not([data-span="2"]) .wx-card-info,
-#weather-section:not([data-span="2"]) .wx-card-precip {
-    display: contents;
-}
-
-#weather-section:not([data-span="2"]) .wx-card-icon {
-    order: 0;
-    font-size: calc(48px * var(--font-scale));
-}
-
-/* Temp + description stay grouped as a column (description below temperature) */
-#weather-section:not([data-span="2"]) .wx-card-temp-col {
-    order: 1;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1px;
-}
-
-#weather-section:not([data-span="2"]) .metric-value.big {
-    font-size: calc(26px * var(--font-scale));
-}
-
-#weather-section:not([data-span="2"]) .wx-card-unit {
-    font-size: calc(12px * var(--font-scale));
-}
-
-/* Details: compact pill chips, forced below the temperature row by default */
-#weather-section:not([data-span="2"]) .wx-card-details {
-    order: 2;
-    flex-basis: 100%;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 4px;
-}
-
-#weather-section:not([data-span="2"]) .wx-card-detail {
-    padding: 3px 9px;
-    font-size: calc(11px * var(--font-scale));
-    gap: 5px;
-}
-
-#weather-section:not([data-span="2"]) .wx-card-detail .nf-icon {
-    font-size: calc(12px * var(--font-scale));
-}
-
-/* Condition + precipitation summary shown under the temperature */
-#weather-section:not([data-span="2"]) .wx-card-text {
-    font-size: calc(13px * var(--font-scale));
-    white-space: normal;
-    overflow: visible;
-    max-width: 100%;
-}
-
-/* Precipitation summary text is merged into .wx-card-text on the small card */
-#weather-section:not([data-span="2"]) .wx-card-precip-text {
-    display: none;
-}
-
-#weather-section:not([data-span="2"]) .wx-card-precip-title,
-#weather-section:not([data-span="2"]) .wx-card-precip-chart {
-    display: none;
-}
-
-/* City/updated not shown on small card */
-#weather-section:not([data-span="2"]) .wx-card-sub {
-    display: none !important;
-}
-
-/* Weather big card (span 2): a "window onto the sky". The card background is a
-   condition-driven sky gradient, the hero (icon + temperature) anchors the top,
-   the detail chips float below it, and the precip/alerts row grows to fill the
-   remaining space at the bottom. The layout flex-fills so the card keeps its
-   density whether the screen is small or large. */
-#weather-section[data-span="2"] > .box-content {
-    justify-content: flex-start;
-    gap: 10px;
-    padding: 18px 20px 22px;
-}
-
-/* Sky gradient: deep accent tint at the top, accent mid, warm horizon at the
-   bottom. Colors mix toward the theme surface so text stays readable in both
-   dark and light themes. */
-#weather-section[data-span="2"] .wx-bg {
-    opacity: clamp(0.4, var(--wx-bg-opacity, 0.8), 1);
-    background:
-        radial-gradient(90% 130% at 16% -6%, color-mix(in srgb, var(--wx-accent) 26%, transparent), transparent 62%),
-        linear-gradient(180deg,
-            color-mix(in srgb, var(--wx-accent) 16%, var(--surface)) 0%,
-            color-mix(in srgb, var(--wx-accent-soft) 8%, var(--surface)) 52%,
-            color-mix(in srgb, var(--wx-accent-soft) 18%, var(--surface)) 100%);
-}
-
-/* Column order: hero on top, detail chips in the middle, precip/alerts fill the
-   rest and anchor the bottom (growing empty info row = open sky when no info). */
-#weather-section[data-span="2"] .wx-card-hero { order: 1; }
-#weather-section[data-span="2"] .wx-card-details { order: 2; }
-#weather-section[data-span="2"] .wx-card-info { order: 3; flex: 1 1 auto; }
-
-#weather-section[data-span="2"] .wx-card-hero {
-    gap: 18px;
-    align-items: flex-end;
-}
-
-/* Icon with a layered glow (gradient-like halo) */
-#weather-section[data-span="2"] .wx-card-icon {
-    font-size: calc(clamp(46px, 5vw, 72px) * var(--font-scale));
-    color: var(--wx-accent);
-    text-shadow:
-        0 0 22px color-mix(in srgb, var(--wx-accent) 55%, transparent),
-        0 0 64px color-mix(in srgb, var(--wx-accent) 28%, transparent);
-}
-
-/* Temperature as gradient text: bright text on top, accent-tinted at the base.
-   Falls back to a solid color when background-clip:text is unsupported. */
-#weather-section[data-span="2"] .wx-card-hero .metric-value.big {
-    font-size: calc(clamp(44px, 5.5vw, 80px) * var(--font-scale));
-    color: var(--text);
-    background: linear-gradient(180deg, var(--text) 0%, var(--wx-accent) 130%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-@supports not ((background-clip: text) or (-webkit-background-clip: text)) {
-    #weather-section[data-span="2"] .wx-card-hero .metric-value.big {
-        background: none;
-        color: var(--text);
-        -webkit-text-fill-color: currentColor;
+    .wx-bottom {
+        flex-direction: column;
+        gap: 8px;
     }
 }
 
-#weather-section[data-span="2"] .wx-card-unit {
-    font-size: calc(18px * var(--font-scale));
+@media (max-width: 320px) {
+    .wx-meta { display: none; }
+    .wx-icon-wrap { font-size: calc(30px * var(--font-scale)); }
+    .wx-temp { font-size: calc(36px * var(--font-scale)); }
 }
 
-#weather-section[data-span="2"] .wx-card-text {
-    font-size: calc(clamp(18px, 2.2vw, 28px) * var(--font-scale));
+/* ==================== SMALL CARD ==================== */
+#weather-section:not([data-span="2"]) > .box-content {
+    position: relative;
+    z-index: 1;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+    min-height: 0;
 }
 
-#weather-section[data-span="2"] .wx-card-city,
-#weather-section[data-span="2"] .wx-card-updated {
-    font-size: calc(12px * var(--font-scale));
+#weather-section:not([data-span="2"]) .wx-top {
+    gap: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
 }
 
-/* Detail chips: gradient-tinted background, accent-tinted border */
-#weather-section[data-span="2"] .wx-card-detail {
-    font-size: calc(13px * var(--font-scale));
-    padding: 5px 11px;
-    background: linear-gradient(180deg,
-        color-mix(in srgb, var(--text) 7%, transparent),
-        color-mix(in srgb, var(--wx-accent) 9%, transparent));
-    border: 1px solid color-mix(in srgb, var(--wx-accent) 30%, var(--border));
+#weather-section:not([data-span="2"]) .wx-icon-wrap {
+    font-size: calc(26px * var(--font-scale));
 }
 
-#weather-section[data-span="2"] .wx-card-detail .nf-icon {
-    color: var(--wx-accent);
+#weather-section:not([data-span="2"]) .wx-temp {
+    font-size: calc(26px * var(--font-scale));
 }
 
-#weather-section[data-span="2"] .wx-card-detail .mono {
-    color: var(--text);
+#weather-section:not([data-span="2"]) .wx-temp-unit {
+    font-size: calc(11px * var(--font-scale));
 }
 
-/* Precip / alerts: accent-tinted dividers */
-#weather-section[data-span="2"] .wx-card-precip,
-#weather-section[data-span="2"] .wx-card-alerts {
-    border-top: 1px solid color-mix(in srgb, var(--wx-accent) 26%, var(--border));
+#weather-section:not([data-span="2"]) .wx-condition {
+    font-size: calc(11px * var(--font-scale));
+    margin-top: 2px;
 }
 
-#weather-section[data-span="2"].has-precip .wx-card-alerts {
-    border-left: 1px solid color-mix(in srgb, var(--wx-accent) 26%, var(--border));
+#weather-section:not([data-span="2"]) .wx-meta { display: none; }
+
+#weather-section:not([data-span="2"]) .wx-metrics {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    padding: 6px 0;
 }
 
-/* Precip chart: gradient bars with a soft glow; height scales with the card */
-#weather-section[data-span="2"] .wx-card-precip-chart {
-    height: calc(clamp(18px, 4vh, 40px) * var(--font-scale));
+#weather-section:not([data-span="2"]) .wx-metric {
+    padding: 0 6px;
 }
 
-#weather-section[data-span="2"] .wx-precip-bar {
-    background: linear-gradient(180deg, color-mix(in srgb, var(--wx-accent) 92%, white 8%), var(--wx-accent));
-    box-shadow: 0 0 10px color-mix(in srgb, var(--wx-accent) 40%, transparent);
+#weather-section:not([data-span="2"]) .wx-metric:first-child {
+    padding-left: 0;
 }
 
-/* Compact mode: when both the precipitation forecast and alerts are shown, the
-   info row takes vertical space, so hero + chips are scaled down moderately to
-   keep the card dense on any screen size. */
-#weather-section[data-span="2"].has-precip.has-alerts .wx-card-icon {
-    font-size: calc(clamp(38px, 4vw, 58px) * var(--font-scale));
+#weather-section:not([data-span="2"]) .wx-metric:last-child {
+    padding-right: 0;
 }
-#weather-section[data-span="2"].has-precip.has-alerts .wx-card-hero .metric-value.big {
-    font-size: calc(clamp(36px, 4.4vw, 64px) * var(--font-scale));
+
+#weather-section:not([data-span="2"]) .wx-metric-label {
+    font-size: calc(8px * var(--font-scale));
 }
-#weather-section[data-span="2"].has-precip.has-alerts .wx-card-unit {
-    font-size: calc(15px * var(--font-scale));
+
+#weather-section:not([data-span="2"]) .wx-metric-value {
+    font-size: calc(11px * var(--font-scale));
 }
-#weather-section[data-span="2"].has-precip.has-alerts .wx-card-text {
-    font-size: calc(clamp(15px, 1.8vw, 22px) * var(--font-scale));
+
+#weather-section:not([data-span="2"]) .wx-metric-value .nf-icon {
+    font-size: calc(9px * var(--font-scale));
 }
-#weather-section[data-span="2"].has-precip.has-alerts .wx-card-detail {
-    font-size: calc(12px * var(--font-scale));
+
+#weather-section:not([data-span="2"]) .wx-metric-value .unit {
+    font-size: calc(9px * var(--font-scale));
+}
+
+/* Small card */
+#weather-section:not([data-span="2"]) .wx-bottom {
+    padding-top: 4px;
+}
+
+#weather-section:not([data-span="2"]) .wx-precip-text {
+    font-size: calc(10px * var(--font-scale));
+    margin-bottom: 4px;
+}
+
+#weather-section:not([data-span="2"]) .wx-section-title {
+    font-size: calc(8px * var(--font-scale));
+    margin-bottom: 4px;
+}
+
+#weather-section:not([data-span="2"]) .wx-alerts-list {
+    max-height: none;
+    overflow: visible;
+}
+
+#weather-section:not([data-span="2"]) .wx-alert-chip {
+    font-size: calc(9px * var(--font-scale));
+    padding: 1px 5px;
+    margin: 1px 2px 1px 0;
+}
+
+#weather-section:not([data-span="2"]) .wx-alert-chip .nf-icon {
+    font-size: calc(8px * var(--font-scale));
 }

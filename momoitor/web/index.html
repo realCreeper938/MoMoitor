@@ -427,37 +427,49 @@
             <!-- Weather -->
             <div class="term-box" id="weather-section" style="display:none">
                 <div class="wx-bg"></div>
+                <div class="wx-precip-chart" id="wx-card-precip-chart"></div>
                 <div class="layout-drag-handle">⠿</div>
                 <div class="box-header">Weather</div>
                 <div class="box-content">
-                    <div class="wx-card-hero">
-                        <span class="wx-card-icon" id="wx-card-icon">&#xF0590;</span>
-                        <div class="wx-card-temp-col">
-                            <div class="wx-card-temp-row">
-                                <span class="metric-value big mono" id="wx-card-temp">--</span><span class="wx-card-unit">&deg;C</span>
+                    <div class="wx-top">
+                        <span class="wx-icon-wrap" id="wx-card-icon">&#xF0590;</span>
+                        <div class="wx-main">
+                            <div class="wx-temp-row">
+                                <span class="wx-temp" id="wx-card-temp">--</span><span class="wx-temp-unit">&deg;C</span>
                             </div>
-                            <span class="wx-card-text" id="wx-card-text">--</span>
+                            <div class="wx-condition" id="wx-card-text">--</div>
+                        </div>
+                        <div class="wx-meta">
+                            <span class="wx-city"><span class="nf-icon">&#xF034E;</span><span id="wx-card-city">--</span></span>
+                            <span class="wx-time"><span class="nf-icon">&#xF0150;</span><span id="wx-card-updated">--</span></span>
                         </div>
                     </div>
-                    <span class="wx-card-sub">
-                        <span class="wx-card-city"><span class="nf-icon">&#xF034E;</span><span class="mono" id="wx-card-city">--</span></span>
-                        <span class="wx-card-updated"><span class="nf-icon">&#xF0150;</span><span id="wx-card-updated">--</span></span>
-                    </span>
-                    <div class="wx-card-details">
-                        <div class="wx-card-detail"><span class="nf-icon">&#xF050F;</span><span class="mono" id="wx-card-feels">--</span><span class="wx-detail-unit">&deg;C</span></div>
-                        <div class="wx-card-detail"><span class="nf-icon">&#xF058E;</span><span class="mono" id="wx-card-humidity">--</span><span class="wx-detail-unit">%</span></div>
-                        <div class="wx-card-detail"><span class="nf-icon">&#xF059D;</span><span class="mono" id="wx-card-wind">--</span></div>
-                        <div class="wx-card-detail" id="wx-card-aqi-row" style="display:none"><span class="nf-icon">&#xF032A;</span><span class="mono" id="wx-card-aqi-val">--</span></div>
-                    </div>
-                    <div class="wx-card-info">
-                        <div class="wx-card-precip" id="wx-card-precip-row" style="display:none">
-                            <div class="wx-card-precip-title"><span class="nf-icon">&#xF0597;</span> <span data-i18n="wx-precip">Precipitation</span></div>
-                            <div class="wx-card-precip-text" id="wx-card-precip-text">--</div>
-                            <div class="wx-card-precip-chart" id="wx-card-precip-chart"></div>
+                    <div class="wx-metrics">
+                        <div class="wx-metric">
+                            <span class="wx-metric-label">体感</span>
+                            <div class="wx-metric-value"><span class="nf-icon">&#xF050F;</span><span id="wx-card-feels">--</span><span class="unit">&deg;C</span></div>
                         </div>
-                        <div class="wx-card-alerts" id="wx-card-alerts-row" style="display:none">
-                            <div class="wx-card-alerts-title"><span class="nf-icon">&#xF05D6;</span> <span data-i18n="wx-alerts">Alerts</span></div>
-                            <div class="wx-card-alerts-list" id="wx-card-alerts-list"></div>
+                        <div class="wx-metric">
+                            <span class="wx-metric-label">湿度</span>
+                            <div class="wx-metric-value"><span class="nf-icon">&#xF058E;</span><span id="wx-card-humidity">--</span><span class="unit">%</span></div>
+                        </div>
+                        <div class="wx-metric">
+                            <span class="wx-metric-label">风力</span>
+                            <div class="wx-metric-value"><span class="nf-icon">&#xF059D;</span><span id="wx-card-wind">--</span></div>
+                        </div>
+                        <div class="wx-metric" id="wx-card-aqi-row" style="display:none">
+                            <span class="wx-metric-label">空气</span>
+                            <div class="wx-metric-value"><span class="nf-icon">&#xF032A;</span><span id="wx-card-aqi-val">--</span></div>
+                        </div>
+                    </div>
+                    <div class="wx-bottom">
+                        <div class="wx-precip-section" id="wx-card-precip-row" style="display:none">
+                            <div class="wx-section-title"><span class="nf-icon">&#xF0597;</span> 降水预报</div>
+                            <div class="wx-precip-text" id="wx-card-precip-text">--</div>
+                        </div>
+                        <div class="wx-alerts-section" id="wx-card-alerts-row" style="display:none">
+                            <div class="wx-section-title"><span class="nf-icon">&#xF05D6;</span> 预警</div>
+                            <div class="wx-alerts-list" id="wx-card-alerts-list"></div>
                         </div>
                     </div>
                 </div>

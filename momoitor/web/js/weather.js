@@ -70,6 +70,8 @@ function resetWeatherDisplays() {
     if (cardPrecipRow) cardPrecipRow.style.display = 'none';
     const cardAlertsRow = document.getElementById('wx-card-alerts-row');
     if (cardAlertsRow) cardAlertsRow.style.display = 'none';
+    const cardPrecipChart = document.getElementById('wx-card-precip-chart');
+    if (cardPrecipChart) cardPrecipChart.innerHTML = '';
     hideWxTip();
 }
 
@@ -362,12 +364,12 @@ async function refreshWeatherCard() {
             }
         }
 
-        // Precipitation forecast (big card only; hidden on small via CSS)
+        // Precipitation forecast (line chart as background)
         const precipRow = document.getElementById('wx-card-precip-row');
         const precipText = document.getElementById('wx-card-precip-text');
         const precipChart = document.getElementById('wx-card-precip-chart');
         let hasPrecip = false;
-        if (precipRow && precipText && precipChart) {
+        if (precipRow && precipText && precipChart && section) {
             if (d && d.minutely && d.minutely.minutely && d.minutely.minutely.length > 0) {
                 const items = d.minutely.minutely;
                 hasPrecip = items.some(m => m.precip > 0);
@@ -375,9 +377,10 @@ async function refreshWeatherCard() {
                     precipText.textContent = d.minutely.summary || '--';
                     precipChart.innerHTML = '';
                     const N = items.length;
-                    const cw = precipChart.clientWidth || 320;
-                    const maxBars = Math.max(8, Math.min(96, Math.floor(cw / 5)));
-                    const bucket = Math.max(1, Math.ceil(N / maxBars));
+                    const cw = section.clientWidth || 320;
+                    const ch = section.clientHeight || 200;
+                    const maxPoints = Math.max(8, Math.min(96, Math.floor(cw / 5)));
+                    const bucket = Math.max(1, Math.ceil(N / maxPoints));
                     const vals = [];
                     for (let i = 0; i < N; i += bucket) {
                         let mx = 0;
@@ -385,21 +388,35 @@ async function refreshWeatherCard() {
                         vals.push(mx);
                     }
                     const maxV = Math.max(...vals, 1);
-                    for (const v of vals) {
-                        const bar = document.createElement('span');
-                        bar.className = 'wx-precip-bar';
-                        bar.style.height = (v > 0 ? Math.max(18, Math.round((v / maxV) * 100)) : 0) + '%';
-                        precipChart.appendChild(bar);
-                    }
+                    const W = cw;
+                    const H = ch;
+                    const stepX = W / (vals.length - 1 || 1);
+                    const points = vals.map((v, i) => {
+                        const x = i * stepX;
+                        const y = H - (v / maxV) * H;
+                        return `${x},${y}`;
+                    });
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+                    svg.setAttribute('preserveAspectRatio', 'none');
+                    const area = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    area.setAttribute('class', 'wx-precip-area');
+                    area.setAttribute('points', `0,${H} ${points.join(' ')} ${W},${H}`);
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                    line.setAttribute('class', 'wx-precip-line');
+                    line.setAttribute('points', points.join(' '));
+                    svg.appendChild(area);
+                    svg.appendChild(line);
+                    precipChart.appendChild(svg);
                 }
             }
             precipRow.style.display = hasPrecip ? '' : 'none';
-            if (section) section.classList.toggle('has-precip', hasPrecip);
+            section.classList.toggle('has-precip', hasPrecip);
 
             // Big card: description keeps only the pure condition. Small card:
             // merge the precipitation summary into the condition line.
             if (cardText && w && !w.error && w.text) {
-                if (section && section.dataset.span === '1' && hasPrecip && precipText.textContent) {
+                if (section.dataset.span === '1' && hasPrecip && precipText.textContent) {
                     cardText.textContent = w.text + ' · ' + precipText.textContent;
                 } else {
                     cardText.textContent = w.text;
