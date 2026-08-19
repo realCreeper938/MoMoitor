@@ -2,6 +2,7 @@
 let _themeTransitionTimer = null;
 
 function applyColorscheme(scheme) {
+    scheme = normalizeColorscheme(scheme);
     document.documentElement.classList.add('theme-transition');
     document.documentElement.setAttribute('data-colorscheme', scheme);
     clearTimeout(_themeTransitionTimer);
@@ -177,50 +178,30 @@ window.addEventListener('resize', () => {
 // Theme picker cards
 const THEME_LIST = {
     dark: [
-        { value: '3024-night', name: '3024 Night' },
-        { value: 'aizen-dark', name: 'Aizen Dark' },
-        { value: 'atom-one-dark', name: 'Atom One Dark' },
-        { value: 'belafonte-night', name: 'Belafonte Night' },
-        { value: 'bluloco-dark', name: 'Bluloco Dark' },
-        { value: 'builtin-dark', name: 'Builtin Dark' },
+        { value: 'ayu-dark', name: 'Ayu Dark' },
+        { value: 'ayu-mirage', name: 'Ayu Mirage' },
         { value: 'catppuccin', name: 'Catppuccin Mocha' },
-        { value: 'ember-dark', name: 'Ember Dark' },
-        { value: 'everforest-dark', name: 'Everforest Dark' },
-        { value: 'farmhouse-dark', name: 'Farmhouse Dark' },
+        { value: 'catppuccin-macchiato', name: 'Catppuccin Macchiato' },
+        { value: 'catppuccin-frappe', name: 'Catppuccin Frappe' },
         { value: 'flexoki-dark', name: 'Flexoki Dark' },
-        { value: 'github-dark', name: 'GitHub Dark' },
         { value: 'gruvbox', name: 'Gruvbox Dark' },
-        { value: 'neutral-dark', name: 'Neutral Dark' },
-        { value: 'rose-pine', name: 'Rosé Pine' },
-        { value: 'solarized-dark', name: 'Solarized Dark' },
-        { value: 'tomorrow-night', name: 'Tomorrow Night' },
-        { value: 'default-dark', name: 'Base16 Default Dark' },
-        { value: 'material-dark', name: 'Material Dark' },
-        { value: 'spacemacs-dark', name: 'Spacemacs Dark' },
     ],
     light: [
-        { value: '3024-day', name: '3024 Day' },
-        { value: 'aizen-light', name: 'Aizen Light' },
-        { value: 'atom-one-light', name: 'Atom One Light' },
-        { value: 'belafonte-day', name: 'Belafonte Day' },
-        { value: 'bluloco-light', name: 'Bluloco Light' },
-        { value: 'builtin-light', name: 'Builtin Light' },
+        { value: 'ayu-light', name: 'Ayu Light' },
         { value: 'catppuccin-latte', name: 'Catppuccin Latte' },
-        { value: 'ember-light', name: 'Ember Light' },
-        { value: 'everforest-light', name: 'Everforest Light' },
-        { value: 'farmhouse-light', name: 'Farmhouse Light' },
         { value: 'flexoki-light', name: 'Flexoki Light' },
-        { value: 'github-light', name: 'GitHub Light' },
         { value: 'gruvbox-light', name: 'Gruvbox Light' },
-        { value: 'neutral-light', name: 'Neutral Light' },
-        { value: 'rose-pine-dawn', name: 'Rosé Pine Dawn' },
-        { value: 'solarized-light', name: 'Solarized Light' },
-        { value: 'tomorrow-day', name: 'Tomorrow Day' },
-        { value: 'default-light', name: 'Base16 Default Light' },
-        { value: 'material-light', name: 'Material Light' },
-        { value: 'spacemacs-light', name: 'Spacemacs Light' },
     ],
 };
+
+const SUPPORTED_THEMES = new Set([
+    ...THEME_LIST.dark.map(theme => theme.value),
+    ...THEME_LIST.light.map(theme => theme.value),
+]);
+
+function normalizeColorscheme(scheme) {
+    return SUPPORTED_THEMES.has(scheme) ? scheme : 'gruvbox';
+}
 
 function getThemeColors(scheme) {
     const tester = document.createElement('div');

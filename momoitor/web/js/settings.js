@@ -662,9 +662,9 @@ function initSettings() {
         onTopChk.checked = d.on_top !== false;
 
         // Theme
-        colorschemeSel.value = g.colorscheme || 'gruvbox';
-        colorschemeDark = g.colorscheme_dark || 'gruvbox';
-        colorschemeLight = g.colorscheme_light || 'gruvbox-light';
+        colorschemeSel.value = normalizeColorscheme(g.colorscheme || 'gruvbox');
+        colorschemeDark = normalizeColorscheme(g.colorscheme_dark || 'gruvbox');
+        colorschemeLight = normalizeColorscheme(g.colorscheme_light || 'gruvbox-light');
         followThemeChk.checked = g.follow_system_theme === true;
         setFollowSystemTheme(followThemeChk.checked);
         if (followThemeChk.checked) _checkSystemTheme(true);

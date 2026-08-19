@@ -1,481 +1,64 @@
-/* ===== 暗色配色方案（base16 标准色板映射） ===== */
+/* 暗色主题：Ayu、Catppuccin、Flexoki、Gruvbox */
 
-/* 3024 Night */
-[data-colorscheme="3024-night"] {
-    --nord0: #090300;
-    --nord1: #3a3432;
-    --nord2: #4a4543;
-    --nord3: #5c5855;
-    --nord4: #a5a2a2;
-    --nord5: #d6d5d4;
-    --nord6: #f7f7f7;
-    --nord7: #b5e4f4;
-    --nord8: #01a0e4;
-    --nord9: #db2d20;
-    --nord10: #807d7c;
-    --nord11: #e8bbd0;
-    --nord12: #fded02;
-    --nord13: #01a252;
-    --nord14: #a16a94;
-    --bg-rgb: 9, 3, 0;
-    --metric-cpu: #b5e4f4;
-    --metric-gpu: #01a0e4;
-    --metric-mem: #a16a94;
-    --metric-fps: #01a252;
+[data-colorscheme="ayu-dark"] {
+    --nord0: #0b0e14; --nord1: #0f131a; --nord2: #1c2433; --nord3: #565b66;
+    --nord4: #bfbdb6; --nord5: #8a9199; --nord6: #f3f4f5; --nord7: #95e6cb;
+    --nord8: #39bae6; --nord9: #d95757; --nord10: #59c2ff; --nord11: #ffb454;
+    --nord12: #e6b673; --nord13: #7fd962; --nord14: #d2a6ff;
+    --bg-rgb: 11, 14, 20; --metric-cpu: #95e6cb; --metric-gpu: #39bae6;
+    --metric-mem: #d2a6ff; --metric-fps: #7fd962;
 }
 
-/* Aizen Dark */
-[data-colorscheme="aizen-dark"] {
-    --nord0: #262626;
-    --nord1: #2e2e2e;
-    --nord2: #383838;
-    --nord3: #454545;
-    --nord4: #9f9f9f;
-    --nord5: #d6d6d6;
-    --nord6: #ffffce;
-    --nord7: #8fb33f;
-    --nord8: #9cc700;
-    --nord9: #b6782f;
-    --nord10: #18a3ac;
-    --nord11: #8fb33f;
-    --nord12: #d99b00;
-    --nord13: #18a3ac;
-    --nord14: #a9bcbb;
-    --bg-rgb: 38, 38, 38;
-    --metric-cpu: #8fb33f;
-    --metric-gpu: #9cc700;
-    --metric-mem: #a9bcbb;
-    --metric-fps: #18a3ac;
+[data-colorscheme="ayu-mirage"] {
+    --nord0: #1f2430; --nord1: #242936; --nord2: #3d424d; --nord3: #707a8c;
+    --nord4: #cbccc6; --nord5: #9da5b4; --nord6: #f3f4f5; --nord7: #95e6cb;
+    --nord8: #5ccfe6; --nord9: #f28779; --nord10: #73d0ff; --nord11: #ffcc66;
+    --nord12: #ffd580; --nord13: #bae67e; --nord14: #d4bfff;
+    --bg-rgb: 31, 36, 48; --metric-cpu: #95e6cb; --metric-gpu: #5ccfe6;
+    --metric-mem: #d4bfff; --metric-fps: #bae67e;
 }
 
-/* Atom One Dark */
-[data-colorscheme="atom-one-dark"] {
-    --nord0: #282c34;
-    --nord1: #353b45;
-    --nord2: #3e4451;
-    --nord3: #545862;
-    --nord4: #abb2bf;
-    --nord5: #6f747b;
-    --nord6: #c8ccd4;
-    --nord7: #56b6c2;
-    --nord8: #61afef;
-    --nord9: #e06c75;
-    --nord10: #61afef;
-    --nord11: #d19a66;
-    --nord12: #e5c07b;
-    --nord13: #98c379;
-    --nord14: #c678dd;
-    --bg-rgb: 40, 44, 52;
-    --metric-cpu: #56b6c2;
-    --metric-gpu: #61afef;
-    --metric-mem: #c678dd;
-    --metric-fps: #98c379;
-}
-
-/* Belafonte Night */
-[data-colorscheme="belafonte-night"] {
-    --nord0: #20111b;
-    --nord1: #3b2a32;
-    --nord2: #5e4a51;
-    --nord3: #72696c;
-    --nord4: #a5a0a2;
-    --nord5: #d0c8c5;
-    --nord6: #fff8ec;
-    --nord7: #244e2a;
-    --nord8: #007dc3;
-    --nord9: #be100e;
-    --nord10: #007dc3;
-    --nord11: #c73d2e;
-    --nord12: #b94b10;
-    --nord13: #26870a;
-    --nord14: #9200a0;
-    --bg-rgb: 32, 17, 27;
-    --metric-cpu: #244e2a;
-    --metric-gpu: #007dc3;
-    --metric-mem: #9200a0;
-    --metric-fps: #26870a;
-}
-
-/* Bluloco Dark */
-[data-colorscheme="bluloco-dark"] {
-    --nord0: #282a36;
-    --nord1: #373844;
-    --nord2: #4b4d5b;
-    --nord3: #60616d;
-    --nord4: #dfd8d1;
-    --nord5: #ffffff;
-    --nord6: #c9c7c0;
-    --nord7: #00b0df;
-    --nord8: #70c0e8;
-    --nord9: #6f7199;
-    --nord10: #00b0df;
-    --nord11: #ff8a57;
-    --nord12: #ffdd57;
-    --nord13: #7ce490;
-    --nord14: #bd93f9;
-    --bg-rgb: 40, 42, 54;
-    --metric-cpu: #00b0df;
-    --metric-gpu: #70c0e8;
-    --metric-mem: #bd93f9;
-    --metric-fps: #7ce490;
-}
-
-/* Builtin Dark */
-[data-colorscheme="builtin-dark"] {
-    --nord0: #000000;
-    --nord1: #2a2a2a;
-    --nord2: #555555;
-    --nord3: #6c6c6c;
-    --nord4: #b2b2b2;
-    --nord5: #d6d6d6;
-    --nord6: #ffffff;
-    --nord7: #00ffff;
-    --nord8: #0000ff;
-    --nord9: #ff0000;
-    --nord10: #0000ff;
-    --nord11: #ff8800;
-    --nord12: #ffd500;
-    --nord13: #00ff00;
-    --nord14: #ff00ff;
-    --bg-rgb: 0, 0, 0;
-    --metric-cpu: #00ffff;
-    --metric-gpu: #0000ff;
-    --metric-mem: #ff00ff;
-    --metric-fps: #00ff00;
-}
-
-/* Catppuccin Mocha */
 [data-colorscheme="catppuccin"] {
-    --nord0: #1e1e2e;
-    --nord1: #181825;
-    --nord2: #313244;
-    --nord3: #45475a;
-    --nord4: #cdd6f4;
-    --nord5: #a6adc8;
-    --nord6: #b4befe;
-    --nord7: #94e2d5;
-    --nord8: #89b4fa;
-    --nord9: #f38ba8;
-    --nord10: #74c7ec;
-    --nord11: #fea968;
-    --nord12: #f9e2af;
-    --nord13: #a6e3a1;
-    --nord14: #cba6f7;
-    --bg-rgb: 30, 30, 46;
-    --metric-cpu: #94e2d5;
-    --metric-gpu: #89b4fa;
-    --metric-mem: #cba6f7;
-    --metric-fps: #a6e3a1;
+    --nord0: #1e1e2e; --nord1: #181825; --nord2: #313244; --nord3: #45475a;
+    --nord4: #cdd6f4; --nord5: #a6adc8; --nord6: #b4befe; --nord7: #94e2d5;
+    --nord8: #89b4fa; --nord9: #f38ba8; --nord10: #74c7ec; --nord11: #fab387;
+    --nord12: #f9e2af; --nord13: #a6e3a1; --nord14: #cba6f7;
+    --bg-rgb: 30, 30, 46; --metric-cpu: #94e2d5; --metric-gpu: #89b4fa;
+    --metric-mem: #cba6f7; --metric-fps: #a6e3a1;
 }
 
-/* Ember Dark */
-[data-colorscheme="ember-dark"] {
-    --nord0: #16130f;
-    --nord1: #2c2620;
-    --nord2: #433b32;
-    --nord3: #5a5047;
-    --nord4: #a39a90;
-    --nord5: #bbb2a9;
-    --nord6: #d6cdc4;
-    --nord7: #576d82;
-    --nord8: #6d5782;
-    --nord9: #826d57;
-    --nord10: #576d82;
-    --nord11: #828257;
-    --nord12: #6d8257;
-    --nord13: #57826d;
-    --nord14: #82576d;
-    --bg-rgb: 22, 19, 15;
-    --metric-cpu: #576d82;
-    --metric-gpu: #6d5782;
-    --metric-mem: #82576d;
-    --metric-fps: #57826d;
+[data-colorscheme="catppuccin-macchiato"] {
+    --nord0: #24273a; --nord1: #1e2030; --nord2: #363a4f; --nord3: #6e738d;
+    --nord4: #cad3f5; --nord5: #b8c0e0; --nord6: #b7bdf8; --nord7: #8bd5ca;
+    --nord8: #8aadf4; --nord9: #ed8796; --nord10: #91d7e3; --nord11: #f5a97f;
+    --nord12: #eed49f; --nord13: #a6da95; --nord14: #c6a0f6;
+    --bg-rgb: 36, 39, 58; --metric-cpu: #8bd5ca; --metric-gpu: #8aadf4;
+    --metric-mem: #c6a0f6; --metric-fps: #a6da95;
 }
 
-/* Everforest Dark */
-[data-colorscheme="everforest-dark"] {
-    --nord0: #2d353b;
-    --nord1: #343f44;
-    --nord2: #3d484d;
-    --nord3: #475258;
-    --nord4: #d3c6aa;
-    --nord5: #d3c6aa;
-    --nord6: #eee9df;
-    --nord7: #83c092;
-    --nord8: #7fbbb3;
-    --nord9: #e67e80;
-    --nord10: #859289;
-    --nord11: #e69875;
-    --nord12: #dbbc7f;
-    --nord13: #a7c080;
-    --nord14: #d699b6;
-    --bg-rgb: 45, 53, 59;
-    --metric-cpu: #83c092;
-    --metric-gpu: #7fbbb3;
-    --metric-mem: #d699b6;
-    --metric-fps: #a7c080;
+[data-colorscheme="catppuccin-frappe"] {
+    --nord0: #303446; --nord1: #292c3c; --nord2: #414559; --nord3: #737994;
+    --nord4: #c6d0f5; --nord5: #b5bfe2; --nord6: #babbf1; --nord7: #81c8be;
+    --nord8: #8caaee; --nord9: #e78284; --nord10: #99d1db; --nord11: #ef9f76;
+    --nord12: #e5c890; --nord13: #a6d189; --nord14: #ca9ee6;
+    --bg-rgb: 48, 52, 70; --metric-cpu: #81c8be; --metric-gpu: #8caaee;
+    --metric-mem: #ca9ee6; --metric-fps: #a6d189;
 }
 
-/* Farmhouse Dark */
-[data-colorscheme="farmhouse-dark"] {
-    --nord0: #0c0c0c;
-    --nord1: #141414;
-    --nord2: #1e1e1e;
-    --nord3: #2e2e2e;
-    --nord4: #a2a2a2;
-    --nord5: #d6d6d6;
-    --nord6: #ffffff;
-    --nord7: #72a89e;
-    --nord8: #7a8a9f;
-    --nord9: #d14853;
-    --nord10: #7a8a9f;
-    --nord11: #d14853;
-    --nord12: #c98641;
-    --nord13: #98b373;
-    --nord14: #b494b8;
-    --bg-rgb: 12, 12, 12;
-    --metric-cpu: #72a89e;
-    --metric-gpu: #7a8a9f;
-    --metric-mem: #b494b8;
-    --metric-fps: #98b373;
-}
-
-/* Flexoki Dark */
 [data-colorscheme="flexoki-dark"] {
-    --nord0: #100f0f;
-    --nord1: #1c1b1a;
-    --nord2: #282726;
-    --nord3: #575653;
-    --nord4: #cecdc3;
-    --nord5: #e6e4d9;
-    --nord6: #fffcf0;
-    --nord7: #3aa99f;
-    --nord8: #4385be;
-    --nord9: #d14d41;
-    --nord10: #4385be;
-    --nord11: #da702c;
-    --nord12: #d0a215;
-    --nord13: #879a39;
-    --nord14: #8b7ec8;
-    --bg-rgb: 16, 15, 15;
-    --metric-cpu: #3aa99f;
-    --metric-gpu: #4385be;
-    --metric-mem: #8b7ec8;
-    --metric-fps: #879a39;
+    --nord0: #100f0f; --nord1: #1c1b1a; --nord2: #282726; --nord3: #575653;
+    --nord4: #cecdc3; --nord5: #e6e4d9; --nord6: #fffcf0; --nord7: #3aa99f;
+    --nord8: #4385be; --nord9: #d14d41; --nord10: #4385be; --nord11: #da702c;
+    --nord12: #d0a215; --nord13: #879a39; --nord14: #8b7ec8;
+    --bg-rgb: 16, 15, 15; --metric-cpu: #3aa99f; --metric-gpu: #4385be;
+    --metric-mem: #8b7ec8; --metric-fps: #879a39;
 }
 
-/* GitHub Dark */
-[data-colorscheme="github-dark"] {
-    --nord0: #0d1117;
-    --nord1: #161b22;
-    --nord2: #21262d;
-    --nord3: #6e7681;
-    --nord4: #c9d1d9;
-    --nord5: #afb8c0;
-    --nord6: #ffffff;
-    --nord7: #7ee787;
-    --nord8: #d2a8ff;
-    --nord9: #ffa657;
-    --nord10: #7ee787;
-    --nord11: #ff9f45;
-    --nord12: #bb8009;
-    --nord13: #a5d6ff;
-    --nord14: #ff7b72;
-    --bg-rgb: 13, 17, 23;
-    --metric-cpu: #7ee787;
-    --metric-gpu: #d2a8ff;
-    --metric-mem: #ff7b72;
-    --metric-fps: #a5d6ff;
-}
-
-/* Gruvbox Dark */
 [data-colorscheme="gruvbox"] {
-    --nord0: #282828;
-    --nord1: #3c3836;
-    --nord2: #504945;
-    --nord3: #665c54;
-    --nord4: #ebdbb2;
-    --nord5: #d5c4a1;
-    --nord6: #fbf1c7;
-    --nord7: #8ec07c;
-    --nord8: #83a598;
-    --nord9: #fb4934;
-    --nord10: #458588;
-    --nord11: #fe8019;
-    --nord12: #fabd2f;
-    --nord13: #b8bb26;
-    --nord14: #d3869b;
-    --bg-rgb: 40, 40, 40;
-    --metric-cpu: #8ec07c;
-    --metric-gpu: #83a598;
-    --metric-mem: #d3869b;
-    --metric-fps: #b8bb26;
-}
-
-/* Neutral Dark */
-[data-colorscheme="neutral-dark"] {
-    --nord0: #111111;
-    --nord1: #202020;
-    --nord2: #303030;
-    --nord3: #4d4d4d;
-    --nord4: #a0a0a0;
-    --nord5: #d4d4d4;
-    --nord6: #f0f0f0;
-    --nord7: #d0d0d0;
-    --nord8: #a0a0a0;
-    --nord9: #b8b8b8;
-    --nord10: #a0a0a0;
-    --nord11: #d0d0d0;
-    --nord12: #e0e0e0;
-    --nord13: #a0a0a0;
-    --nord14: #d0d0d0;
-    --bg-rgb: 17, 17, 17;
-    --metric-cpu: #d0d0d0;
-    --metric-gpu: #a0a0a0;
-    --metric-mem: #d0d0d0;
-    --metric-fps: #a0a0a0;
-}
-
-/* Rosé Pine */
-[data-colorscheme="rose-pine"] {
-    --nord0: #191724;
-    --nord1: #1f1d2e;
-    --nord2: #26233a;
-    --nord3: #6e6a86;
-    --nord4: #e0def4;
-    --nord5: #e0def4;
-    --nord6: #524f67;
-    --nord7: #9ccfd8;
-    --nord8: #c4a7e7;
-    --nord9: #eb6f92;
-    --nord10: #31748f;
-    --nord11: #f6c177;
-    --nord12: #ebbf83;
-    --nord13: #9ccfd8;
-    --nord14: #b4637a;
-    --bg-rgb: 25, 23, 36;
-    --metric-cpu: #9ccfd8;
-    --metric-gpu: #c4a7e7;
-    --metric-mem: #b4637a;
-    --metric-fps: #9ccfd8;
-}
-
-/* Solarized Dark */
-[data-colorscheme="solarized-dark"] {
-    --nord0: #002b36;
-    --nord1: #073642;
-    --nord2: #586e75;
-    --nord3: #657b83;
-    --nord4: #93a1a1;
-    --nord5: #eee8d5;
-    --nord6: #fdf6e3;
-    --nord7: #2aa198;
-    --nord8: #268bd2;
-    --nord9: #dc322f;
-    --nord10: #839496;
-    --nord11: #cb4b16;
-    --nord12: #b58900;
-    --nord13: #859900;
-    --nord14: #6c71c4;
-    --bg-rgb: 0, 43, 54;
-    --metric-cpu: #2aa198;
-    --metric-gpu: #268bd2;
-    --metric-mem: #6c71c4;
-    --metric-fps: #859900;
-}
-
-/* Tomorrow Night */
-[data-colorscheme="tomorrow-night"] {
-    --nord0: #1d1f21;
-    --nord1: #282a2e;
-    --nord2: #373b41;
-    --nord3: #969896;
-    --nord4: #c5c8c6;
-    --nord5: #e0e0e0;
-    --nord6: #ffffff;
-    --nord7: #8abeb7;
-    --nord8: #81a2be;
-    --nord9: #cc6666;
-    --nord10: #81a2be;
-    --nord11: #de935f;
-    --nord12: #f0c674;
-    --nord13: #b5bd68;
-    --nord14: #b294bb;
-    --bg-rgb: 29, 31, 33;
-    --metric-cpu: #8abeb7;
-    --metric-gpu: #81a2be;
-    --metric-mem: #b294bb;
-    --metric-fps: #b5bd68;
-}
-
-/* Base16 Default Dark */
-[data-colorscheme="default-dark"] {
-    --nord0: #181818;
-    --nord1: #282828;
-    --nord2: #383838;
-    --nord3: #585858;
-    --nord4: #d8d8d8;
-    --nord5: #e8e8e8;
-    --nord6: #f8f8f8;
-    --nord7: #86c1b9;
-    --nord8: #7cafc2;
-    --nord9: #ab4642;
-    --nord10: #7cafc2;
-    --nord11: #dc9656;
-    --nord12: #f7ca88;
-    --nord13: #a1b56c;
-    --nord14: #ba8baf;
-    --bg-rgb: 24, 24, 24;
-    --metric-cpu: #86c1b9;
-    --metric-gpu: #7cafc2;
-    --metric-mem: #ba8baf;
-    --metric-fps: #a1b56c;
-}
-
-/* Material Dark */
-[data-colorscheme="material-dark"] {
-    --nord0: #212121;
-    --nord1: #303030;
-    --nord2: #353535;
-    --nord3: #4a4a4a;
-    --nord4: #eeffff;
-    --nord5: #eeffff;
-    --nord6: #ffffff;
-    --nord7: #89ddff;
-    --nord8: #82aaff;
-    --nord9: #f07178;
-    --nord10: #89ddff;
-    --nord11: #f78c6c;
-    --nord12: #ffcb6b;
-    --nord13: #c3e88d;
-    --nord14: #c792ea;
-    --bg-rgb: 33, 33, 33;
-    --metric-cpu: #89ddff;
-    --metric-gpu: #82aaff;
-    --metric-mem: #c792ea;
-    --metric-fps: #c3e88d;
-}
-
-/* Spacemacs Dark */
-[data-colorscheme="spacemacs-dark"] {
-    --nord0: #1f2022;
-    --nord1: #282828;
-    --nord2: #444155;
-    --nord3: #585858;
-    --nord4: #a3a3a3;
-    --nord5: #e8e8e8;
-    --nord6: #f8f8f8;
-    --nord7: #b3b1ad;
-    --nord8: #4f97d7;
-    --nord9: #f2241f;
-    --nord10: #4f97d7;
-    --nord11: #d29419;
-    --nord12: #b1951d;
-    --nord13: #67b11d;
-    --nord14: #a31db1;
-    --bg-rgb: 31, 32, 34;
-    --metric-cpu: #b3b1ad;
-    --metric-gpu: #4f97d7;
-    --metric-mem: #a31db1;
-    --metric-fps: #67b11d;
+    --nord0: #282828; --nord1: #3c3836; --nord2: #504945; --nord3: #665c54;
+    --nord4: #ebdbb2; --nord5: #d5c4a1; --nord6: #fbf1c7; --nord7: #8ec07c;
+    --nord8: #83a598; --nord9: #fb4934; --nord10: #458588; --nord11: #fe8019;
+    --nord12: #fabd2f; --nord13: #b8bb26; --nord14: #d3869b;
+    --bg-rgb: 40, 40, 40; --metric-cpu: #8ec07c; --metric-gpu: #83a598;
+    --metric-mem: #d3869b; --metric-fps: #b8bb26;
 }
