@@ -8,7 +8,6 @@ PyJWT>=2.8
 requests>=2.31
 loguru>=0.7
 Pillow>=10.0
-material-color-utilities==0.1.4
 pycaw>=20230407
 cnlunar>=0.2
 # 服务端模式启动时发送系统通知（server.py）

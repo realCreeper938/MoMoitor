@@ -4,16 +4,16 @@ let _wizardIndex = 0;
 let _wizardSettings = null;
 let _wizardMonitors = [];
 let _wizardHasMonitorStep = false;
-let _wizardMaterialSource = 'blue';
-let _wizardMaterialMode = 'dark';
+let _wizardColorDark = 'gruvbox';
+let _wizardColorLight = 'gruvbox-light';
 let _wizardMonitor = 0;
 
 async function showWelcomeWizard(s) {
     _wizardSettings = s;
     const g = s.general || {};
     const dsp = s.display || {};
-    _wizardMaterialSource = g.material_source || 'blue';
-    _wizardMaterialMode = g.material_mode || (g.follow_system_theme ? 'system' : 'dark');
+    _wizardColorDark = g.colorscheme_dark || 'gruvbox';
+    _wizardColorLight = g.colorscheme_light || 'gruvbox-light';
     _wizardMonitor = typeof dsp.monitor === 'number' ? dsp.monitor : 0;
 
     _wizardMonitors = await pywebview.api.get_monitors();
@@ -28,16 +28,7 @@ async function showWelcomeWizard(s) {
         document.getElementById('welcome-on-top').checked = dsp.on_top !== false;
         document.getElementById('welcome-hide-missing').checked = dsp.hide_when_monitor_missing === true;
     }
-    document.getElementById('welcome-material-source').value = _wizardMaterialSource;
-    document.getElementById('welcome-material-mode').value = _wizardMaterialMode;
-    document.getElementById('welcome-material-source').onchange = (e) => {
-        _wizardMaterialSource = e.target.value;
-        applyMaterialTheme(_wizardMaterialSource, _wizardMaterialMode);
-    };
-    document.getElementById('welcome-material-mode').onchange = (e) => {
-        _wizardMaterialMode = e.target.value;
-        applyMaterialTheme(_wizardMaterialSource, _wizardMaterialMode);
-    };
+    _wizardRenderThemeCards();
     _wizardInitSizeControls(g);
 
     document.getElementById('welcome-next').addEventListener('click', _wizardNext);
@@ -117,14 +108,49 @@ function _wizardRenderMonitorCards() {
     });
 }
 
+function _wizardRenderThemeCards() {
+    const buildGrid = (gridId, list, selected) => {
+        const grid = document.getElementById(gridId);
+        grid.innerHTML = '';
+        list.forEach(item => {
+            const c = getThemeColors(item.value);
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'theme-card' + (item.value === selected ? ' active' : '');
+            card.innerHTML =
+                `<div class="theme-swatches">` +
+                `<span class="swatch" style="background:${c.bg}"></span>` +
+                `<span class="swatch" style="background:${c.surface}"></span>` +
+                `<span class="swatch" style="background:${c.accent}"></span>` +
+                `<span class="swatch" style="background:${c.text}"></span>` +
+                `</div>` +
+                `<span class="theme-name">${escapeHtml(item.name)}</span>`;
+            card.addEventListener('click', () => {
+                if (item.value === _wizardColorDark || item.value === _wizardColorLight) {
+                    _wizardColorDark = item.value;
+                    _wizardColorLight = item.value;
+                } else if (list === THEME_LIST.dark) {
+                    _wizardColorDark = item.value;
+                } else {
+                    _wizardColorLight = item.value;
+                }
+                applyColorscheme(item.value);
+                _wizardRenderThemeCards();
+            });
+            grid.appendChild(card);
+        });
+    };
+    buildGrid('welcome-theme-dark', THEME_LIST.dark, _wizardColorDark);
+    buildGrid('welcome-theme-light', THEME_LIST.light, _wizardColorLight);
+}
+
 async function _wizardFinish() {
     const s = _wizardSettings;
     const g = s.general || {};
     const dsp = s.display || {};
-    g.colorscheme = 'material-you';
-    g.material_source = _wizardMaterialSource;
-    g.material_mode = _wizardMaterialMode;
-    g.follow_system_theme = _wizardMaterialMode === 'system';
+    g.colorscheme = _wizardColorDark;
+    g.colorscheme_dark = _wizardColorDark;
+    g.colorscheme_light = _wizardColorLight;
     g.font_size = parseInt(document.getElementById('welcome-size-card').value) || 100;
     g.font_size_ui = parseInt(document.getElementById('welcome-size-ui').value) || 100;
     g.hint_dismissed = true;
@@ -138,7 +164,7 @@ async function _wizardFinish() {
     if (_wizardHasMonitorStep) {
         await pywebview.api.move_to_monitor(_wizardMonitor);
     }
-    await applyMaterialTheme(_wizardMaterialSource, _wizardMaterialMode);
+    applyColorscheme(_wizardColorDark);
     document.getElementById('welcome-overlay').style.display = 'none';
     showBody();
 }
