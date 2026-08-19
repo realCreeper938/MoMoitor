@@ -178,6 +178,7 @@ DEFAULT_SETTINGS = {
         "font_size": 100,  # 卡片字体大小（含悬浮窗）
         "font_size_ui": 100,  # 界面字体大小（设置/弹窗等）
         "fullscreen": False,
+        "window_opacity": 100,  # 原生窗口透明度（百分比）
         "colorscheme": "gruvbox",
         "colorscheme_dark": "gruvbox",  # 跟随系统主题时使用的暗色主题
         "colorscheme_light": "gruvbox-light",  # 跟随系统主题时使用的亮色主题

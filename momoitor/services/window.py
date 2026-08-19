@@ -74,6 +74,33 @@ def set_caption(window, enabled: bool):
     )
 
 
+def set_opacity(window, opacity: int) -> bool:
+    """设置原生窗口透明度（10-100）。"""
+    hwnd = _resolve_hwnd(window)
+    if not hwnd:
+        logger.warning("Could not get HWND for opacity change")
+        return False
+
+    try:
+        opacity = max(10, min(100, int(opacity)))
+    except (TypeError, ValueError):
+        opacity = 100
+    GWL_EXSTYLE = -20
+    WS_EX_LAYERED = 0x00080000
+    LWA_ALPHA = 0x2
+    style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+    if not ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED):
+        logger.warning("Could not enable layered window style")
+        return False
+    result = ctypes.windll.user32.SetLayeredWindowAttributes(
+        hwnd, 0, round(opacity * 255 / 100), LWA_ALPHA
+    )
+    if not result:
+        logger.warning("SetLayeredWindowAttributes failed, err={}", ctypes.windll.kernel32.GetLastError())
+        return False
+    return True
+
+
 def set_on_top(window, enabled: bool) -> bool:
     """设置窗口是否始终置顶（HWND_TOPMOST / HWND_NOTOPMOST）。"""
     hwnd = _resolve_hwnd(window)

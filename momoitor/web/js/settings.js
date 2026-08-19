@@ -111,6 +111,8 @@ function initSettings() {
     const fontsizeUiRange = document.getElementById('opt-fontsize-ui');
     const fontsizeUiVal = document.getElementById('fontsize-ui-val');
     const fullscreenChk = document.getElementById('opt-fullscreen');
+    const windowOpacityRange = document.getElementById('opt-window-opacity');
+    const windowOpacityVal = document.getElementById('window-opacity-val');
     const autostartChk = document.getElementById('opt-autostart');
     const hoverHighlightChk = document.getElementById('opt-hover-highlight');
     const hoverAnimChk = document.getElementById('opt-hover-anim');
@@ -572,6 +574,10 @@ function initSettings() {
         fontsizeUiRange.value = g.font_size_ui || 100;
         fontsizeUiVal.textContent = (g.font_size_ui || 100) + '%';
         fullscreenChk.checked = g.fullscreen !== false;
+        const savedOpacity = Number(g.window_opacity ?? 100);
+        windowOpacityRange.value = Number.isFinite(savedOpacity)
+            ? Math.max(10, Math.min(100, savedOpacity)) : 100;
+        windowOpacityVal.textContent = windowOpacityRange.value + '%';
         hoverHighlightChk.checked = g.hover_highlight !== false;
         applyHoverHighlight(g.hover_highlight !== false);
         hoverAnimChk.checked = g.hover_animation !== false;
@@ -781,6 +787,7 @@ function initSettings() {
                 font_size: parseInt(fontsizeRange.value),
                 font_size_ui: parseInt(fontsizeUiRange.value),
                 fullscreen: fullscreenChk.checked,
+                window_opacity: parseInt(windowOpacityRange.value, 10) || 100,
                 hover_highlight: hoverHighlightChk.checked,
                 hover_animation: hoverAnimChk.checked,
                 settings_blur: settingsBlurChk.checked,
@@ -946,6 +953,9 @@ function initSettings() {
     fontsizeUiRange.addEventListener('input', () => {
         fontsizeUiVal.textContent = fontsizeUiRange.value + '%';
         applyUiFontSize(parseInt(fontsizeUiRange.value));
+    });
+    windowOpacityRange.addEventListener('input', () => {
+        windowOpacityVal.textContent = windowOpacityRange.value + '%';
     });
     // Clock sidebar background live preview
     clockBgOpacityRange.addEventListener('input', () => {

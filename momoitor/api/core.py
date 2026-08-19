@@ -63,6 +63,7 @@ class ApiCore:
     def set_window(self, window):
         self._window = window
         self._remove_window_shadow()
+        win_svc.set_opacity(window, self._settings.get("general", {}).get("window_opacity", 100))
         self.traffic.start()
 
     def set_server_backend(self, backend):
@@ -97,6 +98,7 @@ class ApiCore:
         old_monitor = self._settings.get("display", {}).get("monitor", 0)
         old_fullscreen = self._settings.get("general", {}).get("fullscreen", True)
         old_on_top = self._settings.get("display", {}).get("on_top", True)
+        old_opacity = self._settings.get("general", {}).get("window_opacity", 100)
         self._settings = settings
         if self._weather is not None:
             self._weather.invalidate()
@@ -108,6 +110,9 @@ class ApiCore:
             fullscreen_changed = settings.get("general", {}).get("fullscreen") != old_fullscreen
             if settings.get("display", {}).get("on_top", True) != old_on_top:
                 win_svc.set_on_top(self._window, settings.get("display", {}).get("on_top", True))
+            new_opacity = settings.get("general", {}).get("window_opacity", 100)
+            if new_opacity != old_opacity:
+                win_svc.set_opacity(self._window, new_opacity)
             if settings.get("general", {}).get("fullscreen"):
                 if monitor_changed or fullscreen_changed:
                     win_svc.move_to_monitor(self._window, mon_idx)
