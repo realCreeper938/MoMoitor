@@ -72,11 +72,22 @@
     display: flex;
     align-items: flex-start;
     gap: 10px;
+    padding-bottom: 10px;
 }
 
 .wx-main {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.wx-temp-row {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+    line-height: 1;
 }
 
 .wx-temp-row {
@@ -87,22 +98,23 @@
 }
 
 .wx-temp {
-    font-size: calc(clamp(48px, 6vw, 72px) * var(--font-scale));
+    font-size: calc(clamp(56px, 7vw, 84px) * var(--font-scale));
     font-weight: 300;
     color: var(--text);
     letter-spacing: -.02em;
+    line-height: 1;
 }
 
 .wx-temp-unit {
-    font-size: calc(16px * var(--font-scale));
+    font-size: calc(18px * var(--font-scale));
     color: var(--text-dim);
     font-weight: 400;
 }
 
 .wx-condition {
-    font-size: calc(16px * var(--font-scale));
+    font-size: calc(18px * var(--font-scale));
     color: var(--text-dim);
-    margin-top: 6px;
+    margin-top: 4px;
 }
 
 .wx-meta {
@@ -133,7 +145,7 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 0;
-    padding: 8px 0;
+    padding: 6px 0;
 }
 
 .wx-metric {
@@ -318,7 +330,7 @@
 
 @media (max-width: 320px) {
     .wx-meta { display: none; }
-    .wx-temp { font-size: calc(40px * var(--font-scale)); }
+    .wx-temp { font-size: calc(46px * var(--font-scale)); }
 }
 
 /* ==================== SMALL CARD ==================== */
@@ -340,16 +352,16 @@
 }
 
 #weather-section:not([data-span="2"]) .wx-temp {
-    font-size: calc(32px * var(--font-scale));
+    font-size: calc(38px * var(--font-scale));
 }
 
 #weather-section:not([data-span="2"]) .wx-temp-unit {
-    font-size: calc(12px * var(--font-scale));
+    font-size: calc(13px * var(--font-scale));
 }
 
 #weather-section:not([data-span="2"]) .wx-condition {
-    font-size: calc(13px * var(--font-scale));
-    margin-top: 3px;
+    font-size: calc(14px * var(--font-scale));
+    margin-top: 2px;
 }
 
 #weather-section:not([data-span="2"]) .wx-meta { display: none; }
