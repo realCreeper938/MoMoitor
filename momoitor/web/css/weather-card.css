@@ -5,7 +5,7 @@
 }
 
 #weather-section[data-wx="sun"]      { --wx-accent: #fabd2f; }
-#weather-section[data-wx="cloud"]    { --wx-accent: #f2b05e; }
+#weather-section[data-wx="cloud"]    { --wx-accent: #d8b878; }
 #weather-section[data-wx="overcast"] { --wx-accent: #8a939c; }
 #weather-section[data-wx="rain"]     { --wx-accent: #6cb3d9; }
 #weather-section[data-wx="snow"]     { --wx-accent: #b7d8ea; }
@@ -19,7 +19,38 @@
 
 #weather-section > .box-header { display: none; }
 
-.wx-bg { display: none; }
+.wx-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: block;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: clamp(.08, var(--wx-bg-opacity, .35), .58);
+    background: radial-gradient(120% 100% at 12% 0%, color-mix(in srgb, var(--wx-accent) 18%, transparent), transparent 70%);
+    transition: opacity .6s ease, background .6s ease;
+}
+
+#weather-section[data-wx="sun"] .wx-bg {
+    background:
+        radial-gradient(90% 110% at 8% 0%, color-mix(in srgb, #ffad24 48%, transparent), transparent 72%),
+        linear-gradient(135deg, color-mix(in srgb, #f59e0b 18%, transparent), transparent 68%);
+}
+
+#weather-section[data-wx="cloud"] .wx-bg,
+#weather-section[data-wx="overcast"] .wx-bg {
+    opacity: clamp(.06, var(--wx-bg-opacity, .35), .36);
+    background: radial-gradient(110% 100% at 8% 0%, color-mix(in srgb, #c9a96b 24%, transparent), transparent 74%);
+}
+
+#weather-section[data-wx="rain"] .wx-bg,
+#weather-section[data-wx="storm"] .wx-bg {
+    background:
+        radial-gradient(100% 110% at 0% 0%, color-mix(in srgb, #5aaed5 34%, transparent), transparent 72%),
+        linear-gradient(135deg, color-mix(in srgb, #318bb9 16%, transparent), transparent 70%);
+}
+
+body.no-card-grad #weather-section .wx-bg { display: none; }
 
 /* Precipitation line chart as background layer */
 .wx-precip-chart {
@@ -352,15 +383,15 @@
 }
 
 #weather-section:not([data-span="2"]) .wx-temp {
-    font-size: calc(38px * var(--font-scale));
+    font-size: calc(32px * var(--font-scale));
 }
 
 #weather-section:not([data-span="2"]) .wx-temp-unit {
-    font-size: calc(13px * var(--font-scale));
+    font-size: calc(12px * var(--font-scale));
 }
 
 #weather-section:not([data-span="2"]) .wx-condition {
-    font-size: calc(14px * var(--font-scale));
+    font-size: calc(12px * var(--font-scale));
     margin-top: 2px;
 }
 
