@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="css/themes-light.css?v=37">
     <link rel="stylesheet" href="css/base.css?v=37">
     <link rel="stylesheet" href="css/weather.css?v=37">
-    <link rel="stylesheet" href="css/weather-card.css?v=37">
+    <link rel="stylesheet" href="css/weather-card.css?v=38">
     <link rel="stylesheet" href="css/layout.css?v=41">
     <link rel="stylesheet" href="css/music.css?v=37">
     <link rel="stylesheet" href="css/cards.css?v=41">
@@ -436,7 +436,10 @@
                             <div class="wx-temp-row">
                                 <span class="wx-temp" id="wx-card-temp">--</span><span class="wx-temp-unit">&deg;C</span>
                             </div>
-                            <div class="wx-condition" id="wx-card-text">--</div>
+                            <div class="wx-condition-row">
+                                <div class="wx-condition" id="wx-card-text">--</div>
+                                <div class="wx-alert-icons" id="wx-card-alerts"></div>
+                            </div>
                         </div>
                         <div class="wx-meta">
                             <span class="wx-city"><span class="nf-icon">&#xF034E;</span><span id="wx-card-city">--</span></span>
@@ -463,12 +466,10 @@
                     </div>
                     <div class="wx-bottom">
                         <div class="wx-precip-section" id="wx-card-precip-row" style="display:none">
-                            <div class="wx-section-title"><span class="nf-icon">&#xF0597;</span> 降水预报</div>
-                            <div class="wx-precip-text" id="wx-card-precip-text">--</div>
-                        </div>
-                        <div class="wx-alerts-section" id="wx-card-alerts-row" style="display:none">
-                            <div class="wx-section-title"><span class="nf-icon">&#xF05D6;</span> 预警</div>
-                            <div class="wx-alerts-list" id="wx-card-alerts-list"></div>
+                            <div class="wx-precip-line">
+                                <div class="wx-section-title"><span class="nf-icon">&#xF0597;</span> 降水预报</div>
+                                <div class="wx-precip-text" id="wx-card-precip-text">--</div>
+                            </div>
                         </div>
                     </div>
                 </div>

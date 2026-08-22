@@ -58,7 +58,7 @@ body.no-card-grad #weather-section .wx-bg { display: none; }
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.4;
+    opacity: 0.25;
     overflow: hidden;
 }
 
@@ -70,14 +70,23 @@ body.no-card-grad #weather-section .wx-bg { display: none; }
 .wx-precip-line {
     fill: none;
     stroke: var(--blue);
-    stroke-width: 1.5;
+    stroke-width: 1;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
 
 .wx-precip-area {
-    fill: var(--blue);
-    opacity: 0.2;
+    fill: url(#wx-precip-grad);
+}
+
+.wx-precip-stop-hi {
+    stop-color: var(--blue);
+    stop-opacity: .4;
+}
+
+.wx-precip-stop-lo {
+    stop-color: var(--blue);
+    stop-opacity: 0;
 }
 
 /* Ensure content sits above the chart */
@@ -142,10 +151,32 @@ body.no-card-grad #weather-section .wx-bg { display: none; }
     font-weight: 400;
 }
 
+.wx-condition-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    margin-top: 4px;
+}
+
 .wx-condition {
     font-size: calc(18px * var(--font-scale));
     color: var(--text-dim);
-    margin-top: 4px;
+}
+
+/* Warning icons beside the description, tinted by alert color */
+.wx-alert-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.wx-alert-icon {
+    width: auto;
+    font-size: calc(15px * var(--font-scale));
+    line-height: 1;
+    cursor: help;
 }
 
 .wx-meta {
@@ -222,17 +253,22 @@ body.no-card-grad #weather-section .wx-bg { display: none; }
     font-weight: 400;
 }
 
-/* Bottom row: precip + alerts */
+/* Bottom row: precipitation forecast, title and summary side by side */
 .wx-bottom {
     display: flex;
-    gap: 12px;
     min-height: 0;
     overflow: hidden;
 }
 
-.wx-precip-section,
-.wx-alerts-section {
+.wx-precip-section {
     flex: 1;
+    min-width: 0;
+}
+
+.wx-precip-line {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
     min-width: 0;
 }
 
@@ -241,10 +277,10 @@ body.no-card-grad #weather-section .wx-bg { display: none; }
     color: var(--text-dim);
     font-weight: 600;
     letter-spacing: .05em;
-    margin-bottom: 5px;
     display: flex;
     align-items: center;
     gap: 4px;
+    flex-shrink: 0;
 }
 
 .wx-section-title .nf-icon {
@@ -253,40 +289,13 @@ body.no-card-grad #weather-section .wx-bg { display: none; }
 }
 
 .wx-precip-text {
+    flex: 1;
+    min-width: 0;
     font-size: calc(11px * var(--font-scale));
     color: var(--text);
     line-height: 1.4;
-    margin-bottom: 6px;
     opacity: 0.6;
     text-align: left;
-}
-
-.wx-alerts-list {
-    max-height: clamp(36px, 15vh, 100px);
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-.wx-alerts-list::-webkit-scrollbar { width: 0; }
-
-.wx-alert-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 6px;
-    margin: 2px 3px 2px 0;
-    font-size: calc(10px * var(--font-scale));
-    color: var(--text);
-    cursor: help;
-    border-radius: 3px;
-    background: color-mix(in srgb, var(--alert-color, var(--red)) 8%, transparent);
-    border-left: 2px solid var(--alert-color, var(--red));
-}
-
-.wx-alert-chip .nf-icon {
-    width: auto;
-    color: var(--alert-color, var(--red));
-    font-size: calc(9px * var(--font-scale));
 }
 
 .wx-alert-more {
@@ -352,11 +361,6 @@ body.no-card-grad #weather-section .wx-bg { display: none; }
 
     .wx-metric:nth-child(odd) { padding-left: 0; }
     .wx-metric:nth-child(even) { padding-right: 0; }
-
-    .wx-bottom {
-        flex-direction: column;
-        gap: 8px;
-    }
 }
 
 @media (max-width: 320px) {
@@ -392,7 +396,6 @@ body.no-card-grad #weather-section .wx-bg { display: none; }
 
 #weather-section:not([data-span="2"]) .wx-condition {
     font-size: calc(12px * var(--font-scale));
-    margin-top: 2px;
 }
 
 #weather-section:not([data-span="2"]) .wx-meta { display: none; }
@@ -431,6 +434,14 @@ body.no-card-grad #weather-section .wx-bg { display: none; }
     font-size: calc(9px * var(--font-scale));
 }
 
+#weather-section:not([data-span="2"]) .wx-condition-row {
+    margin-top: 2px;
+}
+
+#weather-section:not([data-span="2"]) .wx-alert-icon {
+    font-size: calc(13px * var(--font-scale));
+}
+
 /* Small card */
 #weather-section:not([data-span="2"]) .wx-bottom {
     padding-top: 4px;
@@ -438,25 +449,8 @@ body.no-card-grad #weather-section .wx-bg { display: none; }
 
 #weather-section:not([data-span="2"]) .wx-precip-text {
     font-size: calc(10px * var(--font-scale));
-    margin-bottom: 4px;
 }
 
 #weather-section:not([data-span="2"]) .wx-section-title {
-    font-size: calc(8px * var(--font-scale));
-    margin-bottom: 4px;
-}
-
-#weather-section:not([data-span="2"]) .wx-alerts-list {
-    max-height: none;
-    overflow: visible;
-}
-
-#weather-section:not([data-span="2"]) .wx-alert-chip {
-    font-size: calc(9px * var(--font-scale));
-    padding: 1px 5px;
-    margin: 1px 2px 1px 0;
-}
-
-#weather-section:not([data-span="2"]) .wx-alert-chip .nf-icon {
     font-size: calc(8px * var(--font-scale));
 }

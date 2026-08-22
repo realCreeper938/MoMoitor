@@ -53,7 +53,6 @@ function resetWeatherDisplays() {
     if (section) {
         section.dataset.wx = '';
         section.style.setProperty('--wx-bg-opacity', '0.5');
-        section.classList.remove('has-precip', 'has-alerts');
     }
     setText('wx-card-temp', '--');
     setText('wx-card-text', '--');
@@ -66,8 +65,9 @@ function resetWeatherDisplays() {
     if (cardAqiRow) cardAqiRow.style.display = 'none';
     const cardPrecipRow = document.getElementById('wx-card-precip-row');
     if (cardPrecipRow) cardPrecipRow.style.display = 'none';
-    const cardAlertsRow = document.getElementById('wx-card-alerts-row');
-    if (cardAlertsRow) cardAlertsRow.style.display = 'none';
+    setText('wx-card-precip-text', '--');
+    const cardAlerts = document.getElementById('wx-card-alerts');
+    if (cardAlerts) cardAlerts.innerHTML = '';
     const cardPrecipChart = document.getElementById('wx-card-precip-chart');
     if (cardPrecipChart) cardPrecipChart.innerHTML = '';
     hideWxTip();
@@ -126,6 +126,32 @@ function wxAlertPublishHTML(a) {
     const orig = wxAlertTimeStr(a.initialPublishTime);
     if (isUpdate && orig && orig !== latest) out += ` - 初始发布于 ${orig}`;
     return out;
+}
+
+/* 天气大卡片最多同时显示的预警图标数量 */
+const WX_MAX_ALERTS = 6;
+
+/* 按预警类型返回对应的 nf-md 图标。码位已对照内置 Symbols Nerd Font 校验，
+ * 图标颜色由调用方按预警颜色（colorR/G/B）着色，例如雷电黄色预警显示为黄色闪电图标。 */
+function wxAlertIcon(a) {
+    const t = `${(a.eventType || '')} ${(a.headline || '')}`;
+    if (/雷电/.test(t)) return '\u{F0593}';            // md-weather_lightning
+    if (/雷暴|雷雨|强对流/.test(t)) return '\u{F067E}'; // md-weather_lightning_rainy
+    if (/台风/.test(t)) return '\u{F0898}';             // md-weather_hurricane
+    if (/冰雹/.test(t)) return '\u{F0592}';             // md-weather_hail
+    if (/暴雨|大雨|降雨|降水|雨/.test(t)) return '\u{F0596}'; // md-weather_pouring
+    if (/沙尘|沙暴/.test(t)) return '\u{F059E}';        // md-weather_windy_variant
+    if (/大风|风/.test(t)) return '\u{F059D}';          // md-weather_windy
+    if (/暴雪|雪/.test(t)) return '\u{F0F36}';          // md-weather_snowy_heavy
+    if (/寒潮|低温|寒冷/.test(t)) return '\u{F0717}';   // md-snowflake
+    if (/霜冻/.test(t)) return '\u{F12CB}';             // md-snowflake_melt
+    if (/道路结冰|结冰/.test(t)) return '\u{F0462}';    // md-road_variant
+    if (/高温|热浪/.test(t)) return '\u{F18D6}';        // md-sun_thermometer
+    if (/干旱/.test(t)) return '\u{F058D}';             // md-water_off
+    if (/雾/.test(t)) return '\u{F0591}';               // md-weather_fog
+    if (/霾/.test(t)) return '\u{F0F30}';               // md-weather_hazy
+    if (/海浪|风暴潮|海洋/.test(t)) return '\u{F078D}'; // md-waves
+    return '\u{F05D6}';                                 // md-alert_circle_outline
 }
 
 async function refreshWeather() {
@@ -267,8 +293,9 @@ async function refreshAlerts() {
     } catch (e) { console.warn('refreshAlerts:', e); }
 }
 
-/* Weather card — dedicated grid card with big/small variants. The small card
-   hides the precipitation forecast and alerts sections via CSS. */
+/* Weather card — dedicated grid card with big/small variants. Alerts render as
+   type-specific icons beside the condition text; precipitation shows as an
+   inline title + summary row with a background trend chart. */
 
 /* Floating alert tooltip — lives on <body> so it is never clipped by the card */
 let _wxTipEl = null;
@@ -300,6 +327,77 @@ function showWxTip(chip, a) {
     if (top + th > window.innerHeight - 8) top = Math.max(8, window.innerHeight - th - 8);
     tip.style.left = left + 'px';
     tip.style.top = top + 'px';
+}
+
+/* Catmull-Rom 转三次贝塞尔，把降水数据点连成平滑曲线 */
+function wxSmoothPath(pts) {
+    if (pts.length === 0) return '';
+    if (pts.length < 3) return 'M' + pts.map(p => p.join(',')).join(' L');
+    let d = `M${pts[0][0]},${pts[0][1]}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[Math.max(0, i - 1)];
+        const p1 = pts[i];
+        const p2 = pts[i + 1];
+        const p3 = pts[Math.min(pts.length - 1, i + 2)];
+        const c1x = p1[0] + (p2[0] - p0[0]) / 6;
+        const c1y = p1[1] + (p2[1] - p0[1]) / 6;
+        const c2x = p2[0] - (p3[0] - p1[0]) / 6;
+        const c2y = p2[1] - (p3[1] - p1[1]) / 6;
+        d += ` C${c1x},${c1y} ${c2x},${c2y} ${p2[0]},${p2[1]}`;
+    }
+    return d;
+}
+
+/* 背景降水趋势图：不抽样、逐分钟数据点全部绘制，平滑曲线 + 渐变面积填充 */
+function renderWxPrecipChart(chartEl, items, section) {
+    chartEl.innerHTML = '';
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const W = Math.max(section.clientWidth || 320, 40);
+    const H = Math.max(section.clientHeight || 200, 40);
+    const n = items.length;
+    const maxV = Math.max(1, ...items.map(m => parseFloat(m.precip) || 0));
+    const padY = 2;
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+        const x = n > 1 ? (i / (n - 1)) * W : W / 2;
+        const v = parseFloat(items[i].precip) || 0;
+        const y = H - padY - (v / maxV) * (H - padY * 2);
+        pts.push([Math.round(x * 10) / 10, Math.round(y * 10) / 10]);
+    }
+    const lineD = wxSmoothPath(pts);
+    const areaD = `${lineD} L${W},${H} L0,${H} Z`;
+
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+
+    const defs = document.createElementNS(svgNS, 'defs');
+    const grad = document.createElementNS(svgNS, 'linearGradient');
+    grad.setAttribute('id', 'wx-precip-grad');
+    grad.setAttribute('x1', '0');
+    grad.setAttribute('y1', '0');
+    grad.setAttribute('x2', '0');
+    grad.setAttribute('y2', '1');
+    const stopHi = document.createElementNS(svgNS, 'stop');
+    stopHi.setAttribute('offset', '0');
+    stopHi.setAttribute('class', 'wx-precip-stop-hi');
+    const stopLo = document.createElementNS(svgNS, 'stop');
+    stopLo.setAttribute('offset', '1');
+    stopLo.setAttribute('class', 'wx-precip-stop-lo');
+    grad.appendChild(stopHi);
+    grad.appendChild(stopLo);
+    defs.appendChild(grad);
+    svg.appendChild(defs);
+
+    const area = document.createElementNS(svgNS, 'path');
+    area.setAttribute('class', 'wx-precip-area');
+    area.setAttribute('d', areaD);
+    const line = document.createElementNS(svgNS, 'path');
+    line.setAttribute('class', 'wx-precip-line');
+    line.setAttribute('d', lineD);
+    svg.appendChild(area);
+    svg.appendChild(line);
+    chartEl.appendChild(svg);
 }
 
 async function refreshWeatherCard() {
@@ -370,93 +468,36 @@ async function refreshWeatherCard() {
                 hasPrecip = items.some(m => m.precip > 0);
                 if (hasPrecip) {
                     precipText.textContent = d.minutely.summary || '--';
-                    precipChart.innerHTML = '';
-                    const N = items.length;
-                    const cw = section.clientWidth || 320;
-                    const ch = section.clientHeight || 200;
-                    const maxPoints = Math.max(8, Math.min(96, Math.floor(cw / 5)));
-                    const bucket = Math.max(1, Math.ceil(N / maxPoints));
-                    const vals = [];
-                    for (let i = 0; i < N; i += bucket) {
-                        let mx = 0;
-                        for (let j = i; j < Math.min(i + bucket, N); j++) mx = Math.max(mx, items[j].precip);
-                        vals.push(mx);
-                    }
-                    const maxV = Math.max(...vals, 1);
-                    const W = cw;
-                    const H = ch;
-                    const stepX = W / (vals.length - 1 || 1);
-                    const points = vals.map((v, i) => {
-                        const x = i * stepX;
-                        const y = H - (v / maxV) * H;
-                        return `${x},${y}`;
-                    });
-                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-                    svg.setAttribute('preserveAspectRatio', 'none');
-                    const area = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-                    area.setAttribute('class', 'wx-precip-area');
-                    area.setAttribute('points', `0,${H} ${points.join(' ')} ${W},${H}`);
-                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-                    line.setAttribute('class', 'wx-precip-line');
-                    line.setAttribute('points', points.join(' '));
-                    svg.appendChild(area);
-                    svg.appendChild(line);
-                    precipChart.appendChild(svg);
+                    renderWxPrecipChart(precipChart, items, section);
                 }
             }
             precipRow.style.display = hasPrecip ? '' : 'none';
-            section.classList.toggle('has-precip', hasPrecip);
 
-            // Big card: description keeps only the pure condition. Small card:
-            // merge the precipitation summary into the condition line.
+            // Description keeps only the pure condition; the summary now lives
+            // beside the "降水预报" title in the bottom row.
             if (cardText && w && !w.error && w.text) {
-                if (section.dataset.span === '1' && hasPrecip && precipText.textContent) {
-                    cardText.textContent = w.text + ' · ' + precipText.textContent;
-                } else {
-                    cardText.textContent = w.text;
-                }
+                cardText.textContent = w.text;
             }
         }
 
-        // Alerts (big card only; hidden on small via CSS)
-        const alertsRow = document.getElementById('wx-card-alerts-row');
-        const alertsList = document.getElementById('wx-card-alerts-list');
-        if (alertsRow && alertsList) {
-            const hasAlerts = !!(alerts && alerts.length > 0);
-            if (!hasAlerts) {
-                alertsRow.style.display = 'none';
-            } else {
-                hideWxTip();
-                alertsList.innerHTML = '';
-                const maxShow = section.dataset.span === '1' ? 3 : 30;
-                for (const a of alerts.slice(0, maxShow)) {
-                    const chip = document.createElement('div');
-                    chip.className = 'wx-alert-chip';
-                    chip.style.setProperty('--alert-color', a.colorCode ? `rgb(${a.colorR},${a.colorG},${a.colorB})` : 'var(--red)');
-                    chip.innerHTML = '<span class="nf-icon">&#xF05D6;</span><span class="wx-alert-chip-name"></span>';
-                    chip.querySelector('.wx-alert-chip-name').textContent = a.eventType || a.headline || 'Warning';
-                    chip.addEventListener('mouseenter', () => showWxTip(chip, a));
-                    chip.addEventListener('mouseleave', hideWxTip);
-                    alertsList.appendChild(chip);
+        // Alerts: compact type-specific icons next to the condition text
+        const alertsBox = document.getElementById('wx-card-alerts');
+        if (alertsBox) {
+            const hasAlerts = Array.isArray(alerts) && alerts.length > 0;
+            hideWxTip();
+            alertsBox.innerHTML = '';
+            alertsBox.style.display = hasAlerts ? '' : 'none';
+            if (hasAlerts) {
+                for (const a of alerts.slice(0, WX_MAX_ALERTS)) {
+                    const icon = document.createElement('span');
+                    icon.className = 'nf-icon wx-alert-icon';
+                    icon.textContent = wxAlertIcon(a);
+                    icon.style.color = a.colorCode ? `rgb(${a.colorR},${a.colorG},${a.colorB})` : 'var(--red)';
+                    icon.addEventListener('mouseenter', () => showWxTip(icon, a));
+                    icon.addEventListener('mouseleave', hideWxTip);
+                    alertsBox.appendChild(icon);
                 }
-                if (alerts.length > maxShow) appendMoreAlerts(alertsList, alerts.length, maxShow);
-                const updateAlertsFade = () => {
-                    const canScroll = alertsList.scrollHeight > alertsList.clientHeight + 1;
-                    const atBottom = alertsList.scrollHeight - alertsList.scrollTop - alertsList.clientHeight < 8;
-                    alertsRow.classList.toggle('wx-alerts-fade', canScroll && !atBottom);
-                };
-                if (alertsList._wxMaskUpdate) {
-                    alertsList.removeEventListener('scroll', alertsList._wxMaskUpdate);
-                    window.removeEventListener('resize', alertsList._wxMaskUpdate);
-                }
-                alertsList._wxMaskUpdate = updateAlertsFade;
-                alertsList.addEventListener('scroll', alertsList._wxMaskUpdate);
-                window.addEventListener('resize', alertsList._wxMaskUpdate);
-                alertsRow.style.display = '';
-                updateAlertsFade();
             }
-            if (section) section.classList.toggle('has-alerts', hasAlerts);
         }
     } catch (e) { console.warn('refreshWeatherCard:', e); }
 }
