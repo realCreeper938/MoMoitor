@@ -197,7 +197,7 @@ class TestCache:
 @pytest.mark.benchmark(group="weather")
 class TestWeather:
     def test_build_jwt(self, benchmark):
-        from momoitor.services.weather import _build_jwt
+        from momoitor.services.weather.qweather import _build_jwt
         benchmark(lambda: _build_jwt("key_id", "project_id", _ED25519_KEY))
 
     def test_get_now_cache_hit(self, benchmark):
