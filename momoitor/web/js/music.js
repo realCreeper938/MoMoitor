@@ -250,9 +250,28 @@ function _applyCoverAccent(cover) {
     img.src = cover;
 }
 
+/* 多 SMTC 会话切换按钮：仅当存在多个会话时显示（multi/has-multi 类），
+   按钮文案为「当前序号/总数」，tooltip 列出全部来源并标记当前项。 */
+function updateMusicSwitch(m) {
+    const btn = document.getElementById('h-music-switch');
+    const section = document.getElementById('music-section');
+    if (!btn || !section) return;
+    const count = m.session_count || 0;
+    const multi = count > 1;
+    btn.classList.toggle('multi', multi);
+    section.classList.toggle('has-multi', multi);
+    if (!multi) { btn.title = ''; return; }
+    const countEl = document.getElementById('h-music-switch-count');
+    if (countEl) countEl.textContent = ((m.session_index || 0) + 1) + '/' + count;
+    const names = m.session_names || [];
+    const lines = names.map((n, i) => (i === m.session_index ? '› ' : '· ') + (n || '-'));
+    btn.title = t('music-switch-source') + '\n' + lines.join('\n');
+}
+
 async function refreshMusic() {
     try {
         const m = await pywebview.api.get_music();
+        updateMusicSwitch(m);
         const section = document.getElementById('music-section');
         const toggleBtn = document.getElementById('h-music-toggle');
 

@@ -28,7 +28,6 @@ async function initDisplay(s, g, f, ck, ly) {
         applyColorscheme(g.colorscheme || 'gruvbox');
     }
     applyFonts(f.ui, f.data, f.clock);
-    applyClockTimeGradient(ck.time_gradient !== false);
     applyCardGradient(g.card_gradient !== false);
     if (g.debug_clock_gradient) forceClockTimeGradient(g.debug_clock_gradient);
     await applyClockBackgroundSetting(ck.bg_image, ck.bg_opacity, ck.bg_blur, ck.bg_gradient !== false, ck.bg_fit || 'fit', ck.bg_offset_x ?? 50, ck.bg_offset_y ?? 50);
@@ -150,6 +149,7 @@ function initMusicControls() {
     await pywebview.api.music_play_pause();
 });
     bindMusicCtrl('h-music-next', () => pywebview.api.music_next());
+    bindMusicCtrl('h-music-switch', () => pywebview.api.music_switch_session());
 }
 
 function initSeekBar() {

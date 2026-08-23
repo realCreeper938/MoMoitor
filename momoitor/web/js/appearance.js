@@ -615,8 +615,6 @@ function applyFeatureToggles(toggles) {
     if (procSection) procSection.style.display = _sectionVisible('proc-section') ? '' : 'none';
     const clockBg = document.getElementById('clock-bg-image');
     if (clockBg) clockBg.style.display = ft.clock_bg !== false ? '' : 'none';
-    const clockTimeGrad = document.getElementById('clock-time-gradient');
-    if (clockTimeGrad) clockTimeGrad.style.display = ft.clock_bg !== false ? '' : 'none';
     const weatherEl = document.getElementById('h-weather-compact');
     if (weatherEl) weatherEl.style.display = (ft.weather !== false) ? '' : 'none';
     // Top brightness/volume controls

@@ -120,7 +120,6 @@ function initSettings() {
     const settingsShadowChk = document.getElementById('opt-settings-shadow');
     const settingsAnimChk = document.getElementById('opt-settings-anim');
     const lyricAnimChk = document.getElementById('opt-lyric-anim');
-    const clockTimeGradChk = document.getElementById('opt-clock-time-gradient');
     const cardGradChk = document.getElementById('opt-card-gradient');
     const updateNotifyChk = document.getElementById('opt-update-notify');
 
@@ -192,17 +191,12 @@ function initSettings() {
         applyLyricAnim(lyricAnimChk.checked);
     });
 
-    // 时钟时段渐变：拨动开关立即生效，无需保存
-    clockTimeGradChk.addEventListener('change', () => {
-        applyClockTimeGradient(clockTimeGradChk.checked);
-    });
-
     // 卡片渐变（音乐/天气）：拨动开关立即生效，无需保存
     cardGradChk.addEventListener('change', () => {
         applyCardGradient(cardGradChk.checked);
     });
 
-    // 调试：强制时钟渐变时段，立即生效，无需保存
+    // 调试：强制时段（天气卡片时段渐变预览），立即生效，无需保存
     if (clockGradForceSel) {
         clockGradForceSel.addEventListener('change', () => {
             forceClockTimeGradient(clockGradForceSel.value);
@@ -588,8 +582,6 @@ function initSettings() {
         applySettingsEffects();
         lyricAnimChk.checked = ly.animation === true;
         applyLyricAnim(ly.animation === true);
-        clockTimeGradChk.checked = ck.time_gradient !== false;
-        applyClockTimeGradient(ck.time_gradient !== false);
         cardGradChk.checked = g.card_gradient !== false;
         applyCardGradient(g.card_gradient !== false);
         autostartChk.checked = await pywebview.api.get_autostart();
@@ -818,7 +810,6 @@ function initSettings() {
                 ...(existing.clock || {}),
                 clock_24h: clockFormatValue !== '12',
                 clock_show_seconds: clockShowSecondsChk.checked,
-                time_gradient: clockTimeGradChk.checked,
                 bg_image: clockBgImgValue,
                 bg_opacity: parseInt(clockBgOpacityRange.value) || 0,
                 bg_blur: parseInt(clockBgBlurRange.value) || 0,
@@ -910,7 +901,6 @@ function initSettings() {
         const fnt = s.fonts || {};
         applyFonts(fnt.ui, fnt.data, fnt.clock);
         const ckc = s.clock || {};
-        applyClockTimeGradient(ckc.time_gradient !== false);
         applyCardGradient((s.general || {}).card_gradient !== false);
         await applyClockBackgroundSetting(ckc.bg_image, ckc.bg_opacity, ckc.bg_blur, ckc.bg_gradient !== false, ckc.bg_fit || 'fit', ckc.bg_offset_x ?? 50, ckc.bg_offset_y ?? 50);
         applyHwNames(true);

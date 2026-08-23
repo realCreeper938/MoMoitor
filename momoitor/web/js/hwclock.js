@@ -163,23 +163,8 @@ function clockPeriodLabel(h) {
     return t('period-midnight');                             // 午夜
 }
 
-// 时钟卡片背景：按时段变化的渐变。每个时段给出顶部/底部两个强调色，
-// CSS 将其混合进 --surface 以保持低调，与天气/音乐卡片的氛围色一致。
-const CLOCK_TIME_ACCENTS = {
-    dawn:          { a: '#0d3b6e', b: '#1890c4' },   // 凌晨 深蓝→青
-    'morning-early': { a: '#6a4a7a', b: '#d97b4a' }, // 早上 紫→橙
-    morning:       { a: '#3d7aa6', b: '#7fc0d8' },   // 上午 蓝青
-    noon:          { a: '#2e6fa8', b: '#a8dce8' },   // 中午 天蓝
-    afternoon:     { a: '#6ba3c9', b: '#9fcfdd' },   // 下午 浅蓝
-    dusk:          { a: '#8a5a6e', b: '#e8a04a' },   // 傍晚 紫红→橙黄
-    night:         { a: '#2c2a5e', b: '#4a3f7a' },   // 晚上 深靛→紫
-    midnight:      { a: '#141736', b: '#232457' },   // 午夜 近黑→深蓝
-};
-
-let _clockTimeGradientEnabled = false;
-let _clockTimeGradientHour = -1;
-let _clockTimeGradientForce = '';
-
+/* 时段划分：0-5 凌晨 / 5-8 清晨(早上) / 8-11 上午 / 11-13 中午 /
+   13-17 下午 / 17-19 傍晚 / 19-23 晚上 / 其余 午夜。 */
 function _clockGradientKey(h) {
     if (h >= 0 && h < 5) return 'dawn';
     if (h >= 5 && h < 8) return 'morning-early';
@@ -191,46 +176,31 @@ function _clockGradientKey(h) {
     return 'midnight';
 }
 
-function _setClockTimeGradient(layer, key) {
-    const c = CLOCK_TIME_ACCENTS[key];
-    if (c) {
-        layer.style.setProperty('--clock-time-a', c.a);
-        layer.style.setProperty('--clock-time-b', c.b);
-    }
-}
+let _daypartForce = '';  // 调试：强制时段键，空串表示按当前时间自动
 
-/** 应用时钟卡片的时间渐变背景。开启时按当前小时刷新，仅在跨时段时更新。 */
-function applyClockTimeGradient(enabled) {
-    _clockTimeGradientEnabled = !!enabled;
-    _clockTimeGradientHour = -1;
-    const layer = document.getElementById('clock-time-gradient');
-    if (!layer) return;
-    if (!enabled) {
-        layer.style.opacity = '0';
-        return;
-    }
-    const key = _clockTimeGradientForce || _clockGradientKey(new Date().getHours());
-    _setClockTimeGradient(layer, key);
-    layer.style.opacity = '';
-}
-
-/** 调试：强制渐变显示为指定时段（空串恢复为按当前时间自动）。 */
+/** 调试：强制时段显示（空串恢复自动）。用于天气卡片的时段渐变预览。 */
 function forceClockTimeGradient(key) {
-    _clockTimeGradientForce = key || '';
-    const layer = document.getElementById('clock-time-gradient');
-    if (!layer || !_clockTimeGradientEnabled) return;
-    _setClockTimeGradient(layer, _clockTimeGradientForce || _clockGradientKey(new Date().getHours()));
+    _daypartForce = key || '';
+    _weatherDaypartHour = -1;  // 天气卡片时段色随强制值立即刷新
 }
 
-/** 时钟 tick 中调用：仅当小时变化时更新渐变背景。 */
-function updateClockTimeGradient() {
-    if (!_clockTimeGradientEnabled) return;
+/* 天气卡片氛围渐变按时段着色：清晨(5-8点)与傍晚(17-19点)改用对应时段色，
+   其余时段移除标记、保持天气状态色。复用时段划分与调试强制值，
+   仅跨小时时更新 DOM。 */
+let _weatherDaypartHour = -1;
+
+function updateWeatherDaypart() {
     const h = new Date().getHours();
-    if (h === _clockTimeGradientHour) return;
-    _clockTimeGradientHour = h;
-    const layer = document.getElementById('clock-time-gradient');
-    if (!layer) return;
-    _setClockTimeGradient(layer, _clockTimeGradientForce || _clockGradientKey(h));
+    if (h === _weatherDaypartHour) return;
+    _weatherDaypartHour = h;
+    const section = document.getElementById('weather-section');
+    if (!section) return;
+    const key = _daypartForce || _clockGradientKey(h);
+    if (key === 'dusk' || key === 'morning-early') {
+        section.setAttribute('data-daypart', key);
+    } else {
+        section.removeAttribute('data-daypart');
+    }
 }
 
 function startClock() {
@@ -253,7 +223,7 @@ function startClock() {
         setText('h-clock-s', sec);
         const periodEl = document.getElementById('h-clock-period');
         if (periodEl) periodEl.textContent = _clock24 ? '' : clockPeriodLabel(h24);
-        updateClockTimeGradient();
+        updateWeatherDaypart();
         const secEl = document.getElementById('h-clock-s');
         if (secEl) secEl.style.display = _clockShowSeconds ? '' : 'none';
         const block = document.getElementById('h-clock-block');

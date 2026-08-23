@@ -216,7 +216,6 @@ DEFAULT_SETTINGS = {
     "clock": {
         "clock_24h": True,  # 时钟默认 24 小时制，可在设置中切换为 12 小时制
         "clock_show_seconds": True,  # 时钟是否显示秒
-        "time_gradient": True,  # 时钟卡片背景随当前时间变化的渐变效果
         "bg_image": "",
         "bg_opacity": 80,
         "bg_blur": 0,

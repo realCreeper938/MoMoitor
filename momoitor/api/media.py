@@ -16,6 +16,7 @@ from momoitor.services.music import (
     play_pause as music_play_pause,
     prev_track as music_prev,
     seek_track as music_seek,
+    switch_session as music_switch_session,
 )
 from momoitor.services.volume import adjust_volume
 
@@ -72,6 +73,12 @@ class MediaMixin:
         if not self._feature_on("music"):
             return {"error": "disabled"}
         return music_seek(position)
+
+    def music_switch_session(self):
+        """切换到下一个 SMTC 媒体会话（多个会话时循环）。"""
+        if not self._feature_on("music"):
+            return {"error": "disabled"}
+        return music_switch_session()
 
     def adjust_volume(self, action, level=None):
         return adjust_volume(action, level)

@@ -35,6 +35,10 @@ _current = {
     "process_name": "",
     "position": 0.0,
     "duration": 0.0,
+    "session_id": "",      # 当前展示会话的 AUMID
+    "session_index": 0,    # 当前展示会话在全部会话中的下标
+    "session_count": 0,    # SMTC 会话总数
+    "session_names": [],   # 全部会话的来源应用名（前端 tooltip 用）
 }
 _lock = threading.Lock()
 _running = False
@@ -43,20 +47,68 @@ _last_track_key = ""
 _cover_key = ""  # 已抓取过封面的曲目标识
 _last_player = {"name": "", "path": ""}  # 上次播放音乐的进程信息
 _mgr = None  # 复用的 SessionManager（每轮新建会产生大量 winrt 对象）
+_selected = None  # 用户手动切换锁定的会话 (下标, AUMID)；None 表示自动选择
 
 
-def _get_session():
+def _get_sessions():
+    """返回当前全部 SMTC 会话列表（复用 SessionManager，失效时重建）。"""
     global _mgr
     if not _have_smtc:
-        return None
+        return []
     try:
         if _mgr is None:
             _mgr = SessionManager.request_async().get()
-        return _mgr.get_current_session()
+        return list(_mgr.get_sessions())
     except Exception:
         # 管理器可能已失效，丢弃后下一轮重建
         _mgr = None
-        return None
+        return []
+
+
+def _session_id(session):
+    """安全读取会话的来源 AUMID。"""
+    try:
+        return session.source_app_user_model_id or ""
+    except Exception:
+        return ""
+
+
+def _pick_session(sessions):
+    """选择用于展示与控制的会话，返回 (会话, 在列表中的下标)。
+
+    优先用户手动锁定的位置（用「下标 + AUMID」双重校验，以区分同一进程的
+    多个同名会话），其次第一个正在播放的会话，再次系统当前会话，最后取
+    第一个会话。手动锁定的会话已消失时回退自动选择。
+    """
+    global _selected
+    if _selected is not None:
+        pos, aumid = _selected
+        if pos < len(sessions) and _session_id(sessions[pos]) == aumid:
+            return sessions[pos], pos
+        with _lock:
+            _selected = None  # 锁定的会话已退出，回退自动选择
+    for i, s in enumerate(sessions):
+        try:
+            if s.get_playback_info().playback_status.value == PlaybackStatus.PLAYING:
+                return s, i
+        except Exception:
+            continue
+    cur = None
+    try:
+        cur = _mgr.get_current_session() if _mgr else None
+    except Exception:
+        cur = None
+    if cur is not None:
+        cid = _session_id(cur)
+        for i, s in enumerate(sessions):
+            if _session_id(s) == cid:
+                return cur, i
+    return (sessions[0], 0) if sessions else (None, 0)
+
+
+def _get_session():
+    session, _ = _pick_session(_get_sessions())
+    return session
 
 
 def get_current():
@@ -226,64 +278,109 @@ def _find_in_path(name):
     return ""
 
 
+def _read_session(session, sessions, idx):
+    """读取指定会话的全部展示信息并写入 _current（含多会话元数据）。"""
+    global _last_track_key
+    names = [_get_app_name(_session_id(s)) for s in sessions]
+    cur_id = _session_id(session)
+
+    with _lock:
+        _current["available"] = True
+        _current["session_id"] = cur_id
+        _current["session_index"] = idx
+        _current["session_count"] = len(sessions)
+        _current["session_names"] = names
+
+    try:
+        name = names[idx] if names else ""
+        with _lock:
+            _current["process_name"] = name
+        _track_last_player(name, cur_id)
+    except Exception:
+        pass
+
+    try:
+        props = session.try_get_media_properties_async().get()
+        title = props.title or ""
+        artist = props.artist or ""
+        with _lock:
+            _current["title"] = title
+            _current["artist"] = artist
+
+        track_key = f"{title}|{artist}"
+        if track_key != _last_track_key:
+            _last_track_key = track_key
+        # 每轮都尝试抓取封面；_fetch_cover 内部按 _cover_key 缓存，
+        # 已抓取的曲目立即返回。这样切歌或封面流尚未就绪（瞬时失败）时
+        # 都会在下一轮自动重试，避免封面迟迟不更新。
+        _fetch_cover(props, track_key)
+    except Exception:
+        pass
+
+    try:
+        info = session.get_playback_info()
+        with _lock:
+            _current["playing"] = (info.playback_status.value == PlaybackStatus.PLAYING)
+    except Exception:
+        pass
+
+    try:
+        tl = session.get_timeline_properties()
+        with _lock:
+            _current["position"] = max(0, tl.position.total_seconds())
+            _current["duration"] = max(0, (tl.end_time - tl.start_time).total_seconds())
+    except Exception:
+        pass
+
+
+def switch_session():
+    """切换到下一个媒体会话（存在多个 SMTC 会话时循环轮换）。
+
+    按枚举下标循环（可区分同一进程的多个同名会话），切换后锁定该会话
+    （播放控制也随之作用于它），并立即读取一次新会话信息，避免前端等待
+    下一轮轮询。
+    """
+    global _last_track_key, _cover_key, _selected
+    sessions = _get_sessions()
+    if len(sessions) < 2:
+        return False
+    _, idx = _pick_session(sessions)
+    nxt = (idx + 1) % len(sessions)
+    with _lock:
+        _selected = (nxt, _session_id(sessions[nxt]))
+        # 重置曲目/封面缓存并清空旧信息，避免残留上一会话的内容
+        _last_track_key = ""
+        _cover_key = ""
+        _current["title"] = ""
+        _current["artist"] = ""
+        _current["cover"] = ""
+        _current["position"] = 0.0
+        _current["duration"] = 0.0
+    logger.info("Switched media session -> {}", _get_app_name(_session_id(sessions[nxt])))
+    _read_session(sessions[nxt], sessions, nxt)
+    return True
+
+
 def _poll():
-    global _last_track_key, _cover_key
+    global _last_track_key, _cover_key, _selected
     while _running:
         try:
-            session = _get_session()
+            sessions = _get_sessions()
+            session, idx = _pick_session(sessions)
             if not session:
                 with _lock:
+                    _selected = None
                     _current["available"] = False
                     _current["cover"] = ""
+                    _current["session_id"] = ""
+                    _current["session_index"] = 0
+                    _current["session_count"] = 0
+                    _current["session_names"] = []
                 _last_track_key = ""
                 _cover_key = ""
                 time.sleep(2)
                 continue
-
-            with _lock:
-                _current["available"] = True
-
-            try:
-                source = session.source_app_user_model_id
-                name = _get_app_name(source)
-                with _lock:
-                    _current["process_name"] = name
-                _track_last_player(name, source)
-            except Exception:
-                pass
-
-            try:
-                props = session.try_get_media_properties_async().get()
-                title = props.title or ""
-                artist = props.artist or ""
-                with _lock:
-                    _current["title"] = title
-                    _current["artist"] = artist
-
-                track_key = f"{title}|{artist}"
-                if track_key != _last_track_key:
-                    _last_track_key = track_key
-                # 每轮都尝试抓取封面；_fetch_cover 内部按 _cover_key 缓存，
-                # 已抓取的曲目立即返回。这样切歌或封面流尚未就绪（瞬时失败）时
-                # 都会在下一轮自动重试，避免封面迟迟不更新。
-                _fetch_cover(props, track_key)
-            except Exception:
-                pass
-
-            try:
-                info = session.get_playback_info()
-                with _lock:
-                    _current["playing"] = (info.playback_status.value == PlaybackStatus.PLAYING)
-            except Exception:
-                pass
-
-            try:
-                tl = session.get_timeline_properties()
-                with _lock:
-                    _current["position"] = max(0, tl.position.total_seconds())
-                    _current["duration"] = max(0, (tl.end_time - tl.start_time).total_seconds())
-            except Exception:
-                pass
+            _read_session(session, sessions, idx)
 
         except Exception as e:
             logger.debug("Music poll: {}", e)

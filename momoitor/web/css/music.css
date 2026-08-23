@@ -48,6 +48,54 @@
     background: linear-gradient(160deg, var(--nord2), var(--nord1));
 }
 
+/* ── 多 SMTC 会话切换按钮：悬停卡片右上角时显示，点击循环切换媒体来源 ── */
+#music-section .music-switch {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    z-index: 6;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--surface) 78%, var(--accent) 22%);
+    color: var(--accent);
+    font-family: var(--font-data);
+    font-size: calc(11px * var(--font-scale));
+    line-height: 1;
+    cursor: pointer;
+    overflow: hidden;
+    user-select: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.1s ease, filter 0.15s ease;
+}
+
+/* 仅当存在多个会话（JS 加 multi 类）且悬停卡片时可交互 */
+#music-section:hover .music-switch.multi {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#music-section .music-switch.multi:hover {
+    filter: brightness(1.15);
+}
+
+#music-section .music-switch.multi:active {
+    transform: scale(0.92);
+}
+
+/* 多会话时右上角进程名徽标为切换按钮让位 */
+#music-section.has-multi .hw-name {
+    right: 76px;
+}
+
+#music-section .hw-name {
+    transition: opacity 0.2s ease, right 0.2s ease;
+}
+
 #music-section .music-main {
     display: flex;
     flex-direction: column;
@@ -516,20 +564,4 @@ body.no-card-grad #music-section[data-span="2"]::after {
 #clock-section > .box-content {
     position: relative;
     z-index: 1;
-}
-
-/* ---- Clock time-of-day gradient layer ----
-   强调色经 color-mix 混入 --surface，形成低调氛围渐变（与天气卡片一致）。 */
-.clock-time-gradient {
-    opacity: 1;
-    background:
-        radial-gradient(90% 130% at 16% -6%, color-mix(in srgb, var(--clock-time-a, transparent) 32%, transparent) 0%, transparent 62%),
-        linear-gradient(180deg,
-            color-mix(in srgb, var(--clock-time-a, transparent) 20%, var(--surface)) 0%,
-            color-mix(in srgb, var(--clock-time-b, transparent) 11%, var(--surface)) 55%,
-            color-mix(in srgb, var(--clock-time-b, transparent) 22%, var(--surface)) 100%);
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: 100% 100%;
-    transition: opacity 0.2s ease;
 }

@@ -288,7 +288,6 @@
 
             <!-- Clock -->
             <div class="term-box" id="clock-section">
-                <div class="clock-bg-layer clock-time-gradient" id="clock-time-gradient" aria-hidden="true"></div>
                 <div class="clock-bg-layer" id="clock-bg-image" aria-hidden="true"></div>
                 <div class="layout-drag-handle">⠿</div>
                 <div class="box-content">
@@ -391,6 +390,10 @@
             <div class="term-box" id="music-section" style="display:none">
                 <div class="layout-drag-handle">⠿</div>
                 <span class="hw-name" id="h-music-process"></span>
+                <button type="button" class="music-switch" id="h-music-switch" aria-label="Switch source">
+                    <span class="music-switch-icon">&#8646;</span>
+                    <span class="music-switch-count" id="h-music-switch-count"></span>
+                </button>
                 <div class="box-content music-content">
                     <div class="h-music-cover-wrap">
                         <img class="h-music-cover" id="h-music-cover" src="" alt="" style="display:none">
@@ -448,19 +451,15 @@
                     </div>
                     <div class="wx-metrics">
                         <div class="wx-metric">
-                            <span class="wx-metric-label">体感</span>
                             <div class="wx-metric-value"><span class="nf-icon">&#xF050F;</span><span id="wx-card-feels">--</span><span class="unit">&deg;C</span></div>
                         </div>
                         <div class="wx-metric">
-                            <span class="wx-metric-label">湿度</span>
                             <div class="wx-metric-value"><span class="nf-icon">&#xF058E;</span><span id="wx-card-humidity">--</span><span class="unit">%</span></div>
                         </div>
                         <div class="wx-metric">
-                            <span class="wx-metric-label">风力</span>
                             <div class="wx-metric-value"><span class="nf-icon">&#xF059D;</span><span id="wx-card-wind">--</span></div>
                         </div>
                         <div class="wx-metric" id="wx-card-aqi-row" style="display:none">
-                            <span class="wx-metric-label">空气</span>
                             <div class="wx-metric-value"><span class="nf-icon">&#xF032A;</span><span id="wx-card-aqi-val">--</span></div>
                         </div>
                     </div>
@@ -1152,14 +1151,6 @@
                                     </label>
                                 </div>
                                 <div class="setting-desc" data-i18n="desc-lyric-anim">Smooth scroll for over-long lyrics. On: eased scrolling; Off: direct instant scroll (saves GPU).</div>
-                                <div class="setting-item">
-                                    <span data-i18n="label-clock-time-gradient">Clock time gradient</span>
-                                    <label class="toggle">
-                                        <input type="checkbox" id="opt-clock-time-gradient" checked>
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="setting-desc" data-i18n="desc-clock-time-gradient">Background gradient of the clock card that shifts with the current time, e.g. deep blue to cyan in the early hours</div>
                                 <div class="setting-item">
                                     <span data-i18n="label-card-gradient">Card gradients</span>
                                     <label class="toggle">
