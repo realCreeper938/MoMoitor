@@ -282,7 +282,7 @@ function initSettings() {
     let clockFormatValue = '24';
     const clockShowSecondsChk = document.getElementById('opt-show-seconds');
 
-    // Clock sidebar background (horizontal mode)
+    // Interface background
     const clockBgImgPicker = document.getElementById('clockbgimg-picker');
     let clockBgImgValue = '';
     const clockBgFitSel = document.getElementById('opt-clockbgfit');
@@ -299,7 +299,7 @@ function initSettings() {
     const clockBgOffsetBtn = document.getElementById('opt-clockbg-offset');
     let clockBgOffsetX = 50;
     let clockBgOffsetY = 50;
-    const applyClockBg = () => applyClockBackgroundSetting(
+    const applyClockBg = () => applyAppBackgroundSetting(
         clockBgImgValue, clockBgOpacityRange.value, clockBgBlurRange.value,
         clockBgGradientChk.checked, clockBgFitValue, clockBgOffsetX, clockBgOffsetY
     );
@@ -696,12 +696,12 @@ function initSettings() {
             clockBgImgValue = ck.bg_image || '';
             renderImagePicker(clockBgImgPicker, bgList, clockBgImgValue, (val) => {
                 clockBgImgValue = val;
-                lastResolvedClockBg = { image: '', path: '' };
+                lastResolvedAppBg = { image: '', path: '' };
                 applyClockBg();
             });
         } catch (e) { console.warn('get_bg_list:', e); }
 
-        // Clock sidebar background
+        // Interface background
         clockBgOpacityRange.value = String(ck.bg_opacity ?? 80);
         clockBgOpacityVal.textContent = (ck.bg_opacity ?? 80) + '%';
         clockBgBlurRange.value = String(ck.bg_blur || 0);
@@ -921,7 +921,7 @@ function initSettings() {
         applyFonts(fnt.ui, fnt.data, fnt.clock);
         const ckc = s.clock || {};
         applyCardGradient((s.general || {}).card_gradient !== false);
-        await applyClockBackgroundSetting(ckc.bg_image, ckc.bg_opacity, ckc.bg_blur, ckc.bg_gradient !== false, ckc.bg_fit || 'fit', ckc.bg_offset_x ?? 50, ckc.bg_offset_y ?? 50);
+        await applyAppBackgroundSetting(ckc.bg_image, ckc.bg_opacity, ckc.bg_blur, ckc.bg_gradient !== false, ckc.bg_fit || 'fit', ckc.bg_offset_x ?? 50, ckc.bg_offset_y ?? 50);
         applyHwNames(true);
         applyFeatureToggles(s.feature_toggles || {});
 
@@ -981,10 +981,10 @@ function initSettings() {
 
     // Offset adjust modal
     clockBgOffsetBtn.addEventListener('click', () => {
-        openClockBgOffsetModal(lastResolvedClockBg.path, clockBgOffsetX, clockBgOffsetY, (nx, ny) => {
+        openClockBgOffsetModal(lastResolvedAppBg.path, clockBgOffsetX, clockBgOffsetY, (nx, ny) => {
             clockBgOffsetX = nx;
             clockBgOffsetY = ny;
-            applyClockBackgroundSetting(clockBgImgValue, clockBgOpacityRange.value, clockBgBlurRange.value, clockBgGradientChk.checked, clockBgFitValue, nx, ny);
+            applyAppBackgroundSetting(clockBgImgValue, clockBgOpacityRange.value, clockBgBlurRange.value, clockBgGradientChk.checked, clockBgFitValue, nx, ny);
         });
     });
 

@@ -123,15 +123,17 @@ function _gridSlotFromEvent(e) {
     const rows = _gridRows();
     const innerW = rect.width - pad * 2;
     const innerH = rect.height - pad * 2;
-    // Clock column width may be scaled up with --font-scale (weather sidebar).
+    // Clock column width may be scaled up with --font-scale (weather sidebar);
+    // in top/bottom bar mode there is no clock column at all.
     const right = _clockSide() === 'right';
-    const clockW = _clockColumnPx(grid, right);
+    const clockW = _clockVertical() ? 0 : _clockColumnPx(grid, right);
     const cardAreaW = innerW - clockW - gap;
     const colW = (cardAreaW - gap * (cols - 1)) / cols;
     if (colW <= 0) return null;
     // The card columns sit on the opposite side of the clock. When the clock is
-    // on the right, the card area starts at the grid's left edge.
-    const cardLeft = right ? rect.left + pad : rect.left + pad + clockW + gap;
+    // on the right (or rendered as a top/bottom bar), cards start at the grid's
+    // left edge.
+    const cardLeft = (right || _clockVertical()) ? rect.left + pad : rect.left + pad + clockW + gap;
     let col = null;
     for (let i = 0; i < cols; i++) {
         const l = cardLeft + i * (colW + gap);
@@ -236,13 +238,24 @@ function onGridDrop(e) {
     _syncLayoutFromDom();
 }
 
-/* Dropping the clock (either on the empty grid or onto another card): move the
-   whole clock column to whichever half of the grid the pointer is over. */
+/* Dropping the clock (either on the empty grid or onto another card): move it
+   to the grid edge nearest to the pointer — left/right keeps the full-height
+   column, top/bottom switches to the taskbar-like strip. */
 function _handleClockDrop(e) {
     const grid = document.querySelector('.term-grid');
     if (!grid) return;
     const rect = grid.getBoundingClientRect();
-    const side = (e.clientX - rect.left) < rect.width / 2 ? 'left' : 'right';
+    const dists = [
+        ['left', e.clientX - rect.left],
+        ['right', rect.right - e.clientX],
+        ['top', e.clientY - rect.top],
+        ['bottom', rect.bottom - e.clientY],
+    ];
+    let side = 'left';
+    let best = Infinity;
+    for (const [name, d] of dists) {
+        if (d < best) { best = d; side = name; }
+    }
     _syncLayoutFromDom();
     setCardPos('clock-section', { side: side });
     applyLayout(getLayout());

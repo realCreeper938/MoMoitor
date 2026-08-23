@@ -10,21 +10,54 @@ function applyLayout(layout) {
         if (!card.el) return;
         card.applyGrid();
     });
+    applyClockPlacement(rows, cols);
+    applyLyricView();
+}
+
+/* Shape the grid and place the clock element for the current clock side.
+   left/right: clock stays a full-height grid column (first/last track).
+   top/bottom: the element is moved out of the grid into a taskbar-like
+   strip directly above/below it inside #terminal. */
+function applyClockPlacement(rows, cols) {
+    const side = _clockSide();
+    const vertical = side === 'top' || side === 'bottom';
     const grid = document.querySelector('.term-grid');
-    if (grid) {
-        grid.classList.toggle('clock-right', _clockSide() === 'right');
-        grid.style.gridTemplateColumns = _clockSide() === 'right'
+    const clockEl = document.getElementById('clock-section');
+    document.body.classList.toggle('clock-top', side === 'top');
+    document.body.classList.toggle('clock-bottom', side === 'bottom');
+    if (!grid || !clockEl) {
+        applyClockFontScale();
+        return;
+    }
+    grid.classList.toggle('clock-right', side === 'right');
+    if (vertical) {
+        if (clockEl.parentElement === grid) {
+            if (side === 'top') grid.parentElement.insertBefore(clockEl, grid);
+            else grid.parentElement.insertBefore(clockEl, grid.nextSibling);
+        }
+        clockEl.classList.add('clock-bar');
+        clockEl.style.gridColumn = '';
+        clockEl.style.gridRow = '';
+        grid.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
+    } else {
+        if (clockEl.parentElement !== grid) {
+            if (side === 'right') grid.appendChild(clockEl);
+            else grid.insertBefore(clockEl, grid.firstElementChild);
+        }
+        clockEl.classList.remove('clock-bar');
+        clockEl.style.gridColumn = side === 'right' ? String(cols + 1) : '1';
+        clockEl.style.gridRow = '1 / -1';
+        grid.style.gridTemplateColumns = side === 'right'
             ? 'repeat(' + cols + ', minmax(0, 1fr)) var(--clock-col)'
             : 'var(--clock-col) repeat(' + cols + ', minmax(0, 1fr))';
-        grid.style.gridTemplateRows = 'repeat(' + rows + ', minmax(0, 1fr))';
         const cw = getClockWidth();
         if (cw !== null) grid.style.setProperty('--clock-col', cw + 'px');
         else grid.style.removeProperty('--clock-col');
     }
-    const clockEl = document.getElementById('clock-section');
-    if (clockEl) clockEl.style.gridColumn = _clockSide() === 'right' ? String(cols + 1) : '1';
+    grid.style.gridTemplateRows = 'repeat(' + rows + ', minmax(0, 1fr))';
+    // 横条/侧栏切换后壁纸渲染方式可能变化（横条模式强制 cover），重新应用
+    if (typeof applyAppBackgroundGradient === 'function') applyAppBackgroundGradient();
     applyClockFontScale();
-    applyLyricView();
 }
 
 function readLayout() {
@@ -284,11 +317,9 @@ function _restoreLayout(snap) {
         const el = document.getElementById(s.id);
         if (!el) return;
         if (s.id === 'clock-section') {
-            el.style.gridColumn = s.col;
             if (s.layout && Object.keys(s.layout).length) setCardPos(s.id, s.layout);
             else setCardPos(s.id, null);
-            const grid = document.querySelector('.term-grid');
-            if (grid) grid.classList.toggle('clock-right', _clockSide() === 'right');
+            applyClockPlacement(_gridRows(), _gridCols());
             return;
         }
         el.style.gridColumn = s.col;

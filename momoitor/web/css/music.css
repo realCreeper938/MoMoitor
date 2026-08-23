@@ -545,23 +545,15 @@ body.no-card-grad #music-section[data-span="2"]::after {
     z-index: 10;
 }
 
-/* ---- Clock sidebar background layer ---- */
-.clock-bg-layer {
-    position: absolute;
+/* ---- Interface background layer ---- */
+.app-bg-layer {
+    position: fixed;
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    /* clock section overflows (popup), so the image needs its own radius */
-    border-radius: inherit;
     background-position: bottom center;
     background-size: 100% auto;
     background-repeat: no-repeat;
     opacity: 0;
     transition: opacity 0.2s ease;
-}
-
-/* Ensure sidebar content sits above the background layer */
-#clock-section > .box-content {
-    position: relative;
-    z-index: 1;
 }

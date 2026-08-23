@@ -43,6 +43,17 @@
     transition: opacity 0.2s, transform 0.2s, visibility 0s;
 }
 
+/* 时钟在底部横条时，弹窗向上弹出避免溢出屏幕 */
+body.clock-bottom .weather-compact .wx-popup {
+    top: auto;
+    bottom: calc(100% + 10px);
+    transform: translateY(-6px);
+}
+
+body.clock-bottom .weather-compact:hover .wx-popup {
+    transform: translateY(0);
+}
+
 
 .wx-popup-body {
     display: flex;

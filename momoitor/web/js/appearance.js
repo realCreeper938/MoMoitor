@@ -44,31 +44,23 @@ function setFollowSystemTheme(enabled) {
     }
 }
 
-// Clock sidebar background (horizontal mode)
-let lastResolvedClockBg = { image: '', path: '' };
-let clockBgState = { url: '', topColor: '', gradient: true, opacity: 0, blur: 0 };
-let _clockBgResizeTimer = null;
+// Interface background (fixed full-viewport layer behind all content)
+let lastResolvedAppBg = { image: '', path: '' };
+let appBgState = { url: '', topColor: '', gradient: true, opacity: 0, blur: 0 };
+let _appBgResizeTimer = null;
 
-function darkenColor(hex, factor) {
-    if (!hex || !hex.startsWith('#') || hex.length < 7) return hex || '#000000';
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    const f = Math.max(0, Math.min(1, factor));
-    return `rgb(${Math.round(r * (1 - f))}, ${Math.round(g * (1 - f))}, ${Math.round(b * (1 - f))})`;
-}
+function applyAppBackgroundGradient() {
+    const layer = document.getElementById('app-bg-image');
+    if (!layer || !appBgState.url) return;
 
-function applyClockBackgroundGradient() {
-    const layer = document.getElementById('clock-bg-image');
-    if (!layer || !clockBgState.url) return;
-
-    const safeUrl = `url("${String(clockBgState.url).replace(/["\\]/g, '\\$&')}")`;
-    const fit = clockBgState.fit || 'fit';
+    const safeUrl = `url("${String(appBgState.url).replace(/["\\]/g, '\\$&')}")`;
+    // 时钟处于上/下横条模式时强制 cover：壁纸铺满整个窗口，让横条区域也有完整图案
+    const fit = _clockVertical() ? 'cover' : (appBgState.fit || 'fit');
 
     // Cover / stretch modes fill the whole container — no gradient needed
     if (fit === 'cover') {
-        const ox = clockBgState.offsetX ?? 50;
-        const oy = clockBgState.offsetY ?? 50;
+        const ox = appBgState.offsetX ?? 50;
+        const oy = appBgState.offsetY ?? 50;
         layer.style.background = `${safeUrl} ${ox}% ${oy}% / cover no-repeat`;
         return;
     }
@@ -78,7 +70,7 @@ function applyClockBackgroundGradient() {
     }
 
     // Fit mode: width=100%, auto height; add seamless gradient above when short
-    if (!clockBgState.gradient || !clockBgState.topColor) {
+    if (!appBgState.gradient || !appBgState.topColor) {
         layer.style.background = `${safeUrl} bottom center / 100% auto no-repeat`;
         return;
     }
@@ -97,23 +89,23 @@ function applyClockBackgroundGradient() {
             // Image fills or overflows the container — no gradient needed
             layer.style.background = `${safeUrl} bottom center / 100% auto no-repeat`;
         } else {
-            // Image is short — add seamless gradient above it
+            // Image is short — fill the gap above with the image's top color so
+            // it blends seamlessly (no darkened band at the top).
             const pct = ((ch - renderedH) / ch) * 100;
-            const dark = darkenColor(clockBgState.topColor, 0.5);
-            const c = clockBgState.topColor;
+            const c = appBgState.topColor;
             layer.style.background =
                 `${safeUrl} bottom center / 100% auto no-repeat,` +
-                `linear-gradient(to bottom, ${dark} 0%, ${c} ${pct}%, ${c} 100%)`;
+                `linear-gradient(to bottom, ${c} 0%, ${c} ${pct}%, ${c} 100%)`;
         }
     };
     img.onerror = () => {
         layer.style.background = `${safeUrl} bottom center / 100% auto no-repeat`;
     };
-    img.src = clockBgState.url;
+    img.src = appBgState.url;
 }
 
-async function applyClockBackgroundSetting(image, opacity, blur, gradient, fit, offsetX, offsetY) {
-    const layer = document.getElementById('clock-bg-image');
+async function applyAppBackgroundSetting(image, opacity, blur, gradient, fit, offsetX, offsetY) {
+    const layer = document.getElementById('app-bg-image');
     if (!layer) return;
 
     const safeOpacity = Math.max(0, Math.min(100, Number(opacity) || 0)) / 100;
@@ -124,31 +116,38 @@ async function applyClockBackgroundSetting(image, opacity, blur, gradient, fit, 
         layer.style.background = '';
         layer.style.opacity = '0';
         layer.style.filter = 'none';
-        clockBgState = { url: '', topColor: '', gradient: true, opacity: 0, blur: 0, fit: 'fit', offsetX: 50, offsetY: 50 };
+        layer.style.inset = '0';
+        document.body.classList.remove('has-app-bg');
+        appBgState = { url: '', topColor: '', gradient: true, opacity: 0, blur: 0, fit: 'fit', offsetX: 50, offsetY: 50 };
         return;
     }
 
     // Resolve image path (with caching)
     let resolved = image || '';
-    if (lastResolvedClockBg.image === image && lastResolvedClockBg.path) {
-        resolved = lastResolvedClockBg.path;
+    if (lastResolvedAppBg.image === image && lastResolvedAppBg.path) {
+        resolved = lastResolvedAppBg.path;
     } else {
         try {
             resolved = await pywebview.api.resolve_background_image(image || '');
-            lastResolvedClockBg = { image: image || '', path: resolved };
+            lastResolvedAppBg = { image: image || '', path: resolved };
         } catch (e) {
-            console.warn('resolve_background_image (clock):', e);
+            console.warn('resolve_background_image:', e);
         }
     }
 
     if (!resolved) {
         layer.style.background = '';
         layer.style.opacity = '0';
+        layer.style.inset = '0';
+        document.body.classList.remove('has-app-bg');
         return;
     }
 
+    document.body.classList.add('has-app-bg');
     layer.style.opacity = String(safeOpacity);
     layer.style.filter = safeBlur > 0 ? `blur(${safeBlur}px)` : 'none';
+    // 模糊会柔化图层边缘产生透明边，向外扩一圈抵消（上限 40px）
+    layer.style.inset = safeBlur > 0 ? `-${Math.min(safeBlur, 40)}px` : '0';
 
     const safeFit = fit || 'fit';
     // Fetch top-edge color for gradient (only in fit mode with gradient enabled)
@@ -161,18 +160,18 @@ async function applyClockBackgroundSetting(image, opacity, blur, gradient, fit, 
         }
     }
 
-    clockBgState = {
+    appBgState = {
         url: resolved, topColor, gradient: !!gradient,
         opacity: safeOpacity, blur: safeBlur, fit: safeFit,
         offsetX: offsetX ?? 50, offsetY: offsetY ?? 50,
     };
-    applyClockBackgroundGradient();
+    applyAppBackgroundGradient();
 }
 
 window.addEventListener('resize', () => {
-    if (!clockBgState.url) return;
-    if (_clockBgResizeTimer) clearTimeout(_clockBgResizeTimer);
-    _clockBgResizeTimer = setTimeout(applyClockBackgroundGradient, 200);
+    if (!appBgState.url) return;
+    if (_appBgResizeTimer) clearTimeout(_appBgResizeTimer);
+    _appBgResizeTimer = setTimeout(applyAppBackgroundGradient, 200);
 });
 
 // Theme picker cards
@@ -467,7 +466,7 @@ function openClockBgOffsetModal(url, offsetX, offsetY, onChange) {
 
     // Match the preview's aspect ratio to the real clock-section layer so the
     // cover-crop region shown here is the one actually behind the clock.
-    const layer = document.getElementById('clock-bg-image');
+    const layer = document.getElementById('app-bg-image');
     let layerW = 0, layerH = 0;
     if (layer) { layerW = layer.clientWidth; layerH = layer.clientHeight; }
     if (layerW > 0 && layerH > 0) {
@@ -613,8 +612,10 @@ function applyFeatureToggles(toggles) {
     if (calPopup) calPopup.style.display = ft.calendar !== false ? '' : 'none';
     const procSection = document.getElementById('proc-section');
     if (procSection) procSection.style.display = _sectionVisible('proc-section') ? '' : 'none';
-    const clockBg = document.getElementById('clock-bg-image');
+    const clockBg = document.getElementById('app-bg-image');
     if (clockBg) clockBg.style.display = ft.clock_bg !== false ? '' : 'none';
+    // 界面背景开关关闭时，卡片恢复不透明表面
+    document.body.classList.toggle('has-app-bg', ft.clock_bg !== false && Boolean(appBgState.url));
     const weatherEl = document.getElementById('h-weather-compact');
     if (weatherEl) weatherEl.style.display = (ft.weather !== false) ? '' : 'none';
     // Top brightness/volume controls

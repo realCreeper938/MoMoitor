@@ -42,21 +42,31 @@ function _gridCols() {
     return c >= GRID_COLS_MIN && c <= GRID_COLS_MAX ? c : DEFAULT_GRID.cols;
 }
 
-/* Which side the clock column sits on (cards use abstract cols 2/3; the clock
-   is always full-height). 'right' flips the grid so the clock is at col 3. */
+/* Which side the clock sits on: a full-height column on 'left'/'right', or a
+   taskbar-like full-width strip at 'top'/'bottom'. Cards use abstract cols
+   2..cols+1; the clock is never part of the card area. */
 function _clockSide() {
-    const c = _layout['clock-section'];
-    return c && c.side === 'right' ? 'right' : 'left';
+    const s = _layout['clock-section'] && _layout['clock-section'].side;
+    return s === 'right' || s === 'top' || s === 'bottom' ? s : 'left';
 }
 
-/* Abstract layout col (1=clock, 2..cols+1=cards) -> actual grid col. */
+/* True when the clock renders as a horizontal bar above/below the grid. */
+function _clockVertical() {
+    const s = _clockSide();
+    return s === 'top' || s === 'bottom';
+}
+
+/* Abstract layout col (1=clock, 2..cols+1=cards) -> actual grid col. In
+   top/bottom bar mode there is no clock track, so card cols shift down by 1. */
 function _gridColFor(col) {
+    if (_clockVertical()) return Math.max(1, col - 1);
     if (col === 1) return _clockSide() === 'right' ? _gridCols() + 1 : 1;
     if (_clockSide() === 'right') return col - 1;
     return col;
 }
 
 function _layoutColFor(col) {
+    if (_clockVertical()) return col + 1;
     if (_clockSide() === 'right') return col + 1;
     return col;
 }

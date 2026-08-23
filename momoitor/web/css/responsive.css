@@ -597,6 +597,10 @@ body.layout-mode .term-grid.clock-right #clock-section .layout-clock-resize {
     right: auto;
     left: -9px;
 }
+/* 横条模式（顶部/底部）没有可调宽度，隐藏手柄 */
+body.layout-mode .term-box.clock-bar .layout-clock-resize {
+    display: none;
+}
 
 body.layout-mode .layout-control-group {
     display: flex;

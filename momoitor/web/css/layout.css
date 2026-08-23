@@ -44,7 +44,7 @@
     grid-template-rows: repeat(5, minmax(0, 1fr));
     gap: 8px;
     padding: 8px;
-    background: var(--bg);
+    /* Transparent: the fixed interface background layer shows through */
     min-height: 0;
 }
 
@@ -67,7 +67,10 @@ body.layout-mode .drop-slot.hide {
     display: none;
 }
 
-/* Box �?subtle vertical gradient border: base color on top, accent-tinted at bottom */
+/* Box — subtle vertical gradient border: base color on top, accent-tinted at bottom.
+   With an interface background set (body.has-app-bg), the surface turns into a
+   single semi-transparent layer with a matching translucent inset-ring border,
+   so the wallpaper shows through every card, focused or not. */
 .term-box {
     position: relative;
     border: 0 solid transparent;
@@ -78,7 +81,19 @@ body.layout-mode .drop-slot.hide {
     flex-direction: column;
     overflow: hidden;
     border-radius: var(--radius-md);
-    transition: opacity 0.15s ease, border-width 0.15s ease;
+    transition: opacity 0.15s ease, border-width 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* 壁纸模式：卡片表面改为单层半透明（无 border-box 底层，不会整面透出渐变）；
+   边框环用 inset 阴影绘制，随表面一起半透明，仅 hover 时加粗为高亮环 */
+body.has-app-bg .term-box {
+    --card-surface: color-mix(in srgb, var(--surface) 85%, transparent);
+    background: linear-gradient(var(--card-surface), var(--card-surface)) padding-box;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 85%, transparent);
+}
+
+body.has-app-bg:not(.no-hover-anim) .term-box:hover {
+    box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--accent) 45%, var(--border));
 }
 
 /* Focus dim �?hovered box stays full, all others drop to 50% */
@@ -86,14 +101,18 @@ body.layout-mode .drop-slot.hide {
     opacity: 0.5;
 }
 
-/* Hovered box grows the border ring from 0 to 4px */
+/* Hovered box shows a 4px ring via inset box-shadow, so its corner radius always
+   matches the card surface's --radius-md (growing border-width would shrink the
+   padding-box and tighten the surface corners). */
 .term-box:hover {
-    border-width: 4px;
+    border-width: 0;
+    box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--accent) 45%, var(--border));
 }
 
-/* Hover animation off: keep the border ring flat */
+/* Hover animation off: no ring */
 body.no-hover-anim .term-box:hover {
     border-width: 0;
+    box-shadow: none;
 }
 
 /* Header underline fades left→right from the section color to transparent */
@@ -240,6 +259,81 @@ body.no-hover-anim .term-box:hover {
 #text-section > .box-header,
 #hr-section > .box-header {
     display: none;
+}
+
+
+/* ---- 时钟横条模式（顶部/底部）：任务栏式全宽条 ---- */
+#clock-section.clock-bar {
+    height: clamp(44px, calc(52px * var(--font-scale)), 96px);
+}
+
+.clock-bar .box-content {
+    flex-direction: row;
+    align-items: center;
+    padding: 0 16px;
+}
+
+.clock-bar .h-sidebar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 0;
+}
+
+.clock-bar .h-date {
+    font-size: calc(18px * var(--font-scale));
+    text-align: left;
+    white-space: nowrap;
+}
+
+.clock-bar .h-lunar {
+    font-size: calc(13px * var(--font-scale));
+    margin-top: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+/* 时间块脱离文档流绝对居中，左右两组宽度变化不影响其位置 */
+.clock-bar .h-time-block {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    flex-direction: row;
+    align-items: baseline;
+    gap: 3px;
+    margin: 0;
+}
+
+.clock-bar .h-time-row {
+    font-size: calc(28px * var(--font-scale));
+    line-height: 1;
+}
+
+/* 时分秒横排，用冒号分隔（隐藏秒时冒号随元素一起消失） */
+.clock-bar .h-time-row + .h-time-row::before {
+    content: ':';
+    margin-right: 3px;
+}
+
+.clock-bar .h-period {
+    min-height: 0;
+    line-height: 1;
+    letter-spacing: 0.15em;
+    margin-right: -0.15em;
+    font-size: calc(14px * var(--font-scale));
+}
+
+/* 覆盖侧栏模式 12 小时制的时段词下间距 */
+.clock-bar .h-time-block:not(.is-24h) .h-period {
+    margin-bottom: 0;
+}
+
+.clock-bar .h-weather {
+    margin-left: auto;
 }
 
 

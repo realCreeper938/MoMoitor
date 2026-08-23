@@ -327,7 +327,7 @@ let _clockResizeDelta = 0;
 function _clockResizeDown(e) {
     e.preventDefault();
     e.stopPropagation();
-    if (_clockResizing) return;
+    if (_clockResizing || _clockVertical()) return;  // no width drag in bar mode
     const grid = document.querySelector('.term-grid');
     const right = _clockSide() === 'right';
     _clockResizing = { startW: _clockColumnPx(grid, right), right: right };

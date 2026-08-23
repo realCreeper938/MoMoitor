@@ -30,7 +30,7 @@ async function initDisplay(s, g, f, ck, ly) {
     applyFonts(f.ui, f.data, f.clock);
     applyCardGradient(g.card_gradient !== false);
     if (g.debug_clock_gradient) forceClockTimeGradient(g.debug_clock_gradient);
-    await applyClockBackgroundSetting(ck.bg_image, ck.bg_opacity, ck.bg_blur, ck.bg_gradient !== false, ck.bg_fit || 'fit', ck.bg_offset_x ?? 50, ck.bg_offset_y ?? 50);
+    await applyAppBackgroundSetting(ck.bg_image, ck.bg_opacity, ck.bg_blur, ck.bg_gradient !== false, ck.bg_fit || 'fit', ck.bg_offset_x ?? 50, ck.bg_offset_y ?? 50);
     applyFontSize(g.font_size || 100);
     applyUiFontSize(g.font_size_ui || 100);
     applyLyricAutoTranslate(ly.auto_translate === true);
@@ -51,15 +51,15 @@ async function initDisplay(s, g, f, ck, ly) {
 function initClockBgHover() {
     // 时钟区域悬停：背景图片透明度 +10%（无图时透明度为 0，悬停不生效）
     const clockSectionEl = document.getElementById('clock-section');
-    const clockBgLayerEl = document.getElementById('clock-bg-image');
+    const clockBgLayerEl = document.getElementById('app-bg-image');
     if (clockSectionEl && clockBgLayerEl) {
         clockSectionEl.addEventListener('mouseenter', () => {
-            if (!(clockBgState.opacity > 0)) return;
-            clockBgLayerEl.style.opacity = String(Math.min(1, clockBgState.opacity + 0.1));
+            if (!(appBgState.opacity > 0)) return;
+            clockBgLayerEl.style.opacity = String(Math.min(1, appBgState.opacity + 0.1));
         });
         clockSectionEl.addEventListener('mouseleave', () => {
-            if (!(clockBgState.opacity > 0)) return;
-            clockBgLayerEl.style.opacity = String(clockBgState.opacity);
+            if (!(appBgState.opacity > 0)) return;
+            clockBgLayerEl.style.opacity = String(appBgState.opacity);
         });
     }
 }

@@ -23,7 +23,10 @@
     <link rel="stylesheet" href="css/welcome.css?v=37">
 </head>
 <body>
-    <!-- 启动加载动画：程序未完全加载完成时显示 -->
+    <!-- 界面背景层：壁纸铺满整个窗口，垫在所有内容之下 -->
+    <div class="app-bg-layer" id="app-bg-image" aria-hidden="true"></div>
+
+    <!-- 启动加载动画：程序未完全加载完成时显示?-->
     <div id="boot-loading" class="boot-loading">
         <div class="boot-loading-inner">
             <div class="boot-spinner"></div>
@@ -288,7 +291,6 @@
 
             <!-- Clock -->
             <div class="term-box" id="clock-section">
-                <div class="clock-bg-layer" id="clock-bg-image" aria-hidden="true"></div>
                 <div class="layout-drag-handle">⠿</div>
                 <div class="box-content">
                     <!-- Sidebar elements -->
@@ -1023,8 +1025,8 @@
                             </div>
                         </div>
                         <div class="subtab-content" id="subtab-background">
-                            <div class="setting-group" id="clock-bg-group">
-                                <div class="setting-group-title" data-i18n="settings-clock-bg">Clock Sidebar Background</div>
+                            <div class="setting-group" id="bg-group">
+                                <div class="setting-group-title" data-i18n="settings-clock-bg">Interface Background</div>
                                 <div class="setting-item-block">
                                     <span class="setting-item-label" data-i18n="label-bgimg">Background Image</span>
                                     <div class="image-picker" id="clockbgimg-picker"></div>
