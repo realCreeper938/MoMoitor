@@ -1,26 +1,16 @@
-/* Weather icons — Material Design (nf-md) */
-const WX_ICONS = {
-    '100': '\u{F0599}', '101': '\u{F0595}', '102': '\u{F0595}', '103': '\u{F0595}',
-    '104': '\u{F0590}', '150': '\u{F0594}', '151': '\u{F0F31}', '153': '\u{F0590}',
-    '300': '\u{F0597}', '301': '\u{F0596}', '302': '\u{F067E}', '303': '\u{F067E}',
-    '304': '\u{F0592}', '305': '\u{F0597}', '306': '\u{F0597}',
-    '307': '\u{F0596}', '308': '\u{F0596}', '309': '\u{F0597}',
-    '310': '\u{F0596}', '311': '\u{F0596}', '312': '\u{F0596}',
-    '313': '\u{F067F}', '314': '\u{F0597}', '315': '\u{F067E}',
-    '316': '\u{F067E}', '317': '\u{F067E}', '318': '\u{F0592}',
-    '350': '\u{F0597}', '399': '\u{F0597}',
-    '400': '\u{F0598}', '401': '\u{F0598}', '402': '\u{F0F36}', '403': '\u{F0F36}',
-    '404': '\u{F067F}', '405': '\u{F067F}', '406': '\u{F067F}', '407': '\u{F0598}',
-    '408': '\u{F0598}', '409': '\u{F0598}', '410': '\u{F0F36}', '456': '\u{F0598}',
-    '457': '\u{F0598}', '499': '\u{F0598}', '500': '\u{F0591}', '501': '\u{F0591}',
-    '502': '\u{F0F30}', '503': '\u{F0F30}', '504': '\u{F0F30}', '507': '\u{F0F30}', '508': '\u{F0F30}',
-    '509': '\u{F0F30}', '510': '\u{F0591}', '511': '\u{F0591}', '512': '\u{F0F30}', '513': '\u{F0F30}',
-    '514': '\u{F0F30}', '515': '\u{F0591}', '900': '\u{F18D6}', '901': '\u{F0717}',
-    '999': '\u{F0590}',
+/* Weather icons — Material Design (nf-md)，按归一化天气类别取图标 */
+const WX_CATEGORY_ICONS = {
+    sun: '\u{F0599}',
+    cloud: '\u{F0595}',
+    overcast: '\u{F0590}',
+    rain: '\u{F0596}',
+    snow: '\u{F0598}',
+    fog: '\u{F0591}',
+    storm: '\u{F067E}',
 };
 
-function wxIcon(iconCode) {
-    return WX_ICONS[iconCode] || '\u{F0590}';
+function wxIcon(category) {
+    return WX_CATEGORY_ICONS[category] || '\u{F0590}';
 }
 
 /** 天气总开关：weather.enabled 关闭时不获取天气信息。 */
@@ -37,12 +27,16 @@ function resetWeatherDisplays() {
     if (popupIcon) popupIcon.textContent = '';
     setText('wx-popup-temp', '--');
     setText('wx-popup-text', '--');
-    setText('wx-popup-city', '--');
+    setWxCity('wx-popup-city', '--');
     setText('wx-popup-updated', '--:--');
-    setText('wx-feels', '--');
-    setText('wx-humidity', '--');
-    setText('wx-wind-dir', '--');
-    setText('wx-wind-scale', '--');
+    // 恢复可能因数据缺失被隐藏的详情行/胶囊，回到占位显示
+    for (const id of ['wx-feels', 'wx-humidity', 'wx-wind-dir', 'wx-wind-scale',
+                      'wx-card-feels', 'wx-card-humidity', 'wx-card-wind']) {
+        const el = document.getElementById(id);
+        const box = el && (el.closest('.wx-detail-item') || el.closest('.wx-metric'));
+        if (box) box.style.display = '';
+        if (el) { el.style.display = ''; el.textContent = '--'; }
+    }
     const aqiRow = document.getElementById('wx-aqi-row');
     if (aqiRow) aqiRow.style.display = 'none';
     const precipRow = document.getElementById('wx-precip-row');
@@ -80,17 +74,6 @@ function appendMoreAlerts(container, count, maxShow) {
     container.appendChild(more);
 }
 
-function wxCategory(iconCode) {
-    const c = String(iconCode);
-    if (c === '100' || c === '150') return 'sun';
-    if (c === '900' || c === '901') return 'storm';
-    if (c.startsWith('4')) return 'snow';
-    if (c.startsWith('3')) return 'rain';
-    if (c.startsWith('5')) return 'fog';
-    if (c === '104' || c === '153') return 'overcast';
-    return 'cloud';
-}
-
 function wxGradFactor(temp, category, detail) {
     if (category === 'rain' || category === 'storm') {
         let peak = 0;
@@ -105,6 +88,37 @@ function wxGradFactor(temp, category, detail) {
     const t = parseFloat(temp);
     if (isNaN(t)) return 0.5;
     return Math.max(0.15, Math.min(1, (t + 10) / 45));
+}
+
+/* 数据缺失（null/undefined/空串）时隐藏对应元素；存在时恢复显示并写入内容。
+   容器取最近的 .wx-metric（卡片胶囊）或 .wx-detail-item（弹窗详情行）。 */
+function setWxValue(id, value, apply) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const box = el.closest('.wx-metric') || el.closest('.wx-detail-item');
+    if (value == null || value === '') {
+        if (box) box.style.display = 'none';
+        return;
+    }
+    if (box) box.style.display = '';
+    el.textContent = apply ? apply(value) : value;
+}
+
+/* 城市名：数据源未提供时整段隐藏（含弹窗里的分隔点） */
+function setWxCity(elId, city) {
+    const textEl = document.getElementById(elId);
+    if (!textEl) return;
+    const wrap = textEl.closest('.wx-popup-city') || textEl.closest('.wx-city') || textEl;
+    const dot = wrap.previousElementSibling;
+    const hasDot = !!(dot && dot.classList.contains('wx-popup-dot'));
+    if (city) {
+        wrap.style.display = '';
+        if (hasDot) dot.style.display = '';
+        textEl.textContent = city;
+    } else {
+        wrap.style.display = 'none';
+        if (hasDot) dot.style.display = 'none';
+    }
 }
 
 function wxAlertTimeStr(iso) {
@@ -171,7 +185,7 @@ async function refreshWeather() {
             // Update popup
             setText('wx-popup-temp', fmt(w.temp, 0));
             setText('wx-popup-text', w.text || '--');
-            setText('wx-popup-city', w.city || '--');
+            setWxCity('wx-popup-city', w.city);
             setText('wx-popup-updated', formatWxUpdateTime(w.updateTime));
         }
     } catch (e) { console.warn('refreshWeather:', e); }
@@ -201,10 +215,17 @@ async function refreshWeatherDetail() {
         const d = await pywebview.api.get_weather_detail();
         if (d.error) return;
         if (d.now) {
-            setText('wx-feels', fmt(d.now.feelsLike, 0));
-            setText('wx-humidity', fmt(d.now.humidity, 0));
-            setText('wx-wind-dir', d.now.windDir || '--');
-            setText('wx-wind-scale', d.now.windScale || '--');
+            setWxValue('wx-feels', d.now.feelsLike, v => fmt(v, 0));
+            setWxValue('wx-humidity', d.now.humidity, v => fmt(v, 0));
+            // 风向+风力同一详情行：任一存在即显示，缺失的子项单独隐藏
+            const dirEl = document.getElementById('wx-wind-dir');
+            const scaleEl = document.getElementById('wx-wind-scale');
+            const windItem = dirEl ? dirEl.closest('.wx-detail-item') : null;
+            const hasDir = !!d.now.windDir;
+            const hasScale = d.now.windScale != null && d.now.windScale !== '';
+            if (windItem) windItem.style.display = (hasDir || hasScale) ? '' : 'none';
+            if (dirEl) { dirEl.textContent = d.now.windDir || ''; dirEl.style.display = hasDir ? '' : 'none'; }
+            if (scaleEl) { scaleEl.textContent = hasScale ? String(d.now.windScale) : ''; scaleEl.style.display = hasScale ? '' : 'none'; }
         }
         if (d.minutely && d.minutely.minutely && d.minutely.minutely.length > 0) {
             const precipRow = document.getElementById('wx-precip-row');
@@ -415,17 +436,17 @@ async function refreshWeatherCard() {
         // Main block: temperature + condition + city
         const cardTemp = document.getElementById('wx-card-temp');
         const cardText = document.getElementById('wx-card-text');
-        const cardCity = document.getElementById('wx-card-city');
         const cardUpdated = document.getElementById('wx-card-updated');
         if (w && !w.error) {
             if (section) {
-                const cat = wxCategory(w.icon);
+                // 后端 icon 字段即归一化类别（sun/cloud/overcast/rain/snow/fog/storm）
+                const cat = w.icon || 'cloud';
                 section.dataset.wx = cat;
                 section.style.setProperty('--wx-bg-opacity', String(wxGradFactor(w.temp, cat, d)));
             }
             if (cardTemp) cardTemp.textContent = fmt(w.temp, 0);
             if (cardText) cardText.textContent = w.text || '--';
-            if (cardCity) cardCity.textContent = w.city || '--';
+            setWxCity('wx-card-city', w.city);
             if (cardUpdated) cardUpdated.textContent = formatWxUpdateTime(w.updateTime);
         } else {
             if (section) {
@@ -434,15 +455,18 @@ async function refreshWeatherCard() {
             }
             if (cardTemp) cardTemp.textContent = '--';
             if (cardText) cardText.textContent = '--';
-            if (cardCity) cardCity.textContent = '--';
+            setWxCity('wx-card-city', '');
             if (cardUpdated) cardUpdated.textContent = '--';
         }
 
-        // Details: feels-like / humidity / wind / AQI
+        // Details: feels-like / humidity / wind / AQI（缺失的胶囊直接隐藏）
         if (d && d.now) {
-            setText('wx-card-feels', fmt(d.now.feelsLike, 0));
-            setText('wx-card-humidity', fmt(d.now.humidity, 0));
-            setText('wx-card-wind', (d.now.windDir || '') + (d.now.windScale ? ' ' + d.now.windScale : ''));
+            setWxValue('wx-card-feels', d.now.feelsLike, v => fmt(v, 0));
+            setWxValue('wx-card-humidity', d.now.humidity, v => fmt(v, 0));
+            const windParts = [];
+            if (d.now.windDir) windParts.push(d.now.windDir);
+            if (d.now.windScale != null && d.now.windScale !== '') windParts.push(String(d.now.windScale));
+            setWxValue('wx-card-wind', windParts.length ? windParts.join(' ') : null);
         }
         const aqiEl = document.getElementById('wx-card-aqi-val');
         const aqiRow = document.getElementById('wx-card-aqi-row');

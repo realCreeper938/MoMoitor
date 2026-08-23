@@ -150,11 +150,13 @@ function initSettings() {
 
     // Weather
     const wxEnabledChk = document.getElementById('opt-wx-enabled');
+    const wxSourceSel = document.getElementById('opt-wx-source');
     const wxLat = document.getElementById('opt-wx-lat');
     const wxLon = document.getElementById('opt-wx-lon');
     const wxKid = document.getElementById('opt-wx-kid');
     const wxSub = document.getElementById('opt-wx-sub');
     const wxKey = document.getElementById('opt-wx-key');
+    const wxAppidInput = document.getElementById('opt-wx-appid');
 
     // Monitor
     const monitorSel = document.getElementById('opt-monitor');
@@ -202,6 +204,18 @@ function initSettings() {
             forceClockTimeGradient(clockGradForceSel.value);
         });
     }
+
+    // 天气数据源：按所选源显隐对应凭证区
+    function applyWeatherSourceFields() {
+        const source = wxSourceSel.value || 'qweather';
+        const qweatherBox = document.getElementById('wx-qweather-fields');
+        const owmBox = document.getElementById('wx-owm-fields');
+        const omNote = document.getElementById('wx-om-note');
+        if (qweatherBox) qweatherBox.style.display = source === 'qweather' ? '' : 'none';
+        if (owmBox) owmBox.style.display = source === 'openweathermap' ? '' : 'none';
+        if (omNote) omNote.style.display = source === 'open-meteo' ? '' : 'none';
+    }
+    wxSourceSel.addEventListener('change', applyWeatherSourceFields);
 
     // 设置面板效果：拨动开关立即生效，无需保存
     function applySettingsEffects() {
@@ -638,11 +652,14 @@ function initSettings() {
 
         // Weather
         wxEnabledChk.checked = w.enabled !== false;
+        wxSourceSel.value = w.source || 'qweather';
         wxLat.value = w.lat || '';
         wxLon.value = w.lon || '';
         wxKid.value = w.key_id || '';
         wxSub.value = w.project_id || '';
         wxKey.value = w.private_key || '';
+        wxAppidInput.value = w.appid || '';
+        applyWeatherSourceFields();
 
         // Monitor
         try {
@@ -827,11 +844,13 @@ function initSettings() {
             weather: {
                 ...(existing.weather || {}),
                 enabled: wxEnabledChk.checked,
+                source: wxSourceSel.value || 'qweather',
                 lat: wxLat.value.trim(),
                 lon: wxLon.value.trim(),
                 key_id: wxKid.value.trim(),
                 project_id: wxSub.value.trim(),
                 private_key: wxKey.value.trim(),
+                appid: wxAppidInput.value.trim(),
             },
             music: {
                 ...(existing.music || {}),

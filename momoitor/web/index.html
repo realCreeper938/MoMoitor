@@ -859,6 +859,15 @@
                                     </label>
                                 </div>
                                 <div class="setting-desc" data-i18n="desc-wx-enabled">Turn off to stop fetching weather data</div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-wx-source">Data Source</span>
+                                    <select id="opt-wx-source">
+                                        <option value="qweather">和风天气 QWeather</option>
+                                        <option value="openweathermap">OpenWeatherMap</option>
+                                        <option value="open-meteo">Open-Meteo</option>
+                                    </select>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-wx-source">Data not provided by the selected source (e.g. alerts on OpenWeatherMap/Open-Meteo) is hidden automatically.</div>
                             </div>
                             <div class="setting-group">
                                 <div class="setting-group-title" data-i18n="settings-location">Location</div>
@@ -873,19 +882,29 @@
                             </div>
                             <div class="setting-group">
                                 <div class="setting-group-title" data-i18n="settings-apikeys">API Keys</div>
-                                <div class="setting-desc" data-i18n="desc-apikeys">Credentials from QWeather console (EdDSA JWT authentication)</div>
-                                <div class="setting-item">
-                                    <span data-i18n="label-kid">Key ID</span>
-                                    <input type="text" id="opt-wx-kid" placeholder="Credential ID">
+                                <div id="wx-qweather-fields">
+                                    <div class="setting-desc" data-i18n="desc-apikeys">Credentials from QWeather console (EdDSA JWT authentication)</div>
+                                    <div class="setting-item">
+                                        <span data-i18n="label-kid">Key ID</span>
+                                        <input type="text" id="opt-wx-kid" placeholder="Credential ID">
+                                    </div>
+                                    <div class="setting-item">
+                                        <span data-i18n="label-project">Project ID</span>
+                                        <input type="text" id="opt-wx-sub" placeholder="Project ID">
+                                    </div>
+                                    <div class="setting-item">
+                                        <span data-i18n="label-pem">Private Key</span>
+                                        <textarea id="opt-wx-key" rows="3" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+                                    </div>
                                 </div>
-                                <div class="setting-item">
-                                    <span data-i18n="label-project">Project ID</span>
-                                    <input type="text" id="opt-wx-sub" placeholder="Project ID">
+                                <div id="wx-owm-fields" style="display:none">
+                                    <div class="setting-item">
+                                        <span data-i18n="label-appid">AppID</span>
+                                        <input type="text" id="opt-wx-appid" placeholder="OpenWeatherMap API key">
+                                    </div>
+                                    <div class="setting-desc" data-i18n="desc-appid">API key from OpenWeatherMap (free "Current Weather &amp; Air Pollution" endpoints). Alerts and minute-level precipitation are not available.</div>
                                 </div>
-                                <div class="setting-item">
-                                    <span data-i18n="label-pem">Private Key</span>
-                                    <textarea id="opt-wx-key" rows="3" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
-                                </div>
+                                <div class="setting-desc" id="wx-om-note" style="display:none" data-i18n="desc-open-meteo">Open-Meteo requires no API key. Alerts are not available and no city name is shown.</div>
                             </div>
                         </div>
                         <div class="subtab-content" id="subtab-hr">

@@ -233,11 +233,13 @@ DEFAULT_SETTINGS = {
     # 天气
     "weather": {
         "enabled": True,  # 是否启用天气：关闭后不再获取任何天气信息
+        "source": "qweather",  # 数据源：qweather / openweathermap / open-meteo
         "lat": "39.92",
         "lon": "116.41",
         "key_id": "",
         "project_id": "",
         "private_key": "",
+        "appid": "",  # OpenWeatherMap AppID（仅 openweathermap 数据源使用）
     },
     # 音乐 / 歌词
     "music": {
