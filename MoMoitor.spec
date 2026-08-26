@@ -76,8 +76,8 @@ a = Analysis(
         "unittest", "test", "ensurepip", "idlelib", "turtle", "turtledemo",
         "xmlrpc", "curses", "venv", "pydoc_data",
         "doctest", "pydoc", "smtplib", "imaplib", "nntplib", "mailbox", "telnetlib",
-        # comtypes 的 numpy 互操作仅在显式 enable 时使用，本项目未启用，排除可省约 6MB
-        "numpy", "scipy",
+        # scipy 未被引用，排除可省体积；numpy 由 services/spectrum.py FFT 使用，须保留
+        "scipy",
     ],
     noarchive=False,
 )
