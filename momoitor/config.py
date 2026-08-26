@@ -82,7 +82,7 @@ def _migrate_legacy_data():
 
 _migrate_legacy_data()
 
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 
 APP_AUTHOR = "realCreeper938"
 APP_HOMEPAGE = "https://github.com/realCreeper938/MoMoitor"
