@@ -23,6 +23,15 @@ def _vbs_location() -> str:
     return os.path.join(_appdata, "MoMoitor")
 
 
+def _find_venv_pythonw() -> str:
+    """返回项目根目录下虚拟环境的 pythonw.exe 路径，不存在则返回空字符串。"""
+    for name in (".venv", "venv"):
+        exe = os.path.join(PROJECT_ROOT, name, "Scripts", "pythonw.exe")
+        if os.path.exists(exe):
+            return exe
+    return ""
+
+
 def _vbs_content() -> str:
     """生成 autostart.vbs 内容（当前运行形态对应调用）。"""
     if _FROZEN:
@@ -32,10 +41,13 @@ def _vbs_content() -> str:
             'Set WshShell = CreateObject("WScript.Shell")\n'
             f'WshShell.Run """{sys.executable}""", 0, False\n'
         )
-    python_exe = sys.executable
-    pythonw_exe = os.path.join(os.path.dirname(python_exe), "pythonw.exe")
-    if not os.path.exists(pythonw_exe):
-        pythonw_exe = python_exe
+    # 源码运行：优先使用项目内虚拟环境，其次回退到当前解释器同目录的 pythonw。
+    pythonw_exe = _find_venv_pythonw()
+    if not pythonw_exe:
+        python_exe = sys.executable
+        pythonw_exe = os.path.join(os.path.dirname(python_exe), "pythonw.exe")
+        if not os.path.exists(pythonw_exe):
+            pythonw_exe = python_exe
     return (
         'Set WshShell = CreateObject("WScript.Shell")\n'
         f'WshShell.CurrentDirectory = "{PROJECT_ROOT}"\n'

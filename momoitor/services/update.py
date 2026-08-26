@@ -2,9 +2,9 @@
 
 import re
 
-import requests
 from loguru import logger
 
+from momoitor.common import http_get
 from momoitor.config import APP_VERSION, APP_GITHUB_REPO
 
 
@@ -38,7 +38,8 @@ def check_latest():
         return None
     url = "https://api.github.com/repos/{}/releases/latest".format(APP_GITHUB_REPO)
     try:
-        resp = requests.get(url, timeout=8)
+        # GitHub API 要求 User-Agent，http_get 统一注入浏览器 UA
+        resp = http_get(url, timeout=8)
         resp.raise_for_status()
         data = resp.json()
     except Exception as e:

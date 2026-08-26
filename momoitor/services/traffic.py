@@ -1,6 +1,5 @@
 """流量记录服务 —— 每日上传/下载流量统计（SQLite: data/traffic.db）。"""
 
-import os
 import time
 import threading
 from collections import defaultdict
@@ -8,10 +7,9 @@ from collections import defaultdict
 import psutil
 from loguru import logger
 
-from momoitor.config import DATA_DIR
-from momoitor.services.db import get_conn, init_db
+from momoitor.common import Poller
+from momoitor.services.db import TRAFFIC_DB_PATH as DB_PATH, get_conn, init_db
 
-DB_PATH = os.path.join(DATA_DIR, "traffic.db")
 POLL_INTERVAL = 30  # 每30秒记录一次
 SAVE_INTERVAL = 60  # 每60秒持久化一次
 PRUNE_SAMPLES = 30  # 进程记录连续30个采样周期（约1小时）未出现则清理
@@ -34,9 +32,12 @@ _SCHEMA = """
 
 class TrafficService:
     def __init__(self):
-        self._thread = None
-        self._running = False
         self._lock = threading.Lock()
+        self._poller = Poller("traffic-recorder", POLL_INTERVAL, self._tick)
+
+        # 轮询内部分频计数器（秒）
+        self._save_counter = 0
+        self._sample_counter = 0
 
         # 当前累计的上/下行流量（从psutil获取）
         self._prev_bytes_sent = 0
@@ -120,8 +121,7 @@ class TrafficService:
 
     @staticmethod
     def _today_str():
-        now = time.localtime()
-        return f"{now.tm_year}-{now.tm_mon:02d}-{now.tm_mday:02d}"
+        return time.strftime("%Y-%m-%d")
 
     def _record_cycle(self):
         """记录周期：计算网络流量增量并累加到当日。"""
@@ -233,51 +233,36 @@ class TrafficService:
         except Exception as e:
             logger.debug("Process sampling error: {}", e)
 
-    def _run(self):
-        """后台线程主循环。"""
-        save_counter = 0
-        sample_counter = 0
-        while self._running:
-            self._record_cycle()
+    def _tick(self):
+        """单次轮询：记录流量、按周期持久化与采样进程。"""
+        self._record_cycle()
 
-            save_counter += POLL_INTERVAL
-            sample_counter += POLL_INTERVAL
-            if save_counter >= SAVE_INTERVAL:
-                self._save_daily()
-                save_counter = 0
+        self._save_counter += POLL_INTERVAL
+        self._sample_counter += POLL_INTERVAL
+        if self._save_counter >= SAVE_INTERVAL:
+            self._save_daily()
+            self._save_counter = 0
 
-            # 每2分钟采样一次进程
-            if sample_counter >= 120:
-                self._sample_processes()
-                sample_counter = 0
-
-            # 分片 sleep：stop() 置 _running=False 后能在此快速退出，
-            # 避免整个 POLL_INTERVAL 都在睡导致 join 等到超时。
-            slept = 0.0
-            while self._running and slept < POLL_INTERVAL:
-                time.sleep(0.5)
-                slept += 0.5
+        # 每2分钟采样一次进程
+        if self._sample_counter >= 120:
+            self._sample_processes()
+            self._sample_counter = 0
 
     @property
     def running(self) -> bool:
         """后台记录线程是否运行中。"""
-        return self._thread is not None and self._thread.is_alive()
+        return self._poller.running()
 
     def start(self):
         """启动后台记录线程。"""
-        if self._thread and self._thread.is_alive():
-            return
-        self._running = True
-        self._thread = threading.Thread(target=self._run, daemon=True, name="traffic-recorder")
-        self._thread.start()
-        logger.info("Traffic service started")
+        fresh = not self._poller.running()
+        self._poller.start()
+        if fresh:
+            logger.info("Traffic service started")
 
     def stop(self):
         """停止后台记录线程并保存数据（幂等，可安全多次调用）。"""
-        self._running = False
-        if self._thread:
-            self._thread.join(timeout=2)
-            self._thread = None
+        self._poller.stop(join_timeout=2)
         self._save_daily()
         logger.info("Traffic service stopped")
 

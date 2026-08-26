@@ -9,6 +9,7 @@ import ctypes
 
 from loguru import logger
 
+from momoitor.api._util import safe
 from momoitor.services.system import (clean_memory, get_sysinfo,
                                       get_system_theme_mode,
                                       get_top_processes, kill_process,
@@ -30,6 +31,30 @@ class HardwareMixin:
     def get_hw_detail(self):
         return self._hw.get_hw_detail()
 
+    def get_data_catalog(self):
+        """自选数据卡片目录：当前启用的数据源 × (标准指标 + 原始传感器树)。
+
+        返回 {"sources": [{"source", "label", "groups": [{"name", "items": [...]}]}]}。
+        items 的 key 形如 "std:{group}.{field}" 或 "raw:{ident}"。
+        """
+        return self._hw.get_data_catalog()
+
+    def get_custom_values(self, slots):
+        """批量解析自选数据槽位的实时值。
+
+        slots: [{"source", "key"}, ...]，逐项对应返回 [float|None, ...]。
+        槽位数量有上限保护，避免异常输入导致超大遍历。
+        """
+        if not isinstance(slots, list):
+            return []
+        out = []
+        for s in slots[:500]:
+            if not isinstance(s, dict):
+                out.append(None)
+                continue
+            out.append(self._hw.read_value(s.get("source"), s.get("key")))
+        return out
+
     def change_backend(self, source):
         return self._hw.change_backend(source)
 
@@ -48,14 +73,11 @@ class HardwareMixin:
     def get_listening_ports(self):
         return scan_listening_ports()
 
+    @safe("clean_memory", {"ok": False}, include_error=True)
     def clean_memory(self, deep=False):
         """回收所有进程的工作集 —— 点击内存占用百分比时触发。
         deep=True（快速重复点击）更激进地刷新工作集。"""
-        try:
-            return clean_memory(bool(deep))
-        except Exception as e:
-            logger.warning("clean_memory failed: {}", e)
-            return {"ok": False, "error": str(e)}
+        return clean_memory(bool(deep))
 
     def open_taskmgr(self):
         """启动 Windows 任务管理器并置于前台。"""

@@ -4,8 +4,6 @@
 不支持：分钟级降水、天气预警（One Call 3.0 需单独订阅，暂不接入）。
 """
 
-import requests
-
 from momoitor.services.weather import common
 
 _BASE = "https://api.openweathermap.org/data/2.5"
@@ -43,14 +41,11 @@ def available(w: dict) -> bool:
 
 
 def get_now(w: dict) -> dict:
-    resp = requests.get(
+    data = common.get_json(
         f"{_BASE}/weather",
         params={"lat": w.get("lat"), "lon": w.get("lon"),
                 "units": "metric", "lang": "zh_cn", "appid": w.get("appid")},
-        timeout=5,
     )
-    resp.raise_for_status()
-    data = resp.json()
     main = data.get("main") or {}
     weather = (data.get("weather") or [{}])[0]
     wind = data.get("wind") or {}
@@ -70,13 +65,10 @@ def get_now(w: dict) -> dict:
 
 
 def get_airquality(w: dict) -> dict:
-    resp = requests.get(
+    data = common.get_json(
         f"{_BASE}/air_pollution",
         params={"lat": w.get("lat"), "lon": w.get("lon"), "appid": w.get("appid")},
-        timeout=5,
     )
-    resp.raise_for_status()
-    data = resp.json()
     entries = data.get("list") or []
     if not entries:
         return {"indexes": [], "pollutants": []}

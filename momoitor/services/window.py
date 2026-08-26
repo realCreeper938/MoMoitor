@@ -7,36 +7,68 @@ import time
 from loguru import logger
 
 
-def _get_hwnd(window) -> int:
-    """从 pywebview 窗口获取 HWND。"""
+def _hwnd_from_native(window) -> int:
+    """从 pywebview 原生窗口（window.native，WinForms Form）取 HWND。
+
+    pywebview 在窗口创建后把原生窗口对象放到 window.native（详见官方 API 文档
+    window.native），其 .Handle 即本程序窗口的 HWND。native 为 None 时（尚未显示）
+    返回 0。
+
+    注意：WinForms Form.Handle 是 System.IntPtr，`int(handle)` 会抛 TypeError，
+    必须经 ToInt64() 转成整数，否则会退化为不可靠的按标题枚举窗口（见
+    _find_window_by_title），在窗口刚显示时易失败、导致启动时透明度不生效。
+    """
     try:
-        import win32gui
-
-        def _enum(hwnd, result):
-            if win32gui.IsWindowVisible(hwnd):
-                title = win32gui.GetWindowText(hwnd)
-                if "MoMoitor" in title or "pywebview" in title:
-                    result.append(hwnd)
-
-        hwnds = []
-        win32gui.EnumWindows(_enum, hwnds)
-        if hwnds:
-            return hwnds[0]
-    except ImportError:
+        native = getattr(window, "native", None)
+        if native is not None:
+            handle = getattr(native, "Handle", None)
+            if handle:
+                if hasattr(handle, "ToInt64"):
+                    return int(handle.ToInt64())
+                return int(handle)
+    except Exception:
         pass
-    return ctypes.windll.user32.GetForegroundWindow()
+    return 0
+
+
+def _find_window_by_title() -> int:
+    """仅枚举标题含本程序特征名的窗口，取第一个；找不到返回 0。
+
+    不依赖 win32gui；绝不返回无关窗口（避免误操作其它程序窗口）。
+    """
+    try:
+        from ctypes import wintypes
+
+        found = []
+
+        @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+        def _cb(hwnd, lparam):
+            length = ctypes.windll.user32.GetWindowTextLengthW(hwnd)
+            if length:
+                buf = ctypes.create_unicode_buffer(length + 1)
+                if ctypes.windll.user32.GetWindowTextW(hwnd, buf, length + 1):
+                    title = buf.value
+                    if "MoMoitor" in title or "pywebview" in title:
+                        found.append(hwnd)
+            return True
+
+        ctypes.windll.user32.EnumWindows(_cb, 0)
+        return int(found[0]) if found else 0
+    except Exception:
+        return 0
 
 
 def _resolve_hwnd(window) -> int:
-    """从窗口对象解析 HWND，依次尝试多个属性。"""
-    for attr in ("native_handle", "_hwnd", "handle"):
-        try:
-            h = getattr(window, attr, None)
-            if h:
-                return int(h)
-        except Exception:
-            pass
-    return _get_hwnd(window)
+    """解析 pywebview 窗口的 HWND；找到返回句柄，否则返回 0。
+
+    优先取 window.native 的原生句柄，其次按标题枚举本程序窗口。
+    绝不用 GetForegroundWindow 兜底——那会拿到当前聚焦的任意窗口，把它误当作
+    本程序窗口做移动/改样式等操作（例如把用户正在用的窗口或锁屏时钟挪到副屏）。
+    """
+    hwnd = _hwnd_from_native(window)
+    if hwnd:
+        return hwnd
+    return _find_window_by_title()
 
 
 def minimize(window):
@@ -45,6 +77,54 @@ def minimize(window):
         window.minimize()
     except Exception as e:
         logger.warning("Failed to minimize window: {}", e)
+
+
+def focus_hwnd(hwnd) -> bool:
+    """显示并激活指定 HWND（托盘左键 / 单实例聚焦共用）。最小化时先还原。
+
+    SetForegroundWindow 受系统前台锁定限制（后台进程不得抢占前台），
+    标准做法是临时把当前线程附加到前台窗口的输入队列以获得许可。
+    """
+    hwnd = int(hwnd)
+    user32 = ctypes.windll.user32
+    kernel32 = ctypes.windll.kernel32
+
+    SW_SHOW = 5
+    SW_RESTORE = 9
+    if user32.IsIconic(hwnd):
+        user32.ShowWindow(hwnd, SW_RESTORE)
+    else:
+        user32.ShowWindow(hwnd, SW_SHOW)
+
+    fg = user32.GetForegroundWindow()
+    fg_tid = user32.GetWindowThreadProcessId(fg, None) if fg else 0
+    cur_tid = kernel32.GetCurrentThreadId()
+    attached = False
+    if fg_tid and fg_tid != cur_tid:
+        attached = user32.AttachThreadInput(fg_tid, cur_tid, True)
+    try:
+        user32.SetForegroundWindow(hwnd)
+    finally:
+        if attached:
+            user32.AttachThreadInput(fg_tid, cur_tid, False)
+    return True
+
+
+def focus(window) -> bool:
+    """显示并激活窗口（托盘左键）。最小化时先还原。"""
+    hwnd = _resolve_hwnd(window)
+    if not hwnd:
+        logger.warning("Could not get HWND for window focus")
+        return False
+    return focus_hwnd(hwnd)
+
+
+def is_visible(window) -> bool:
+    """窗口当前是否可见（最小化仍算可见；无法判断时按可见处理）。"""
+    hwnd = _resolve_hwnd(window)
+    if not hwnd:
+        return True
+    return bool(ctypes.windll.user32.IsWindowVisible(int(hwnd)))
 
 
 def set_caption(window, enabled: bool):
@@ -126,17 +206,16 @@ def set_on_top(window, enabled: bool) -> bool:
     return True
 
 
-def move_to_monitor(window, index: int) -> bool:
-    """移动并调整窗口到目标显示器，失败时最多重试 3 次。"""
-    monitors = get_monitors()
-    if not (0 <= index < len(monitors)):
-        logger.debug("Monitor index {} out of range ({} monitors), falling back to monitor 0", index, len(monitors))
-        index = 0
-        if not monitors:
-            logger.warning("No monitors available")
-            return False
+def move_to_monitor(window, target) -> bool:
+    """移动并调整窗口到目标显示器，失败时最多重试 3 次。
 
-    m = monitors[index]
+    target 可以是显示器设备 ID / 设备路径字符串，或 legacy 序号 int。
+    目标不在当前枚举中时会回退到主屏/首屏。
+    """
+    m, _ = find_display(target)
+    if m is None:
+        logger.warning("No monitors available")
+        return False
 
     hwnd = _resolve_hwnd(window)
     if not hwnd:
@@ -155,7 +234,7 @@ def move_to_monitor(window, index: int) -> bool:
             hwnd, 0, m["x"], m["y"], m["width"], m["height"], flags
         )
         if result:
-            logger.info("Window -> monitor {}: {}x{} at ({},{})", index + 1, m["width"], m["height"], m["x"], m["y"])
+            logger.info("Window -> monitor {}: {}x{} at ({},{})", m.get("name") or m.get("device") or m.get("id", ""), m["width"], m["height"], m["x"], m["y"])
             return True
         err = ctypes.windll.kernel32.GetLastError()
         if err == 5 and attempt < 3:
@@ -189,8 +268,29 @@ def get_idle_time() -> float:
     return 0.0
 
 
+def enum_display_monitors(callback) -> None:
+    """枚举所有活动显示器，对每个 HMONITOR 句柄调用 callback(hmonitor)。
+
+    封装 EnumDisplayMonitors 的 WINFUNCTYPE 回调样板，供本模块
+    get_monitors 与 brightness 等服务复用。
+    """
+    MONITORENUMPROC = ctypes.WINFUNCTYPE(
+        ctypes.wintypes.BOOL,
+        ctypes.wintypes.HMONITOR,
+        ctypes.wintypes.HDC,
+        ctypes.POINTER(ctypes.wintypes.RECT),
+        ctypes.wintypes.LPARAM,
+    )
+
+    def _cb(hmon, _hdc, _lprc, _dw):
+        callback(hmon)
+        return True
+
+    ctypes.windll.user32.EnumDisplayMonitors(None, None, MONITORENUMPROC(_cb), 0)
+
+
 def get_monitors() -> list:
-    """获取所有显示器的物理像素坐标列表（含友好设备名）。"""
+    """获取所有显示器的物理像素坐标列表（含友好设备名与稳定设备标识）。"""
     monitors = []
 
     class MONITORINFOEXW(ctypes.Structure):
@@ -212,35 +312,96 @@ def get_monitors() -> list:
             ("DeviceKey", ctypes.wintypes.WCHAR * 128),
         ]
 
-    def _device_name(device: str) -> str:
-        """通过设备路径（\\\\.\\DISPLAY1）查询友好的显示器型号名称。"""
+    def _device_info(device: str) -> tuple:
+        """通过设备路径（\\\\.\\DISPLAY1）查询友好的显示器型号名称与设备 ID。
+
+        返回 (名称, 设备 ID)。设备 ID（如 DISPLAY\\DEL409E\\5&...）是这块屏的
+        稳定标识，比枚举下标更能精确对应物理显示器。查询失败时返回空字符串。
+        """
         dd = DISPLAY_DEVICE()
         dd.cb = ctypes.sizeof(DISPLAY_DEVICE)
         if ctypes.windll.user32.EnumDisplayDevicesW(device, 0, ctypes.byref(dd), 0):
-            return dd.DeviceString.strip("\x00 ").strip()
-        return ""
+            name = dd.DeviceString.strip("\x00 ").strip()
+            dev_id = dd.DeviceID.strip("\x00 ").strip()
+            return name, dev_id
+        return "", ""
 
-    def callback(hMonitor, hdcMonitor, lprcMonitor, dwData):
+    MONITORINFOF_PRIMARY = 0x01
+
+    def _collect(hmon):
         mi = MONITORINFOEXW()
         mi.cbSize = ctypes.sizeof(MONITORINFOEXW)
-        ctypes.windll.user32.GetMonitorInfoW(hMonitor, ctypes.byref(mi))
+        ctypes.windll.user32.GetMonitorInfoW(hmon, ctypes.byref(mi))
         r = mi.rcMonitor
+        w = mi.rcWork
         device = mi.szDevice.strip("\x00 ").strip()
+        name, dev_id = _device_info(device)
         monitors.append({
             "x": r.left,
             "y": r.top,
             "width": r.right - r.left,
             "height": r.bottom - r.top,
-            "name": _device_name(device) or "Monitor",
+            "work_x": w.left,
+            "work_y": w.top,
+            "work_width": w.right - w.left,
+            "work_height": w.bottom - w.top,
+            "name": name or "Monitor",
+            "device": device,
+            "id": dev_id,
+            "primary": bool(mi.dwFlags & MONITORINFOF_PRIMARY),
         })
-        return True
 
-    MONITORENUMPROC = ctypes.WINFUNCTYPE(
-        ctypes.wintypes.BOOL,
-        ctypes.wintypes.HMONITOR,
-        ctypes.wintypes.HDC,
-        ctypes.POINTER(ctypes.wintypes.RECT),
-        ctypes.wintypes.LPARAM,
-    )
-    ctypes.windll.user32.EnumDisplayMonitors(None, None, MONITORENUMPROC(callback), 0)
+    enum_display_monitors(_collect)
     return monitors
+
+
+def display_target(display: dict):
+    """从 settings 的 display 分组提取目标显示器身份。
+
+    优先使用 monitor_id（设备 ID 字符串，稳定），否则回退为 legacy 序号 monitor（int）。
+    无偏好时返回 None（表示由系统回退到主屏/首屏）。
+    """
+    mid = display.get("monitor_id")
+    # monitor_id 可能是历史遗留的哨兵值（如 "0"/""，表示未选择具体显示器），
+    # 这类纯数字/空值不是真实设备偏好（真实设备 ID 形如 MONITOR\\... 或 \\.\DISPLAY1），
+    # 直接忽略，回退用 legacy 序号。
+    if mid and not str(mid).strip().isdigit():
+        return mid
+    monitor = display.get("monitor", 0)
+    return monitor
+
+
+def _primary_monitor(monitors: list) -> dict:
+    """取主屏；无主屏标记时回退首屏。monitors 为空时返回 None。"""
+    if not monitors:
+        return None
+    for m in monitors:
+        if m.get("primary"):
+            return m
+    return monitors[0]
+
+
+def find_display(target, monitors=None) -> tuple:
+    """把目标显示器身份解析为当前枚举中的一块屏。
+
+    - target: 目标身份（设备 ID / 设备路径字符串，或 legacy 序号 int，或 None）。
+    - 返回 (monitor dict | None, matched)。
+      - monitor_dict 为 None 表示系统没有任何显示器；
+      - matched 为 True 表示精确命中目标（或无需精确匹配、有任一块屏即可）；
+        matched 为 False 表示目标不在当前枚举中，已回退到主屏/首屏。
+    """
+    if monitors is None:
+        monitors = get_monitors()
+    if not monitors:
+        return None, False
+    if target is None:
+        return _primary_monitor(monitors), True
+    if isinstance(target, int):
+        if 0 <= target < len(monitors):
+            return monitors[target], True
+        return _primary_monitor(monitors), False
+    target = str(target).strip()
+    for m in monitors:
+        if m.get("id") == target or m.get("device") == target:
+            return m, True
+    return _primary_monitor(monitors), False

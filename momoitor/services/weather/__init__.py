@@ -19,9 +19,9 @@ WeatherService 公开接口（供 api 层调用）:
 
 import time
 
-import requests
 from loguru import logger
 
+from momoitor.common import http_get
 from momoitor.services.cache import TTLCache
 from momoitor.services.weather import openmeteo, openweathermap, qweather
 
@@ -122,7 +122,7 @@ class WeatherService:
         if hit:
             return cached
         try:
-            resp = requests.get(
+            resp = http_get(
                 "https://uapis.cn/api/v1/misc/lunartime",
                 params={"ts": str(int(time.time())), "timezone": tz},
                 timeout=5,

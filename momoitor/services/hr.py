@@ -193,7 +193,7 @@ def connect(address):
 
 
 async def _connect_async(addr):
-    global _device, _service, _characteristic, _notify_token
+    global _device, _service, _characteristic, _notify_token, _last_update
     await _disconnect_async()
     device = None
     try:
@@ -268,7 +268,7 @@ def disconnect():
 
 
 async def _disconnect_async():
-    global _device, _service, _characteristic, _notify_token
+    global _device, _service, _characteristic, _notify_token, _last_update
     char, token = _characteristic, _notify_token
     if char is not None and token is not None:
         try:

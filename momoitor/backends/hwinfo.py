@@ -5,7 +5,9 @@ import ctypes.wintypes
 import struct
 import psutil
 from loguru import logger
+from . import _shm
 from .base import BaseMonitor
+from momoitor.services.catalog import hwinfo_sensor_kind
 
 # HWiNFO 共享内存常量
 HWINFO_SM2_NAME = "Global\\HWiNFO_SENS_SM2"
@@ -22,24 +24,6 @@ SENSOR_TYPE_POWER = 5
 SENSOR_TYPE_CLOCK = 6
 SENSOR_TYPE_USAGE = 7
 SENSOR_TYPE_OTHER = 8
-
-# Windows API
-kernel32 = ctypes.windll.kernel32
-OpenFileMappingW = kernel32.OpenFileMappingW
-OpenFileMappingW.argtypes = [ctypes.wintypes.DWORD, ctypes.wintypes.BOOL, ctypes.wintypes.LPCWSTR]
-OpenFileMappingW.restype = ctypes.wintypes.HANDLE
-
-MapViewOfFile = kernel32.MapViewOfFile
-MapViewOfFile.argtypes = [ctypes.wintypes.HANDLE, ctypes.wintypes.DWORD, ctypes.wintypes.DWORD, ctypes.wintypes.DWORD, ctypes.c_size_t]
-MapViewOfFile.restype = ctypes.c_void_p
-
-UnmapViewOfFile = kernel32.UnmapViewOfFile
-UnmapViewOfFile.argtypes = [ctypes.c_void_p]
-UnmapViewOfFile.restype = ctypes.wintypes.BOOL
-
-CloseHandle = kernel32.CloseHandle
-CloseHandle.argtypes = [ctypes.wintypes.HANDLE]
-CloseHandle.restype = ctypes.wintypes.BOOL
 
 FILE_MAP_READ = 0x0004
 MAX_SM_BYTES = 20_000_000
@@ -78,12 +62,12 @@ class HWiNFOMonitor(BaseMonitor):
 
     def _read_shared_memory(self):
         """从 HWiNFO 共享内存读取全部读数。"""
-        h_mapping = OpenFileMappingW(FILE_MAP_READ, False, HWINFO_SM2_NAME)
+        h_mapping = _shm.open_mapping(HWINFO_SM2_NAME)
         if not h_mapping:
             raise OSError("Cannot open HWiNFO shared memory. Is HWiNFO running with shared memory enabled?")
 
         try:
-            ptr = MapViewOfFile(h_mapping, FILE_MAP_READ, 0, 0, 0)
+            ptr = _shm.map_view(h_mapping)
             if not ptr:
                 raise OSError("Cannot map HWiNFO shared memory view")
 
@@ -155,9 +139,9 @@ class HWiNFOMonitor(BaseMonitor):
 
                 return results
             finally:
-                UnmapViewOfFile(ptr)
+                _shm.unmap_view(ptr)
         finally:
-            CloseHandle(h_mapping)
+            _shm.close_handle(h_mapping)
 
     def _find_readings(self, readings, rtype, label_keywords, sensor_keywords=None):
         """查找匹配指定类型 + 任意标签关键字（+ 可选的传感器名关键字）的读数。"""
@@ -460,3 +444,61 @@ class HWiNFOMonitor(BaseMonitor):
         vm = psutil.virtual_memory()
         info["mem"]["total_gb"] = round(vm.total / 1073741824, 1)
         return info
+
+    # ---- 原始传感器树（自选数据卡片）----
+    #
+    # ident 格式: "{sensor_name}|{type}|{label}"（均取 str()）。
+    # 共享内存中同键读数去重保留首条，运行时同样按枚举顺序首匹配。
+
+    def get_sensor_groups(self) -> list:
+        try:
+            readings = self._read_shared_memory()
+        except OSError as e:
+            logger.warning("HWiNFO sensor catalog unavailable: {}", e)
+            return []
+        groups = []
+        index = {}   # 组名 -> 组 dict
+        seen = set()
+        for r in readings:
+            rtype = r['type']
+            label = r['label']
+            if not rtype or not label:
+                continue
+            ident = f"{r['sensor_name']}|{rtype}|{label}"
+            if ident in seen:
+                continue
+            seen.add(ident)
+            item = {
+                "key": "raw:" + ident,
+                "label": label,
+                "kind": hwinfo_sensor_kind(rtype, r.get('unit') or ''),
+            }
+            if rtype == 8 and r.get('unit'):
+                item["unit"] = r['unit']   # OTHER 类型无固定单位，透传原生单位
+            group = index.get(r['sensor_name'])
+            if group is None:
+                group = {"name": r['sensor_name'], "items": []}
+                index[r['sensor_name']] = group
+                groups.append(group)
+            group["items"].append(item)
+        return groups
+
+    def get_sensor_value(self, ident: str):
+        parts = str(ident or "").split("|")
+        if len(parts) != 3:
+            return None
+        want_sensor, want_type, want_label = (p.lower() for p in parts)
+        try:
+            readings = self._read_shared_memory()
+        except OSError:
+            return None
+        for r in readings:
+            if (r['sensor_name'].lower() == want_sensor
+                    and str(r['type']) == want_type
+                    and r['label'].lower() == want_label):
+                v = r['value']
+                try:
+                    return float(v) if v is not None else None
+                except (TypeError, ValueError):
+                    return None
+        return None

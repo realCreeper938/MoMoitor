@@ -43,6 +43,29 @@
     color: var(--text-dim);
 }
 
+/* 音乐频谱背景：后端回环捕获+FFT 推送柱值，前端 canvas 绘制（纯装饰层） */
+.music-spectrum {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.music-spectrum.on {
+    opacity: 1;
+}
+
+/* 卡片内容置于频谱层之上 */
+#music-section .box-content {
+    position: relative;
+    z-index: 1;
+}
+
 /* 未在播放时封面框有明确的背景色，灰色音乐图标浮于其上 */
 #music-section.paused .h-music-cover-wrap {
     background: linear-gradient(160deg, var(--nord2), var(--nord1));

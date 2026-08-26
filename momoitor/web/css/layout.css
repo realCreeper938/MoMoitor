@@ -159,6 +159,11 @@ body.no-hover-anim .term-box:hover {
     z-index: 0;
 }
 
+/* 全局关闭背景折线图（设置 → 外观）：隐藏内置卡片的走势折线与降水趋势图。
+   自定义数据卡片的折线（data-spark 以 cd- 开头）有独立开关，不受影响 */
+body.no-bg-charts .sparkline-bg:not([data-spark^="cd-"]) { display: none; }
+body.no-bg-charts .wx-precip-chart { display: none; }
+
 /* Sparkline hover time label */
 .spark-time-label {
     position: absolute;

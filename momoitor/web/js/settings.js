@@ -121,6 +121,7 @@ function initSettings() {
     const settingsAnimChk = document.getElementById('opt-settings-anim');
     const lyricAnimChk = document.getElementById('opt-lyric-anim');
     const cardGradChk = document.getElementById('opt-card-gradient');
+    const bgChartsChk = document.getElementById('opt-bg-charts');
     const updateNotifyChk = document.getElementById('opt-update-notify');
 
     // Server mode
@@ -128,6 +129,7 @@ function initSettings() {
     const serverHostInput = document.getElementById('opt-server-host');
     const serverPortInput = document.getElementById('opt-server-port');
     const serverAuthChk = document.getElementById('opt-server-auth');
+    const serverAuthFields = document.getElementById('server-auth-fields');
     const serverUserInput = document.getElementById('opt-server-user');
     const serverPassInput = document.getElementById('opt-server-pass');
     const debugLogsChk = document.getElementById('opt-debug-logs');
@@ -141,8 +143,34 @@ function initSettings() {
     const datasourceList = document.getElementById('datasource-list');
     const gpuSel = document.getElementById('opt-gpu');
     const metingUrlInput = document.getElementById('opt-meting-url');
-    const lyricsWhitelistInput = document.getElementById('opt-lyrics-whitelist');
-    const lyricsTranslateChk = document.getElementById('opt-lyrics-translate');
+    const musicSpectrumChk = document.getElementById('opt-music-spectrum');
+    const spectrumOptions = document.getElementById('spectrum-options');
+    const spectrumPosSel = document.getElementById('opt-spectrum-position');
+    const spectrumStyleSel = document.getElementById('opt-spectrum-style');
+    const spectrumColorSel = document.getElementById('opt-spectrum-color');
+    const spectrumSmoothRange = document.getElementById('opt-spectrum-smooth');
+    const spectrumSmoothVal = document.getElementById('spectrum-smooth-val');
+    const spectrumSensitivityRange = document.getElementById('opt-spectrum-sensitivity');
+    const spectrumSensitivityVal = document.getElementById('spectrum-sensitivity-val');
+    const spectrumBarsRange = document.getElementById('opt-spectrum-bars');
+    const spectrumBarsVal = document.getElementById('spectrum-bars-val');
+
+    // 频谱选项随开关折叠/展开；滑杆与分段按钮改动即时写入 _appSettings 供卡片实时预览
+    function updateSpectrumOptions(on) {
+        if (spectrumOptions) spectrumOptions.style.display = on ? '' : 'none';
+    }
+    function specLive(key, val) {
+        window._appSettings = window._appSettings || {};
+        window._appSettings.music = Object.assign({}, window._appSettings.music || {}, { [key]: val });
+    }
+    if (musicSpectrumChk) {
+        musicSpectrumChk.addEventListener('change', () => updateSpectrumOptions(musicSpectrumChk.checked));
+    }
+const lyricsWhitelistInput = document.getElementById('opt-lyrics-whitelist');
+const lyricsTranslateChk = document.getElementById('opt-lyrics-translate');
+const lyricsPredictionChk = document.getElementById('opt-lyrics-prediction');
+const lyricsOffsetRange = document.getElementById('opt-lyrics-offset');
+const lyricsOffsetVal = document.getElementById('lyrics-offset-val');
     const hrDeviceSel = document.getElementById('opt-hr-device');
     const hrScanBtn = document.getElementById('btn-hr-scan');
     const hrStatusEl = document.getElementById('hr-status');
@@ -162,6 +190,7 @@ function initSettings() {
     const monitorSel = document.getElementById('opt-monitor');
     const hideMissingChk = document.getElementById('opt-hide-missing');
     const onTopChk = document.getElementById('opt-ontop');
+    let monCache = [];  // 当前显示器枚举缓存（含 id/device），供保存时回推序号
 
     // Theme
     const colorschemeSel = document.getElementById('opt-colorscheme');
@@ -192,6 +221,46 @@ function initSettings() {
     lyricAnimChk.addEventListener('change', () => {
         applyLyricAnim(lyricAnimChk.checked);
     });
+
+    // 歌词时间偏移：拖动即时预览（按新偏移重建显示行），数值随动
+    if (lyricsOffsetRange) {
+        lyricsOffsetRange.addEventListener('input', () => {
+            const v = parseFloat(lyricsOffsetRange.value) || 0;
+            if (lyricsOffsetVal) lyricsOffsetVal.textContent = v + 's';
+            window._appSettings = window._appSettings || {};
+            window._appSettings.lyrics = Object.assign({}, window._appSettings.lyrics, { time_offset: v });
+            if (window.applyLyricTimeOffset) window.applyLyricTimeOffset();
+        });
+    }
+
+    // 歌词预测：开启时提醒用户进度条调整可能导致歌词与播放内容错位
+    if (lyricsPredictionChk) {
+        lyricsPredictionChk.addEventListener('change', () => {
+            if (lyricsPredictionChk.checked && window.showToast) {
+                showToast(t('toast-lyrics-prediction'), 6000);
+            }
+        });
+    }
+
+    // 清除歌词缓存：立即生效，toast 反馈清理条数
+    const btnLyricsClear = document.getElementById('btn-lyrics-clear');
+    if (btnLyricsClear) {
+        btnLyricsClear.addEventListener('click', async () => {
+            btnLyricsClear.disabled = true;
+            try {
+                const r = await pywebview.api.clear_lyrics_cache();
+                if (r && r.ok) {
+                    showToast(t('toast-lyrics-cleared').replace('{n}', String(r.cleared || 0)), 4000);
+                } else {
+                    showToast(t('toast-lyrics-clear-fail'), 4000);
+                }
+            } catch (e) {
+                showToast(t('toast-lyrics-clear-fail'), 4000);
+            } finally {
+                btnLyricsClear.disabled = false;
+            }
+        });
+    }
 
     // 卡片渐变（音乐/天气）：拨动开关立即生效，无需保存
     cardGradChk.addEventListener('change', () => {
@@ -280,6 +349,7 @@ function initSettings() {
     // Clock (personalization > Time subtab)
     const clockFormatSel = document.getElementById('opt-clockformat');
     let clockFormatValue = '24';
+    let intervalValue = '1000';
     const clockShowSecondsChk = document.getElementById('opt-show-seconds');
 
     // Interface background
@@ -293,7 +363,6 @@ function initSettings() {
     const clockBgBlurVal = document.getElementById('clockbgblur-val');
     const clockBgGradientChk = document.getElementById('opt-clockbggradient');
     const clockBgGradientRow = document.getElementById('clockbg-gradient-row');
-    const clockBgGradientDesc = document.getElementById('clockbg-gradient-desc');
     const clockBgOffsetRow = document.getElementById('clockbg-offset-row');
     const clockBgOffsetDesc = document.getElementById('clockbg-offset-desc');
     const clockBgOffsetBtn = document.getElementById('opt-clockbg-offset');
@@ -315,7 +384,6 @@ function initSettings() {
         // Gradient only applies to "fit" mode
         const show = clockBgFitValue === 'fit';
         if (clockBgGradientRow) clockBgGradientRow.style.display = show ? '' : 'none';
-        if (clockBgGradientDesc) clockBgGradientDesc.style.display = show ? '' : 'none';
     }
 
     function updateClockBgOffsetVisibility() {
@@ -324,6 +392,12 @@ function initSettings() {
         if (clockBgOffsetRow) clockBgOffsetRow.style.display = show ? '' : 'none';
         if (clockBgOffsetDesc) clockBgOffsetDesc.style.display = show ? '' : 'none';
     }
+
+    // BasicAuth 开启时才显示用户名/密码输入行
+    function updateServerAuthVisibility() {
+        if (serverAuthFields) serverAuthFields.style.display = serverAuthChk.checked ? '' : 'none';
+    }
+    if (serverAuthChk) serverAuthChk.addEventListener('change', updateServerAuthVisibility);
 
     // Tab switching
     // 使用事件委托，动态注册的插件标签页也能正常工作
@@ -598,16 +672,88 @@ function initSettings() {
         applyLyricAnim(ly.animation === true);
         cardGradChk.checked = g.card_gradient !== false;
         applyCardGradient(g.card_gradient !== false);
+        bgChartsChk.checked = g.bg_charts !== false;
+        applyBgCharts(g.bg_charts !== false);
         autostartChk.checked = await pywebview.api.get_autostart();
         updateNotifyChk.checked = g.update_check_enabled !== false;
 
         // Data
-        intervalSel.value = String(g.refresh_interval || 1000);
+        intervalValue = String(g.refresh_interval || 1000);
+        if (!intervalSel.dataset.init) {
+            initSegmented(intervalSel, intervalValue, (v) => { intervalValue = v; });
+            intervalSel.dataset.init = '1';
+        } else {
+            intervalSel.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.value === intervalValue));
+        }
         renderDataSourceList(g.data_sources);
         metingUrlInput.value = m.meting_api_base || '';
+        const specOn = m.spectrum === true;
+        if (musicSpectrumChk) musicSpectrumChk.checked = specOn;
+        updateSpectrumOptions(specOn);
+        if (spectrumPosSel && !spectrumPosSel.dataset.init) {
+            spectrumPosSel.dataset.init = '1';
+            initSegmented(spectrumPosSel, m.spectrum_position || 'bottom', (v) => specLive('spectrum_position', v));
+        } else if (spectrumPosSel) {
+            spectrumPosSel.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.value === (m.spectrum_position || 'bottom')));
+        }
+        if (spectrumStyleSel && !spectrumStyleSel.dataset.init) {
+            spectrumStyleSel.dataset.init = '1';
+            initSegmented(spectrumStyleSel, m.spectrum_style || 'bars', (v) => specLive('spectrum_style', v));
+        } else if (spectrumStyleSel) {
+            spectrumStyleSel.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.value === (m.spectrum_style || 'bars')));
+        }
+        if (spectrumColorSel && !spectrumColorSel.dataset.init) {
+            spectrumColorSel.dataset.init = '1';
+            initSegmented(spectrumColorSel, m.spectrum_color || 'gradient', (v) => specLive('spectrum_color', v));
+        } else if (spectrumColorSel) {
+            spectrumColorSel.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.value === (m.spectrum_color || 'gradient')));
+        }
+        if (spectrumSmoothRange) {
+            spectrumSmoothRange.value = String(m.spectrum_smooth ?? 65);
+            spectrumSmoothVal.textContent = (m.spectrum_smooth ?? 65) + '%';
+            if (!spectrumSmoothRange.dataset.init) {
+                spectrumSmoothRange.dataset.init = '1';
+                spectrumSmoothRange.addEventListener('input', () => {
+                    const p = parseInt(spectrumSmoothRange.value, 10);
+                    const v = Number.isNaN(p) ? 65 : p;
+                    spectrumSmoothVal.textContent = v + '%';
+                    specLive('spectrum_smooth', v);
+                });
+            }
+        }
+        if (spectrumSensitivityRange) {
+            spectrumSensitivityRange.value = String(m.spectrum_sensitivity ?? 100);
+            spectrumSensitivityVal.textContent = (m.spectrum_sensitivity ?? 100) + '%';
+            if (!spectrumSensitivityRange.dataset.init) {
+                spectrumSensitivityRange.dataset.init = '1';
+                spectrumSensitivityRange.addEventListener('input', () => {
+                    const v = parseInt(spectrumSensitivityRange.value, 10) || 100;
+                    spectrumSensitivityVal.textContent = v + '%';
+                    specLive('spectrum_sensitivity', v);
+                });
+            }
+        }
+        if (spectrumBarsRange) {
+            spectrumBarsRange.value = String(m.spectrum_bars ?? 28);
+            spectrumBarsVal.textContent = String(m.spectrum_bars ?? 28);
+            if (!spectrumBarsRange.dataset.init) {
+                spectrumBarsRange.dataset.init = '1';
+                spectrumBarsRange.addEventListener('input', () => {
+                    const v = parseInt(spectrumBarsRange.value, 10) || 28;
+                    spectrumBarsVal.textContent = String(v);
+                    specLive('spectrum_bars', v);
+                });
+            }
+        }
         lyricsWhitelistInput.value = ly.process_whitelist || '';
         lyricsTranslateChk.checked = ly.auto_translate === true;
         applyLyricAutoTranslate(ly.auto_translate === true);
+        if (lyricsPredictionChk) lyricsPredictionChk.checked = ly.estimated_position === true;
+        if (lyricsOffsetRange) {
+            const off = Number(ly.time_offset) || 0;
+            lyricsOffsetRange.value = String(off);
+            if (lyricsOffsetVal) lyricsOffsetVal.textContent = off + 's';
+        }
 
         // Heart rate
         const hr = s.hr || {};
@@ -664,14 +810,22 @@ function initSettings() {
         // Monitor
         try {
             const monitors = await pywebview.api.get_monitors();
+            monCache = monitors;
             monitorSel.innerHTML = '';
-            monitors.forEach((m, i) => {
+            monitors.forEach((m) => {
                 const opt = document.createElement('option');
-                opt.value = i;
-                opt.textContent = `${m.name || 'Monitor'} (${m.width}x${m.height})`;
+                opt.value = m.id || m.device || '';
+                const label = m.name || 'Monitor';
+                const res = `${m.width}x${m.height}`;
+                const primaryTag = m.primary ? ' *' : '';
+                opt.textContent = `${label} (${res})${primaryTag}`;
                 monitorSel.appendChild(opt);
             });
-            monitorSel.value = d.monitor || 0;
+            const wantId = d.monitor_id || '';
+            const idx = d.monitor || 0;
+            monitorSel.value = monitors.some(m => (m.id || m.device) === wantId)
+                ? wantId
+                : ((monitors[idx] && (monitors[idx].id || monitors[idx].device)) || (monitors[0] && (monitors[0].id || monitors[0].device)) || '');
         } catch (e) { console.warn('get_monitors:', e); }
         hideMissingChk.checked = d.hide_when_monitor_missing === true;
         onTopChk.checked = d.on_top !== false;
@@ -749,6 +903,7 @@ function initSettings() {
         serverHostInput.value = sv.host || '0.0.0.0';
         serverPortInput.value = sv.port || 20622;
         serverAuthChk.checked = sv.auth_enabled === true;
+        updateServerAuthVisibility();
         serverUserInput.value = sv.auth_user || '';
         serverPassInput.value = sv.auth_pass || '';
         debugLogsChk.checked = g.debug_logs === true;
@@ -803,8 +958,9 @@ function initSettings() {
                 settings_shadow: settingsShadowChk.checked,
                 settings_animation: settingsAnimChk.checked,
                 card_gradient: cardGradChk.checked,
+                bg_charts: bgChartsChk.checked,
                 update_check_enabled: updateNotifyChk.checked,
-                refresh_interval: parseInt(intervalSel.value),
+                refresh_interval: parseInt(intervalValue),
                 data_sources: collectDataSourceList(),
                 data_source: collectDataSourceList().find(d => d.enabled)?.source || 'lhm',
                 colorscheme: colorschemeSel.value,
@@ -818,7 +974,13 @@ function initSettings() {
             },
             display: {
                 ...(existing.display || {}),
-                monitor: parseInt(monitorSel.value) || 0,
+                monitor_id: monitorSel.value,
+                monitor: (() => {
+                    const sel = monitorSel.value;
+                    if (sel === '') return parseInt(monitorSel.value) || 0;
+                    const i = monCache.findIndex(m => (m.id || m.device) === sel);
+                    return i >= 0 ? i : 0;
+                })(),
                 gpu_index: parseInt(gpuSel.value) || 0,
                 hide_when_monitor_missing: hideMissingChk.checked,
                 on_top: onTopChk.checked,
@@ -856,12 +1018,21 @@ function initSettings() {
                 ...(existing.music || {}),
                 meting_api_base: metingUrlInput.value.trim(),
                 auto_launch_music_player: autoLaunchChk ? autoLaunchChk.checked : true,
+                spectrum: !!(musicSpectrumChk && musicSpectrumChk.checked),
+                spectrum_position: spectrumPosSel ? (spectrumPosSel.querySelector('button.active')?.dataset.value || 'bottom') : 'bottom',
+                spectrum_style: spectrumStyleSel ? (spectrumStyleSel.querySelector('button.active')?.dataset.value || 'bars') : 'bars',
+                spectrum_color: spectrumColorSel ? (spectrumColorSel.querySelector('button.active')?.dataset.value || 'gradient') : 'gradient',
+                spectrum_smooth: spectrumSmoothRange ? (Number.isNaN(parseInt(spectrumSmoothRange.value, 10)) ? 65 : parseInt(spectrumSmoothRange.value, 10)) : 65,
+                spectrum_sensitivity: spectrumSensitivityRange ? (parseInt(spectrumSensitivityRange.value, 10) || 100) : 100,
+                spectrum_bars: spectrumBarsRange ? (parseInt(spectrumBarsRange.value, 10) || 28) : 28,
             },
             lyrics: {
                 ...(existing.lyrics || {}),
                 process_whitelist: lyricsWhitelistInput.value.trim(),
                 auto_translate: lyricsTranslateChk.checked,
                 animation: lyricAnimChk.checked,
+                estimated_position: !!(lyricsPredictionChk && lyricsPredictionChk.checked),
+                time_offset: lyricsOffsetRange ? (parseFloat(lyricsOffsetRange.value) || 0) : 0,
             },
             hr: {
                 ...(existing.hr || {}),
@@ -917,10 +1088,12 @@ function initSettings() {
         applySettingsEffects();
         applyLyricAutoTranslate((s.lyrics || {}).auto_translate === true);
         applyLyricAnim((s.lyrics || {}).animation === true);
+        if (window.applyLyricTimeOffset) window.applyLyricTimeOffset();
         const fnt = s.fonts || {};
         applyFonts(fnt.ui, fnt.data, fnt.clock);
         const ckc = s.clock || {};
         applyCardGradient((s.general || {}).card_gradient !== false);
+        applyBgCharts((s.general || {}).bg_charts !== false);
         await applyAppBackgroundSetting(ckc.bg_image, ckc.bg_opacity, ckc.bg_blur, ckc.bg_gradient !== false, ckc.bg_fit || 'fit', ckc.bg_offset_x ?? 50, ckc.bg_offset_y ?? 50);
         applyHwNames(true);
         applyFeatureToggles(s.feature_toggles || {});

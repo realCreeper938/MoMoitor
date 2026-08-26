@@ -14,7 +14,7 @@ import time
 import psutil
 from loguru import logger
 
-from .base import BaseMonitor
+from .base import BaseMonitor, safe_int
 
 # 静态硬件元数据（名称、规格）很少变化。
 _META_TTL = 300
@@ -23,14 +23,11 @@ _META_TTL = 300
 _IGPU_KEYWORDS = ("microsoft", "basic", "uhd", "iris", "radeon graphics", "vega", "intel")
 
 
-def _parse_int(raw, default=None):
-    """将 WMI 返回的字符串/数值安全转为 int。"""
-    if raw is None:
-        return default
-    try:
-        return int(str(raw).strip())
-    except (TypeError, ValueError):
-        return default
+# 常见核显关键字（与 lhm._IGPU_KEYWORDS 语义一致，用于挑选独显）。
+_IGPU_KEYWORDS = ("microsoft", "basic", "uhd", "iris", "radeon graphics", "vega", "intel")
+
+# 数值解析统一走 base 的安全转换（历史名 _parse_int 保留为别名）
+_parse_int = safe_int
 
 
 class WMIMonitor(BaseMonitor):

@@ -51,26 +51,45 @@ def _start_background_services(api):
     _hr.start()
     if api._feature_on("music"):
         _music.start()
+    api._sync_spectrum()
+
+
+def _target_screen(display: dict, screens: list):
+    """根据 display 设置解析目标 webview.Screen，无偏好/缺失时回退到首屏/主屏。
+
+    webview.Screen 只暴露坐标/尺寸/缩放，不含设备 ID。因此统一先经 win_svc 的
+    物理枚举（含设备 ID）解析出目标屏，再按其下标从 webview.screens 取同序 Screen。
+    """
+    if not screens:
+        return None
+    mon_target = win_svc.display_target(display)
+    monitors = win_svc.get_monitors()
+    target_monitor, _ = win_svc.find_display(mon_target, monitors)
+    if target_monitor is None:
+        return screens[0]
+    try:
+        idx = monitors.index(target_monitor)
+    except ValueError:
+        idx = 0
+    return screens[idx] if 0 <= idx < len(screens) else screens[0]
 
 
 def create_window(monitor):
     api = Api(monitor)
     index = os.path.join(WEB_DIR, "index.html")
 
-    mon_idx = api._settings.get("display", {}).get("monitor", 0)
     on_top = api._settings.get("display", {}).get("on_top", True)
-    monitors = win_svc.get_monitors()
-    wx = wy = None
+    screens = webview.screens
     ww, wh = 800, 600
-    if 0 <= mon_idx < len(monitors):
-        m = monitors[mon_idx]
-        wx, wy, ww, wh = m["x"], m["y"], m["width"], m["height"]
+    target_screen = _target_screen(api._settings.get("display", {}), screens)
+    if target_screen is not None:
+        ww, wh = target_screen.width, target_screen.height
 
     window = webview.create_window(
         "MoMoitor", url=index, js_api=api,
         fullscreen=False, frameless=False, easy_drag=False,
         background_color="#050505", on_top=on_top,
-        x=wx, y=wy, width=ww, height=wh,
+        width=ww, height=wh, screen=target_screen,
     )
     api.set_window(window)
     _start_background_services(api)

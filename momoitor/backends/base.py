@@ -9,6 +9,22 @@ from ctypes import wintypes
 import psutil
 
 
+def safe_float(raw, default=None):
+    """把任意后端原始值（WMI 字符串 / 注册表值等）安全转 float；失败返回 default。"""
+    try:
+        return float(str(raw).strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def safe_int(raw, default=None):
+    """把任意后端原始值安全转 int；失败返回 default。"""
+    try:
+        return int(str(raw).strip())
+    except (TypeError, ValueError):
+        return default
+
+
 class _MIB_IF_ROW2(ctypes.Structure):
     _fields_ = [
         ("InterfaceLuid", ctypes.c_uint64), ("InterfaceIndex", ctypes.c_uint32),
@@ -202,16 +218,31 @@ class BaseMonitor(abc.ABC):
         return {"name": self.__class__.__name__, "version": None}
 
     @staticmethod
-    def _run_wmic(args, timeout=3):
-        """运行 WMIC 命令并返回解码后的 stdout；失败时返回空字符串。"""
-        import subprocess
+    def _run_cim(wmi_class: str, props, where: str = "", timeout: int = 6) -> list:
+        """通过 PowerShell Get-CimInstance 查询 WMI/CIM 类，返回属性字典列表。
+
+        替代已从 Windows 11 24H2+ 移除的 wmic.exe。数值属性保持 int、
+        空值为 None；查询失败或系统不支持时返回 []，不抛出。
+        """
+        import json
+        from momoitor.common import run_hidden
         try:
-            return subprocess.check_output(
-                ["wmic"] + args,
-                timeout=timeout, stderr=subprocess.DEVNULL
-            ).decode("utf-8", errors="ignore")
+            q = f"Get-CimInstance -ClassName {wmi_class}"
+            if where:
+                q += f' -Filter "{where}"'
+            q += " | Select-Object " + ", ".join(props) + " | ConvertTo-Json -Compress"
+            r = run_hidden(
+                ["powershell", "-NoProfile", "-Command", q],
+                timeout=timeout, text=True,
+            )
+            if r.returncode != 0 or not r.stdout.strip():
+                return []
+            data = json.loads(r.stdout)
         except Exception:
-            return ""
+            return []
+        if isinstance(data, dict):
+            data = [data]
+        return data if isinstance(data, list) else []
 
     @staticmethod
     def _run_powershell(script, timeout=5):
@@ -233,6 +264,20 @@ class BaseMonitor(abc.ABC):
     def get_hw_detail(self, gpu_index=None) -> dict:
         """返回 CPU、GPU、内存的详细硬件信息。"""
         return {"cpu": {}, "gpu": {}, "mem": {}}
+
+    def get_sensor_groups(self) -> list:
+        """原始传感器分组目录（自选数据卡片编辑器用）。
+
+        返回 [{"name": 组名, "items": [{"key", "label", "kind", "unit"}]}, ...]；
+        key 为 "raw:{ident}"，ident 格式由各后端自定义并保证可被
+        get_sensor_value 反查。默认后端无原始传感器树，返回 []。
+        """
+        return []
+
+    def get_sensor_value(self, ident: str):
+        """按目录 ident 反查原始传感器实时值；不支持时返回 None。"""
+        return None
+
 
     def get_network(self) -> dict:
         now = time.monotonic()
@@ -288,16 +333,15 @@ class BaseMonitor(abc.ABC):
         out = self._run_powershell(ps)
         if out and out.lower() not in ('', iface.lower()):
             return out
-        # 回退：WMI（较旧 Windows）
-        out = self._run_wmic([
-            "nic", "where", f"NetConnectionID='{iface}'",
-            "get", "ProductName", "/format:list"
-        ])
-        for line in out.splitlines():
-            if line.startswith("ProductName="):
-                val = line.split("=", 1)[1].strip()
-                if val:
-                    return val
+        # 回退：CIM 查询（Get-NetAdapter 不可用的较旧 Windows）
+        rows = self._run_cim(
+            "Win32_NetworkAdapter", ["ProductName"],
+            where="NetConnectionID='" + iface.replace('"', "") + "'",
+        )
+        for row in rows:
+            val = str(row.get("ProductName") or "").strip()
+            if val:
+                return val
         return ""
 
     def _get_disk_partitions(self):

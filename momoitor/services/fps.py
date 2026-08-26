@@ -1,12 +1,13 @@
 """通过 RTSS（RivaTuner Statistics Server）共享内存追踪 FPS —— 仅限 Windows。"""
 
-import time
 import threading
 import ctypes
 from ctypes import wintypes
 import struct
 from collections import deque
 from loguru import logger
+
+from momoitor.common import Poller
 
 HISTORY_SIZE = 60
 
@@ -28,8 +29,6 @@ _frametime = 0.0
 _process_name = ""
 _history_fps = deque([0.0] * HISTORY_SIZE, maxlen=HISTORY_SIZE)
 _lock = threading.Lock()
-_running = False
-_thread = None
 
 
 def get_current():
@@ -123,32 +122,26 @@ def _read_rtss():
 
 def _poll():
     global _fps, _frametime, _process_name
-    while _running:
-        try:
-            fps, ft, name = _read_rtss()
-            with _lock:
-                _fps = fps
-                _frametime = ft
-                _process_name = name
-                _history_fps.append(float(fps))
-        except Exception:
-            pass
-        time.sleep(1.0)
+    try:
+        fps, ft, name = _read_rtss()
+        with _lock:
+            _fps = fps
+            _frametime = ft
+            _process_name = name
+            _history_fps.append(float(fps))
+    except Exception:
+        pass
+
+
+_poller = Poller("rtss-fps", 1.0, _poll)
 
 
 def start():
-    global _running, _thread
-    if _running:
-        return
-    _running = True
-    if _thread and _thread.is_alive():
-        # stop() 后立即 start() 时旧线程仍在运行，直接复用避免重复轮询
-        return
-    _thread = threading.Thread(target=_poll, daemon=True)
-    _thread.start()
-    logger.info("RTSS FPS tracking started")
+    fresh = not _poller.running()
+    _poller.start()
+    if fresh:
+        logger.info("RTSS FPS tracking started")
 
 
 def stop():
-    global _running
-    _running = False
+    _poller.stop()

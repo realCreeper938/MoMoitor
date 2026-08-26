@@ -4,8 +4,6 @@
 不支持：天气预警；无逆地理编码，城市名不提供。
 """
 
-import requests
-
 from momoitor.services.weather import common
 
 _FORECAST = "https://api.open-meteo.com/v1/forecast"
@@ -58,7 +56,7 @@ def available(w: dict) -> bool:
 
 
 def get_now(w: dict) -> dict:
-    resp = requests.get(
+    data = common.get_json(
         _FORECAST,
         params={
             "latitude": w.get("lat"), "longitude": w.get("lon"),
@@ -66,10 +64,7 @@ def get_now(w: dict) -> dict:
                         "weather_code,wind_speed_10m,wind_direction_10m"),
             "timezone": "auto",
         },
-        timeout=5,
     )
-    resp.raise_for_status()
-    data = resp.json()
     cur = data.get("current") or {}
     code = cur.get("weather_code")
     category, text = _WMO.get(code, ("cloud", ""))
@@ -94,17 +89,14 @@ def get_now(w: dict) -> dict:
 
 
 def get_airquality(w: dict) -> dict:
-    resp = requests.get(
+    data = common.get_json(
         _AIR,
         params={
             "latitude": w.get("lat"), "longitude": w.get("lon"),
             "current": "us_aqi,pm2_5,pm10",
             "timezone": "auto",
         },
-        timeout=5,
     )
-    resp.raise_for_status()
-    data = resp.json()
     cur = data.get("current") or {}
     aqi = cur.get("us_aqi")
     indexes = []

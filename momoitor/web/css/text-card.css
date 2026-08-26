@@ -337,3 +337,153 @@
 .term-box[style*="display: none"] {
     display: none !important;
 }
+
+/* Custom data card (自选数据) */
+.custom-data-card .cd-lines {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+    width: 100%;
+}
+
+.custom-data-card .info-line {
+    align-self: flex-start;
+    max-width: 100%;
+}
+
+.custom-data-card .cd-line-text {
+    color: var(--text);
+    font-family: var(--font-data);
+    font-size: calc(clamp(14px, 1.4vw, 20px) * var(--font-scale));
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.custom-data-card .metric-value.big {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 大卡片（span 2）与内置 CPU/GPU 大卡片布局对齐：底部、左侧、行间距一致 */
+.custom-data-card > .box-content {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 2px 20px 10px 18px;
+}
+
+.custom-data-card[data-span="2"] > .box-content {
+    align-items: flex-end;
+    padding-bottom: 12px;
+}
+
+.custom-data-card .split-row {
+    width: 100%;
+    align-items: center;
+}
+
+.custom-data-card[data-span="2"] .split-row {
+    align-items: flex-end;
+}
+
+.custom-data-card .data-col,
+.custom-data-card[data-span="2"] .data-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    min-width: 0;
+}
+
+.custom-data-card .data-col {
+    justify-content: center;
+    gap: 2px;
+}
+
+.custom-data-card[data-span="2"] .data-col {
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.custom-data-card[data-span="2"] .metric-value.big {
+    text-align: left;
+    min-width: 0;
+}
+
+/* Data card background sparkline color (user-configurable via --spark-color) */
+.custom-data-card .sparkline-bg .spark-line {
+    stroke: var(--spark-color, var(--green));
+}
+
+.custom-data-card .sparkline-bg .spark-area {
+    fill: var(--spark-color, var(--green));
+}
+
+/* Data card editor: slot rows */
+.cd-slot-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    width: 100%;
+}
+
+.cd-slot-row select {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.cd-slot-row .cd-src {
+    flex: 0 0 38%;
+}
+
+.cd-slot-row .cd-slot-del {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 2px 8px;
+    font-size: 15px;
+}
+
+/* Data card editor: info-line template rows (text + variable insert) */
+.cd-line-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.cd-line-row .ce-line-text {
+    flex: 2 1 auto;
+    min-width: 120px;
+}
+
+.cd-line-row .cd-ins-src {
+    flex: 0 0 26%;
+    min-width: 90px;
+}
+
+.cd-line-row .cd-ins-item {
+    flex: 1 1 auto;
+    min-width: 90px;
+}
+
+.cd-line-row .cd-ins-btn,
+.cd-line-row .cd-slot-del {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 2px 8px;
+    font-size: 13px;
+}
+
+/* Spacing inputs (left / bottom pad) in the data-card editor */
+.card-edit-body .cd-space-input {
+    width: 86px !important;
+    margin-bottom: 2px;
+}
+
+

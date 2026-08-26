@@ -8,6 +8,7 @@ from loguru import logger
 from momoitor.backends import LHMMonitor, HWiNFOMonitor, WMIMonitor, AIDA64Monitor
 from momoitor.backends.composite import CompositeMonitor
 from momoitor.config import save_settings
+from momoitor.services.catalog import SOURCE_ORDER, build_source_entry
 
 
 _EMPTY_SNAPSHOT = {
@@ -54,6 +55,19 @@ def build_monitor(source_names: list):
     return CompositeMonitor(monitors)
 
 
+def _monitors_map(monitor, source_names: list) -> dict:
+    """提取 名称 -> 后端实例 的映射（含单后端与聚合两种情况）。
+
+    聚合后端内部保存 [(name, mon), ...]；单后端则直接把当前启用的唯一源
+    映射到该实例。该映射用于按源精确定位标准指标 / 原始传感器值。
+    """
+    pairs = getattr(monitor, "_monitors", None)
+    if pairs:
+        return dict(pairs)
+    name = source_names[0] if source_names else "lhm"
+    return {name: monitor}
+
+
 class HardwareService:
     """围绕硬件监视后端的线程安全包装类。"""
 
@@ -62,6 +76,8 @@ class HardwareService:
         self._lock = threading.RLock()
         self._settings = settings
         self._source_names = _sources_from_settings(settings)
+        self._mon_map = _monitors_map(monitor, self._source_names)
+        self._source_snaps = {}   # 按源最近一次快照缓存（read_value 用）
         self._closed = False
 
     def snapshot(self, skip_net=False) -> dict:
@@ -69,6 +85,7 @@ class HardwareService:
             gpu_index = self._settings.get("display", {}).get("gpu_index", 0)
             with self._lock:
                 data = self._sanitize(self._monitor.snapshot(gpu_index=gpu_index, skip_net=skip_net))
+                self._cache_source_snaps(data)
             data["error"] = ""
             data["unavailable_sources"] = self._unavailable_sources(data)
             return data
@@ -77,6 +94,17 @@ class HardwareService:
             data = {**_EMPTY_SNAPSHOT, "error": str(e)}
             data["unavailable_sources"] = list(self._source_names)
             return data
+
+    def _cache_source_snaps(self, data: dict):
+        """缓存本次快照的按源明细，供 read_value 精确取某源的值。
+
+        聚合后端内部已记录各源快照；单后端直接用整体快照（含融合后的字段）。
+        """
+        getter = getattr(self._monitor, "get_source_snapshots", None)
+        snaps = getter() if callable(getter) else None
+        if not isinstance(snaps, dict):
+            snaps = {self._source_names[0]: data} if self._source_names else {}
+        self._source_snaps = snaps
 
     def _unavailable_sources(self, data: dict) -> list:
         """从快照中提取不可用的数据源名。
@@ -129,6 +157,49 @@ class HardwareService:
         except Exception:
             return {"name": " + ".join(self._source_names) or "None", "version": None}
 
+    def get_data_catalog(self) -> dict:
+        """自选数据卡片编辑器目录：当前启用的数据源 × (标准指标 + 原始传感器树)。"""
+        sources = []
+        for name in SOURCE_ORDER:
+            if name not in self._mon_map:
+                continue
+            raw_groups = []
+            mon = self._mon_map.get(name)
+            try:
+                raw_groups = mon.get_sensor_groups()
+            except Exception as e:
+                logger.warning("{} get_sensor_groups failed: {}", name, e)
+            sources.append(build_source_entry(name, raw_groups))
+        return {"sources": sources}
+
+    def read_value(self, source, key):
+        """解析自选数据槽位（某源 + key）的实时值；不可用时返回 None。
+
+        - "std:{group}.{field}"：取该源最近一次快照中的标准指标字段；
+        - "raw:{ident}"：交给该后端反查原始传感器实时值。
+        """
+        try:
+            key = str(key or "")
+            if not source or source not in self._mon_map:
+                return None
+            if key.startswith("std:"):
+                snap = self._source_snaps.get(source)
+                if not snap:
+                    return None
+                group, _, field = key[4:].partition(".")
+                val = snap.get(group)
+                val = val.get(field) if isinstance(val, dict) else None
+                if isinstance(val, bool) or not isinstance(val, (int, float)):
+                    return None
+                return float(val)
+            if key.startswith("raw:"):
+                v = self._mon_map.get(source).get_sensor_value(key[4:])
+                return float(v) if isinstance(v, (int, float)) else None
+        except Exception as e:
+            logger.warning("read_value failed for {} / {}: {}", source, key, e)
+        return None
+
+
     def change_backend(self, sources) -> bool:
         """按新数据源列表重建监视器。sources: [{source, enabled}, ...] 顺序即优先级。"""
         new_names = []
@@ -146,6 +217,8 @@ class HardwareService:
             old_monitor = self._monitor
             self._monitor = new_monitor
             self._source_names = new_names
+            self._mon_map = _monitors_map(new_monitor, new_names)
+            self._source_snaps = {}
             self._closed = False
             try:
                 old_monitor.close()

@@ -7,9 +7,11 @@ import time
 from dataclasses import dataclass
 
 import jwt
-import requests
+from loguru import logger
 
 from momoitor.config import has_weather_creds
+from momoitor.services.cache import TTLCache
+from momoitor.services.weather import common
 
 API_HOST = "https://devapi.qweather.com"
 
@@ -70,43 +72,37 @@ def category_from_icon(code) -> str:
     return "cloud"
 
 
-_city_cache = {}  # 键为 "lat,lon"，值为 {"name": str, "ts": float}
+_city_cache = TTLCache()  # 键为 "lat,lon"，值为城市名
 
 
 def get_city_name(c: _Creds) -> str:
     cache_key = f"{c.lat},{c.lon}"
-    now = time.time()
-    cached = _city_cache.get(cache_key)
-    if cached and now - cached.get("ts", 0) < 86400:
-        return cached.get("name", "")
-    try:
-        resp = requests.get(
-            "https://geoapi.qweather.com/v2/city/lookup",
-            params={"location": c.location(), "number": 1},
-            headers=_auth_headers(c),
-            timeout=5,
+    name, fresh = _city_cache.get(cache_key, 86400)
+    if not fresh:
+        try:
+            data = common.get_json(
+                "https://geoapi.qweather.com/v2/city/lookup",
+                params={"location": c.location(), "number": 1},
+                headers=_auth_headers(c),
             )
-        resp.raise_for_status()
-        data = resp.json()
-        if data.get("code") == "200" and data.get("location"):
-            name = data["location"][0].get("name", "")
-            _city_cache[cache_key] = {"name": name, "ts": now}
-            return name
-    except Exception:
-        pass
-    return cached.get("name", "") if cached else ""
+            if data.get("code") == "200" and data.get("location"):
+                name = data["location"][0].get("name", "")
+                _city_cache.set(cache_key, name)
+        except Exception as e:
+            logger.debug("QWeather city lookup failed: {}", e)
+        if name is None:
+            # 刷新失败时回退使用旧值（若有）
+            name, _ = _city_cache.get(cache_key, None)
+    return name or ""
 
 
 def get_now(w: dict) -> dict:
     c = _creds(w)
-    resp = requests.get(
+    data = common.get_json(
         f"{API_HOST}/v7/weather/now",
         params={"location": c.location()},
         headers=_auth_headers(c),
-        timeout=5,
     )
-    resp.raise_for_status()
-    data = resp.json()
     if data.get("code") != "200":
         return {"error": data.get("code")}
     now = data["now"]
@@ -126,14 +122,11 @@ def get_now(w: dict) -> dict:
 
 def get_minutely(w: dict) -> dict:
     c = _creds(w)
-    resp = requests.get(
+    data = common.get_json(
         f"{API_HOST}/v7/minutely/5m",
         params={"location": c.location(), "lang": "zh"},
         headers=_auth_headers(c),
-        timeout=5,
     )
-    resp.raise_for_status()
-    data = resp.json()
     if data.get("code") != "200":
         return {"error": data.get("code")}
     return {
@@ -147,14 +140,11 @@ def get_minutely(w: dict) -> dict:
 
 def get_airquality(w: dict) -> dict:
     c = _creds(w)
-    resp = requests.get(
+    data = common.get_json(
         f"{API_HOST}/airquality/v1/current/{c.lat}/{c.lon}",
         params={"lang": "zh"},
         headers=_auth_headers(c),
-        timeout=5,
     )
-    resp.raise_for_status()
-    data = resp.json()
     indexes = []
     for idx in data.get("indexes") or []:
         color = idx.get("color") or {}
@@ -188,14 +178,11 @@ def get_airquality(w: dict) -> dict:
 
 def get_alerts(w: dict) -> list:
     c = _creds(w)
-    resp = requests.get(
+    data = common.get_json(
         f"{API_HOST}/weatheralert/v1/current/{c.lat}/{c.lon}",
         params={"localTime": "true", "lang": "zh"},
         headers=_auth_headers(c),
-        timeout=5,
     )
-    resp.raise_for_status()
-    data = resp.json()
     if data.get("metadata", {}).get("zeroResult", True):
         return []
     result = []

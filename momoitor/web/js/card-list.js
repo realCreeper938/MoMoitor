@@ -43,6 +43,17 @@ function _cardPreviewHTML(id) {
                 : '<span class="clp-html-glyph">&lt;/&gt;</span>')
             + '</div>';
     }
+    if (m.type === 'data') {
+        const cfg = _dataCardCfg(id);
+        let html = '<div class="clp-value-row"><span class="clp-value">--</span>'
+            + '<span class="clp-pct">' + escapeHtml(_cdUnitFor(cfg.big ? _cdItemByKey(cfg.big.source, cfg.big.key) : null)) + '</span></div>';
+        for (const ln of (cfg.lines || []).slice(0, 2)) {
+            const item = _cdItemByKey(ln.source, ln.key);
+            html += '<div class="clp-info"><span class="mono">--</span>'
+                + '<span class="clp-unit">' + escapeHtml(_cdUnitFor(item)) + '</span></div>';
+        }
+        return html;
+    }
     return '<div class="clp-value-row"><span class="clp-value">' + m.value
         + '</span><span class="clp-pct">' + m.pct + '</span></div>'
         + m.lines.map(l =>
@@ -58,6 +69,12 @@ function _customTypePreviewHTML(type) {
     if (type === 'html') {
         return '<div class="clp-text"><span class="clp-html-glyph">&lt;/&gt;</span></div>';
     }
+    if (type === 'data') {
+        return '<div class="clp-value-row"><span class="clp-value">42</span>'
+            + '<span class="clp-pct">%</span></div>'
+            + '<div class="clp-info"><span class="mono">65</span>'
+            + '<span class="clp-unit">°C</span></div>';
+    }
     return '<div class="clp-text"><span class="clp-text-empty">Aa</span></div>';
 }
 
@@ -66,9 +83,9 @@ function _renderCardList() {
     if (!body) return;
     body.textContent = '';
 
-    // Text / html card types are listed like every other card in the grid;
+    // Text / html / data card types are listed like every other card in the grid;
     // clicking one creates a brand new card of that type (addable repeatedly).
-    [['text', 'card-add-text'], ['html', 'card-add-html']].forEach(function(pair) {
+    [['text', 'card-add-text'], ['html', 'card-add-html'], ['data', 'card-add-data']].forEach(function(pair) {
         const type = pair[0];
         const item = document.createElement('div');
         item.className = 'card-list-item card-add-item';

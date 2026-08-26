@@ -4,8 +4,7 @@ MediaMixin 汇聚展示类卡片（音乐 / 歌词 / FPS / 流量 / 壁纸）与
 （音量 / 亮度）的 JS 桥接方法，并统一做 feature_toggles 开关判断。
 """
 
-from loguru import logger
-
+from momoitor.api._util import feature_gated, safe
 from momoitor.services import background as bg_svc
 from momoitor.services.brightness import adjust_brightness
 from momoitor.services.fps import get_current as get_fps
@@ -28,56 +27,49 @@ class MediaMixin:
     方法统一通过 feature_toggles 开关判断。
     """
 
+    @feature_gated("music", {"available": False})
+    @safe("get_music", {"available": False}, include_error=True)
     def get_music(self):
-        if not self._feature_on("music"):
-            return {"available": False}
-        try:
-            return get_music()
-        except Exception as e:
-            logger.warning("get_music failed: {}", e)
-            return {"available": False, "error": str(e)}
+        return get_music()
 
+    @safe("get_lyrics", {"lines": []})
     def get_lyrics(self, title, artist=""):
         if not self._settings.get("music", {}).get("meting_api_base", "").strip():
             return {"lines": []}
-        try:
-            return {"lines": self.lyrics.get_lyrics(title or "", artist or "")}
-        except Exception as e:
-            logger.warning("get_lyrics failed: {}", e)
-            return {"lines": []}
+        return {"lines": self.lyrics.get_lyrics(title or "", artist or "")}
 
+    @safe("clear_lyrics_cache", {"ok": False, "cleared": 0}, include_error=True)
+    def clear_lyrics_cache(self):
+        """清除全部已缓存的歌词（设置 → 数据 → 歌词），返回 {ok, cleared}。"""
+        cleared = self.lyrics.invalidate()
+        return {"ok": True, "cleared": cleared}
+
+    @feature_gated("fps", {"fps": 0, "frametime": 0, "low1pct": 0, "avg_fps": 0, "p99_fps": 0})
     def get_fps(self):
-        if not self._feature_on("fps"):
-            return {"fps": 0, "frametime": 0, "low1pct": 0, "avg_fps": 0, "p99_fps": 0}
         return get_fps()
 
     def launch_last_player(self):
         return launch_last_player()
 
+    @feature_gated("music", {"error": "disabled"})
     def music_play_pause(self):
-        if not self._feature_on("music"):
-            return {"error": "disabled"}
         return music_play_pause()
 
+    @feature_gated("music", {"error": "disabled"})
     def music_next(self):
-        if not self._feature_on("music"):
-            return {"error": "disabled"}
         return music_next()
 
+    @feature_gated("music", {"error": "disabled"})
     def music_prev(self):
-        if not self._feature_on("music"):
-            return {"error": "disabled"}
         return music_prev()
 
+    @feature_gated("music", {"error": "disabled"})
     def music_seek(self, position):
-        if not self._feature_on("music"):
-            return {"error": "disabled"}
         return music_seek(position)
 
+    @feature_gated("music", {"error": "disabled"})
     def music_switch_session(self):
         """切换到下一个 SMTC 媒体会话（多个会话时循环）。"""
-        if not self._feature_on("music"):
-            return {"error": "disabled"}
         return music_switch_session()
 
     def adjust_volume(self, action, level=None):
@@ -87,44 +79,36 @@ class MediaMixin:
         idx = monitor_index if monitor_index is not None else self._settings.get("display", {}).get("monitor", 0)
         return adjust_brightness(action, level, idx)
 
+    @feature_gated("traffic", {"error": "disabled"})
     def get_traffic_today(self):
-        if not self._feature_on("traffic"):
-            return {"error": "disabled"}
         return self.traffic.get_today()
 
+    @feature_gated("traffic", {"error": "disabled"})
     def get_traffic_month(self, year, month):
-        if not self._feature_on("traffic"):
-            return {"error": "disabled"}
         return self.traffic.get_month(int(year), int(month))
 
+    @feature_gated("traffic", {"error": "disabled"})
     def get_traffic_top_processes(self, limit=5):
-        if not self._feature_on("traffic"):
-            return {"error": "disabled"}
         return self.traffic.get_top_processes(int(limit))
 
+    @feature_gated("clock_bg", [])
     def get_bg_list(self):
-        if not self._feature_on("clock_bg"):
-            return []
         return bg_svc.get_bg_list()
 
+    @feature_gated("clock_bg", "")
     def resolve_background_image(self, image=""):
-        if not self._feature_on("clock_bg"):
-            return ""
         return bg_svc.resolve_background(image)
 
+    @feature_gated("clock_bg", "")
     def get_clock_bg_top_color(self, image=""):
-        if not self._feature_on("clock_bg"):
-            return ""
         return bg_svc.get_image_top_color(image)
 
+    @feature_gated("clock_bg", "")
     def save_wallpaper(self, filename="", data_url=""):
         """前端导入壁纸：接收 base64 data URL，保存到用户壁纸目录，返回 wp/ 路径。"""
-        if not self._feature_on("clock_bg"):
-            return ""
         return bg_svc.save_wallpaper(filename, data_url)
 
+    @feature_gated("clock_bg", False)
     def delete_wallpaper(self, path=""):
         """删除用户壁纸（仅 wp/ 下用户导入的壁纸）。"""
-        if not self._feature_on("clock_bg"):
-            return False
         return bg_svc.delete_wallpaper(path)

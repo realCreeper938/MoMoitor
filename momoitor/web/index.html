@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="css/music.css?v=37">
     <link rel="stylesheet" href="css/cards.css?v=41">
     <link rel="stylesheet" href="css/values.css?v=37">
-    <link rel="stylesheet" href="css/settings.css?v=38">
+    <link rel="stylesheet" href="css/settings.css?v=39">
     <link rel="stylesheet" href="css/popups.css?v=37">
     <link rel="stylesheet" href="css/responsive.css?v=37">
     <link rel="stylesheet" href="css/text-card.css?v=38">
@@ -390,6 +390,7 @@
 
             <!-- Music (left of process list) -->
             <div class="term-box" id="music-section" style="display:none">
+                <canvas class="music-spectrum" id="music-spectrum"></canvas>
                 <div class="layout-drag-handle">⠿</div>
                 <span class="hw-name" id="h-music-process"></span>
                 <button type="button" class="music-switch" id="h-music-switch" aria-label="Switch source">
@@ -677,6 +678,39 @@
                 <label class="ce-label" for="ce-html" data-i18n="html-edit-content">HTML Content</label>
                 <textarea id="ce-html" rows="7" placeholder="<b>Hello</b>"></textarea>
             </div>
+            <div id="ce-data-fields" style="display:none">
+                <div class="ce-field">
+                    <label class="ce-label" for="ce-data-title" data-i18n="data-edit-title-label">Card Title</label>
+                    <input type="text" id="ce-data-title" class="input-sm" placeholder="">
+                </div>
+                <div class="ce-field">
+                    <span class="ce-label" data-i18n="data-edit-big">Big Value</span>
+                    <div class="cd-slot-row cd-slot-big">
+                        <select id="ce-big-src" class="cd-src"></select>
+                        <select id="ce-big-item" class="cd-item"></select>
+                        <button type="button" class="text-btn cd-slot-del" id="ce-big-clear" data-i18n-title="data-edit-clear">×</button>
+                    </div>
+                </div>
+                <div class="ce-field">
+                    <span class="ce-label" data-i18n="data-edit-lines">Info Lines</span>
+                    <div id="ce-lines"></div>
+                    <button type="button" class="text-btn" id="ce-add-line" data-i18n="data-edit-add-line">+ Add Line</button>
+                </div>
+                <div class="ce-row">
+                    <label class="ce-toggle">
+                        <input type="checkbox" id="ce-spark">
+                        <span data-i18n="data-edit-spark">Background Sparkline</span>
+                    </label>
+                    <label class="ce-label" data-i18n="data-edit-spark-color">Color</label>
+                    <input type="color" id="ce-spark-color" value="#5e81ac">
+                </div>
+                <div class="ce-row">
+                    <label class="ce-label" for="ce-space-left" data-i18n="data-edit-space-left">Left Pad</label>
+                    <input type="number" id="ce-space-left" class="input-sm cd-space-input" min="0" max="60" placeholder="18">
+                    <label class="ce-label" for="ce-space-bottom" data-i18n="data-edit-space-bottom">Bottom Pad</label>
+                    <input type="number" id="ce-space-bottom" class="input-sm cd-space-input" min="0" max="60" placeholder="10">
+                </div>
+            </div>
             <div class="ce-actions">
                 <button type="button" class="text-btn" id="card-edit-save" data-i18n="btn-save">Save</button>
                 <button type="button" class="text-btn" id="card-edit-cancel" data-i18n="btn-close">Close</button>
@@ -694,29 +728,25 @@
                         <span class="nf-icon">&#xF013;</span>
                         <span data-i18n="nav-general">General</span>
                     </button>
+                    <button class="nav-btn" data-tab="window">
+                        <span class="nf-icon">&#xF108;</span>
+                        <span data-i18n="nav-window">Window</span>
+                    </button>
+                    <button class="nav-btn" data-tab="appearance">
+                        <span class="nf-icon">&#xF1FC;</span>
+                        <span data-i18n="nav-appearance">Appearance</span>
+                    </button>
                     <button class="nav-btn" data-tab="data">
                         <span class="nf-icon">&#xF1C0;</span>
                         <span data-i18n="nav-data">Data</span>
                     </button>
+                    <button class="nav-btn" data-tab="features">
+                        <span class="nf-icon">&#xF1DE;</span>
+                        <span data-i18n="nav-features">Features</span>
+                    </button>
                     <button class="nav-btn" data-tab="advanced">
                         <span class="nf-icon">&#xF233;</span>
                         <span data-i18n="nav-advanced">Advanced</span>
-                    </button>
-                    <button class="nav-btn" data-tab="backup">
-                        <span class="nf-icon">&#xF187;</span>
-                        <span data-i18n="nav-backup">Backup</span>
-                    </button>
-                    <button class="nav-btn" data-tab="monitor">
-                        <span class="nf-icon">&#xF108;</span>
-                        <span data-i18n="nav-monitor">Monitor</span>
-                    </button>
-                    <button class="nav-btn" data-tab="theme">
-                        <span class="nf-icon">&#xF1FC;</span>
-                        <span data-i18n="nav-theme">Theme</span>
-                    </button>
-                    <button class="nav-btn" data-tab="behavior">
-                        <span class="nf-icon">&#xF1DE;</span>
-                        <span data-i18n="nav-behavior">Behavior</span>
                     </button>
                     <button class="nav-btn" data-tab="about">
                         <span class="nf-icon">&#xF05A;</span>
@@ -745,35 +775,20 @@
                                 <input type="range" id="opt-fontsize-ui" min="60" max="200" value="100">
                                 <span class="range-val" id="fontsize-ui-val">100%</span>
                             </div>
-                            <div class="setting-item">
-                                <span data-i18n="label-fullscreen">Fullscreen</span>
-                                <label class="toggle">
-                                    <input type="checkbox" id="opt-fullscreen" checked>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="setting-item">
-                                <span data-i18n="label-window-opacity">Window Opacity</span>
-                                <input type="range" id="opt-window-opacity" min="10" max="100" value="100">
-                                <span class="range-val" id="window-opacity-val">100%</span>
-                            </div>
                         </div>
                         <div class="setting-group">
-                            <div class="setting-group-title" data-i18n="settings-updates">Updates</div>
-                            <div class="setting-item">
-                                <span data-i18n="label-update-notify">Update Notifications</span>
-                                <label class="toggle">
-                                    <input type="checkbox" id="opt-update-notify" checked>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="setting-group">
-                            <div class="setting-group-title" data-i18n="settings-startup">Startup</div>
+                            <div class="setting-group-title" data-i18n="settings-startup">Startup &amp; Updates</div>
                             <div class="setting-item">
                                 <span data-i18n="label-autostart">Auto-start at logon</span>
                                 <label class="toggle">
                                     <input type="checkbox" id="opt-autostart">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-update-notify">Update Notifications</span>
+                                <label class="toggle">
+                                    <input type="checkbox" id="opt-update-notify" checked>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -810,76 +825,173 @@
                                 <div class="setting-desc" data-i18n="desc-datasource-many">Enabling too many data sources may cause lag or delayed updates</div>
                                 <div class="setting-item">
                                     <span data-i18n="label-interval">Refresh Interval</span>
-                                    <select id="opt-interval">
-                                        <option value="500">500ms</option>
-                                        <option value="1000">1s</option>
-                                        <option value="1500">1.5s</option>
-                                        <option value="2000">2s</option>
-                                        <option value="5000">5s</option>
-                                    </select>
+                                    <div class="segmented" id="opt-interval">
+                                        <button type="button" data-value="500">500ms</button>
+                                        <button type="button" data-value="1000">1s</button>
+                                        <button type="button" data-value="1500">1.5s</button>
+                                        <button type="button" data-value="2000">2s</button>
+                                        <button type="button" data-value="5000">5s</button>
+                                    </div>
                                 </div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-gpu">GPU</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-gpu">GPU</span>
+                                        <span class="setting-sub" data-i18n="desc-gpu">Select which GPU to monitor on multi-GPU systems</span>
+                                    </div>
                                     <select id="opt-gpu">
                                         <option value="0">Auto</option>
                                     </select>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-gpu">Select which GPU to monitor on multi-GPU systems</div>
                             </div>
                         </div>
                         <div class="subtab-content" id="subtab-lyrics">
                             <div class="setting-group">
                                 <div class="setting-group-title" data-i18n="settings-lyrics">Lyrics</div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-meting-url">Meting API URL</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-music-spectrum">Music Spectrum</span>
+                                        <span class="setting-sub" data-i18n="desc-music-spectrum">Real-time spectrum bars on the music card via system audio loopback. Captures only while media is playing; fully disabled when off.</span>
+                                    </div>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-music-spectrum">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div id="spectrum-options" style="display:none">
+                                    <div class="setting-item">
+                                        <span data-i18n="label-spectrum-position">Spectrum Position</span>
+                                        <div class="segmented" id="opt-spectrum-position">
+                                            <button type="button" data-value="bottom" data-i18n="spec-pos-bottom">Bottom</button>
+                                            <button type="button" data-value="top" data-i18n="spec-pos-top">Top</button>
+                                            <button type="button" data-value="left" data-i18n="spec-pos-left">Left</button>
+                                            <button type="button" data-value="right" data-i18n="spec-pos-right">Right</button>
+                                        </div>
+                                    </div>
+                                    <div class="setting-item">
+                                        <span data-i18n="label-spectrum-style">Spectrum Style</span>
+                                        <div class="segmented" id="opt-spectrum-style">
+                                            <button type="button" data-value="bars" data-i18n="spec-style-bars">Bars</button>
+                                            <button type="button" data-value="wave" data-i18n="spec-style-wave">Wave</button>
+                                        </div>
+                                    </div>
+                                    <div class="setting-item">
+                                        <span data-i18n="label-spectrum-color">Spectrum Color</span>
+                                        <div class="segmented" id="opt-spectrum-color">
+                                            <button type="button" data-value="gradient" data-i18n="spec-color-gradient">Gradient</button>
+                                            <button type="button" data-value="theme" data-i18n="spec-color-theme">Theme</button>
+                                            <button type="button" data-value="cover" data-i18n="spec-color-cover">From Cover</button>
+                                        </div>
+                                    </div>
+                                    <div class="setting-item">
+                                        <div class="setting-label">
+                                            <span class="setting-label-text" data-i18n="label-spectrum-smooth">Smoothness</span>
+                                            <span class="setting-sub" data-i18n="desc-spectrum-smooth">How smoothly bars move: higher looks softer but laggier, lower follows the beat more sharply (0% ~ 100%).</span>
+                                        </div>
+                                        <input type="range" id="opt-spectrum-smooth" min="0" max="100" step="5" value="65">
+                                        <span class="range-val" id="spectrum-smooth-val">65%</span>
+                                    </div>
+                                    <div class="setting-item">
+                                        <div class="setting-label">
+                                            <span class="setting-label-text" data-i18n="label-spectrum-sensitivity">Sensitivity</span>
+                                            <span class="setting-sub" data-i18n="desc-spectrum-sensitivity">How strongly the capture responds: lower needs louder audio to show a full waveform, higher saturates sooner.</span>
+                                        </div>
+                                        <input type="range" id="opt-spectrum-sensitivity" min="50" max="200" step="10" value="100">
+                                        <span class="range-val" id="spectrum-sensitivity-val">100%</span>
+                                    </div>
+                                    <div class="setting-item">
+                                        <div class="setting-label">
+                                            <span class="setting-label-text" data-i18n="label-spectrum-bars">Bars / Density</span>
+                                            <span class="setting-sub" data-i18n="desc-spectrum-bars">Number of bars; more bars look denser.</span>
+                                        </div>
+                                        <input type="range" id="opt-spectrum-bars" min="12" max="48" step="2" value="28">
+                                        <span class="range-val" id="spectrum-bars-val">28</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-meting-url">Meting API URL</span>
+                                        <span class="setting-sub" data-i18n="desc-meting-url">Meting API endpoint used to fetch lyrics. Leave empty to disable lyrics.</span>
+                                    </div>
                                     <input type="text" id="opt-meting-url">
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-meting-url">Meting API endpoint used to fetch lyrics. Leave empty to disable lyrics.</div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-lyrics-whitelist">Process Whitelist</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-lyrics-whitelist">Process Whitelist</span>
+                                        <span class="setting-sub" data-i18n="desc-lyrics-whitelist">Only fetch lyrics when media is played by these processes (comma-separated). Leave empty to allow all.</span>
+                                    </div>
                                     <input type="text" id="opt-lyrics-whitelist" placeholder="cloudmusic,foobar2000,potplayer,QQMusic">
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-lyrics-whitelist">Only fetch lyrics when media is played by these processes (comma-separated). Leave empty to allow all.</div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-lyrics-translate">Auto-detect translation</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-lyrics-translate">Auto-detect translation</span>
+                                        <span class="setting-sub" data-i18n="desc-lyrics-translate">When a lyric line ends with a translation in parentheses, show the translation above the original.</span>
+                                    </div>
                                     <label class="toggle">
                                         <input type="checkbox" id="opt-lyrics-translate">
                                         <span class="toggle-slider"></span>
                                     </label>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-lyrics-translate">When a lyric line ends with a translation in parentheses, show the translation above the original.</div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-lyrics-prediction">Lyrics prediction</span>
+                                        <span class="setting-sub" data-i18n="desc-lyrics-prediction">When the player does not report playback position, advance lyrics by elapsed play time. Pausing pauses lyrics too.</span>
+                                    </div>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-lyrics-prediction">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-desc" data-i18n="desc-lyrics-prediction-warn"></div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-lyrics-offset">Lyrics time offset</span>
+                                        <span class="setting-sub" data-i18n="desc-lyrics-offset">Positive values show lyrics earlier, negative later (-10 ~ +10s).</span>
+                                    </div>
+                                    <input type="range" id="opt-lyrics-offset" min="-10" max="10" step="0.5" value="0">
+                                    <span class="range-val" id="lyrics-offset-val">0s</span>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-lyrics-clear">Lyrics Cache</span>
+                                        <span class="setting-sub" data-i18n="desc-lyrics-clear">Delete all cached lyrics; they will be re-fetched on demand.</span>
+                                    </div>
+                                    <button type="button" class="text-btn" id="btn-lyrics-clear" data-i18n="btn-lyrics-clear">Clear Lyrics Cache</button>
+                                </div>
                             </div>
                         </div>
                         <div class="subtab-content" id="subtab-weather">
                             <div class="setting-group">
                                 <div class="setting-group-title" data-i18n="settings-weather">Weather</div>
                                 <div class="setting-item">
-                                    <span data-i18n="wx-enabled">Enable Weather</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="wx-enabled">Enable Weather</span>
+                                        <span class="setting-sub" data-i18n="desc-wx-enabled">Turn off to stop fetching weather data</span>
+                                    </div>
                                     <label class="toggle">
                                         <input type="checkbox" id="opt-wx-enabled" checked>
                                         <span class="toggle-slider"></span>
                                     </label>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-wx-enabled">Turn off to stop fetching weather data</div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-wx-source">Data Source</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-wx-source">Data Source</span>
+                                        <span class="setting-sub" data-i18n="desc-wx-source">Data not provided by the selected source (e.g. alerts on OpenWeatherMap/Open-Meteo) is hidden automatically.</span>
+                                    </div>
                                     <select id="opt-wx-source">
                                         <option value="qweather">和风天气 QWeather</option>
                                         <option value="openweathermap">OpenWeatherMap</option>
                                         <option value="open-meteo">Open-Meteo</option>
                                     </select>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-wx-source">Data not provided by the selected source (e.g. alerts on OpenWeatherMap/Open-Meteo) is hidden automatically.</div>
                             </div>
                             <div class="setting-group">
                                 <div class="setting-group-title" data-i18n="settings-location">Location</div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-lat">Latitude</span>
-                                    <input type="text" id="opt-wx-lat" placeholder="39.92">
-                                </div>
-                                <div class="setting-item">
-                                    <span data-i18n="label-lon">Longitude</span>
-                                    <input type="text" id="opt-wx-lon" placeholder="116.41">
+                                    <span data-i18n="label-latlon">Coordinates</span>
+                                    <div class="field-pair">
+                                        <input type="text" id="opt-wx-lat" placeholder="39.92" title="Latitude">
+                                        <input type="text" id="opt-wx-lon" placeholder="116.41" title="Longitude">
+                                    </div>
                                 </div>
                             </div>
                             <div class="setting-group">
@@ -901,10 +1013,12 @@
                                 </div>
                                 <div id="wx-owm-fields" style="display:none">
                                     <div class="setting-item">
-                                        <span data-i18n="label-appid">AppID</span>
+                                        <div class="setting-label">
+                                            <span class="setting-label-text" data-i18n="label-appid">AppID</span>
+                                            <span class="setting-sub" data-i18n="desc-appid">API key from OpenWeatherMap (free "Current Weather &amp; Air Pollution" endpoints). Alerts and minute-level precipitation are not available.</span>
+                                        </div>
                                         <input type="text" id="opt-wx-appid" placeholder="OpenWeatherMap API key">
                                     </div>
-                                    <div class="setting-desc" data-i18n="desc-appid">API key from OpenWeatherMap (free "Current Weather &amp; Air Pollution" endpoints). Alerts and minute-level precipitation are not available.</div>
                                 </div>
                                 <div class="setting-desc" id="wx-om-note" style="display:none" data-i18n="desc-open-meteo">Open-Meteo requires no API key. Alerts are not available and no city name is shown.</div>
                             </div>
@@ -913,7 +1027,10 @@
                             <div class="setting-group">
                                 <div class="setting-group-title" data-i18n="settings-hr">Heart Rate</div>
                                 <div class="setting-item setting-item-block">
-                                    <span data-i18n="label-hr-device">Bluetooth Device</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-hr-device">Bluetooth Device</span>
+                                        <span class="setting-sub" data-i18n="desc-hr-device">Scan for nearby Bluetooth devices that broadcast heart rate (BLE Heart Rate Service). Keep the phone (Mi Fitness) disconnected from the band while using it.</span>
+                                    </div>
                                     <div class="hr-device-row">
                                         <select id="opt-hr-device">
                                             <option value="">--</option>
@@ -921,33 +1038,22 @@
                                         <button type="button" class="text-btn" id="btn-hr-scan" data-i18n="btn-hr-scan">Scan</button>
                                     </div>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-hr-device">Scan for nearby Bluetooth devices that broadcast heart rate (BLE Heart Rate Service). Keep the phone (Mi Fitness) disconnected from the band while using it.</div>
                                 <div class="setting-desc hr-status" id="hr-status"></div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-hr-anim">Heart rate animation</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-hr-anim">Heart rate animation</span>
+                                        <span class="setting-sub" data-i18n="desc-hr-anim">Animate the heart icon beating in sync with your current heart rate.</span>
+                                    </div>
                                     <label class="toggle">
                                         <input type="checkbox" id="opt-hr-anim">
                                         <span class="toggle-slider"></span>
                                     </label>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-hr-anim">Animate the heart icon beating in sync with your current heart rate.</div>
                             </div>
                         </div>
                     </div>
-                    <!-- Backup Tab -->
-                    <div class="tab-content" id="tab-backup">
-                        <div class="setting-group">
-                            <div class="setting-group-title" data-i18n="settings-backup">Backup</div>
-                            <div class="setting-desc" data-i18n="desc-backup">Export all program data (settings, wallpapers, lyric and traffic caches) to a zip file, or restore from a previous backup.</div>
-                            <div class="setting-item setting-item-block">
-                                <button type="button" class="text-btn" id="btn-backup-export" data-i18n="btn-backup-export">Export Backup</button>
-                                <button type="button" class="text-btn" id="btn-backup-restore" data-i18n="btn-backup-restore">Restore Backup</button>
-                            </div>
-                            <div class="setting-desc" data-i18n="desc-backup-restart">Restoring overwrites current data; restart the app for changes to take full effect.</div>
-                        </div>
-                    </div>
-                    <!-- Monitor Tab -->
-                    <div class="tab-content" id="tab-monitor">
+                    <!-- Window Tab -->
+                    <div class="tab-content" id="tab-window">
                         <div class="setting-group">
                             <div class="setting-group-title" data-i18n="settings-display">Display</div>
                             <div class="setting-item">
@@ -957,44 +1063,61 @@
                                 </select>
                             </div>
                             <div class="setting-item">
-                                <span data-i18n="label-hidemissing">Hide if missing</span>
+                                <span data-i18n="label-fullscreen">Fullscreen</span>
                                 <label class="toggle">
-                                    <input type="checkbox" id="opt-hide-missing">
+                                    <input type="checkbox" id="opt-fullscreen" checked>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
-                            <div class="setting-desc" data-i18n="desc-hidemissing">Hide the window when the selected display is unavailable</div>
                             <div class="setting-item">
-                                <span data-i18n="label-ontop">Always on top</span>
+                                <div class="setting-label">
+                                    <span class="setting-label-text" data-i18n="label-ontop">Always on top</span>
+                                    <span class="setting-sub" data-i18n="desc-ontop">Keep the window always on top of other windows</span>
+                                </div>
                                 <label class="toggle">
                                     <input type="checkbox" id="opt-ontop">
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
-                            <div class="setting-desc" data-i18n="desc-ontop">Keep the window always on top of other windows</div>
+                            <div class="setting-item">
+                                <div class="setting-label">
+                                    <span class="setting-label-text" data-i18n="label-hidemissing">Hide if missing</span>
+                                    <span class="setting-sub" data-i18n="desc-hidemissing">Hide the window when the selected display is unavailable</span>
+                                </div>
+                                <label class="toggle">
+                                    <input type="checkbox" id="opt-hide-missing">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span data-i18n="label-window-opacity">Window Opacity</span>
+                                <input type="range" id="opt-window-opacity" min="10" max="100" value="100">
+                                <span class="range-val" id="window-opacity-val">100%</span>
+                            </div>
                         </div>
                     </div>
-                    <!-- Theme Tab -->
-                    <div class="tab-content" id="tab-theme">
+                    <!-- Appearance Tab -->
+                    <div class="tab-content" id="tab-appearance">
                         <div class="subtab-bar">
-                            <button type="button" class="subtab-btn active" data-subtab="appearance" data-i18n="subtab-appearance">Appearance</button>
+                            <button type="button" class="subtab-btn active" data-subtab="theme" data-i18n="subtab-theme">Theme</button>
                             <button type="button" class="subtab-btn" data-subtab="background" data-i18n="subtab-background">Background</button>
                             <button type="button" class="subtab-btn" data-subtab="fonts" data-i18n="subtab-fonts">Fonts</button>
                             <button type="button" class="subtab-btn" data-subtab="time" data-i18n="subtab-time">Time</button>
-                            <button type="button" class="subtab-btn" data-subtab="layout" data-i18n="subtab-layout">Layout</button>
-                            <button type="button" class="subtab-btn" data-subtab="animation" data-i18n="subtab-animation">Animation</button>
+                            <button type="button" class="subtab-btn" data-subtab="layoutfx" data-i18n="subtab-layoutfx">Layout &amp; Effects</button>
                         </div>
-                        <div class="subtab-content active" id="subtab-appearance">
+                        <div class="subtab-content active" id="subtab-theme">
                             <div class="setting-group">
                                 <div class="setting-group-title" data-i18n="settings-appearance">Appearance</div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-follow-theme">Follow system theme</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-follow-theme">Follow system theme</span>
+                                        <span class="setting-sub" data-i18n="desc-follow-theme">Automatically switch between your chosen dark and light color schemes to match Windows</span>
+                                    </div>
                                     <label class="toggle">
                                         <input type="checkbox" id="opt-follow-theme">
                                         <span class="toggle-slider"></span>
                                     </label>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-follow-theme">Automatically switch between your chosen dark and light color schemes to match Windows</div>
                                 <div class="theme-picker">
                                     <div class="theme-picker-section">
                                         <div class="theme-picker-label" data-i18n="theme-group-dark">Dark</div>
@@ -1055,13 +1178,15 @@
                                     <span class="range-val" id="clockbgblur-val">0px</span>
                                 </div>
                                 <div class="setting-item" id="clockbg-gradient-row">
-                                    <span data-i18n="label-clockbg-gradient">Auto Gradient Fill</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-clockbg-gradient">Auto Gradient Fill</span>
+                                        <span class="setting-sub" data-i18n="desc-clockbg-gradient">Extend image upward with a seamless gradient when height is insufficient</span>
+                                    </div>
                                     <label class="toggle">
                                         <input type="checkbox" id="opt-clockbggradient">
                                         <span class="toggle-slider"></span>
                                     </label>
                                 </div>
-                                <div class="setting-desc" id="clockbg-gradient-desc" data-i18n="desc-clockbg-gradient">Extend image upward with a seamless gradient when height is insufficient</div>
                             </div>
                         </div>
                         <div class="subtab-content" id="subtab-fonts">
@@ -1108,48 +1233,54 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="subtab-content" id="subtab-layout">
+                        <div class="subtab-content" id="subtab-layoutfx">
                             <div class="setting-group">
                                 <div class="setting-group-title" data-i18n="settings-layout">Layout</div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-layout-mode">Layout Mode</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-layout-mode">Layout Mode</span>
+                                        <span class="setting-sub" data-i18n="desc-layout-mode">Drag cards in the main grid to rearrange. CPU and GPU cards always keep their size.</span>
+                                    </div>
                                     <button type="button" class="text-btn" id="btn-layout-mode" data-i18n="layout-mode-start">Enable Layout Mode</button>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-layout-mode">Drag cards in the main grid to rearrange. CPU and GPU cards always keep their size.</div>
                                 <div class="setting-desc" data-i18n="layout-resize-hint">Drag cards to rearrange, pull the bottom edge handle to resize, click × to delete.</div>
                                 <div class="setting-item">
                                     <button type="button" class="text-btn" id="btn-layout-reset" data-i18n="btn-layout-reset">Reset to Default</button>
                                     <button type="button" class="text-btn" id="btn-font-reset" data-i18n="btn-font-reset">Reset Font Sizes</button>
                                 </div>
                             </div>
-                        </div>
-                        <div class="subtab-content" id="subtab-animation">
                             <div class="setting-group">
                                 <div class="setting-group-title" data-i18n="settings-animation">Animation</div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-settings-blur">Settings background blur</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-settings-blur">Settings background blur</span>
+                                        <span class="setting-sub" data-i18n="desc-settings-blur">Blur the content behind the settings window</span>
+                                    </div>
                                     <label class="toggle">
                                         <input type="checkbox" id="opt-settings-blur" checked>
                                         <span class="toggle-slider"></span>
                                     </label>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-settings-blur">Blur the content behind the settings window</div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-settings-shadow">Settings panel shadow</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-settings-shadow">Settings panel shadow</span>
+                                        <span class="setting-sub" data-i18n="desc-settings-shadow">Add a drop shadow to the settings panel to lift it from the background</span>
+                                    </div>
                                     <label class="toggle">
                                         <input type="checkbox" id="opt-settings-shadow" checked>
                                         <span class="toggle-slider"></span>
                                     </label>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-settings-shadow">Add a drop shadow to the settings panel to lift it from the background</div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-settings-anim">Settings animation</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-settings-anim">Settings animation</span>
+                                        <span class="setting-sub" data-i18n="desc-settings-anim">Animate tab switching, panel transitions and hover effects inside settings</span>
+                                    </div>
                                     <label class="toggle">
                                         <input type="checkbox" id="opt-settings-anim" checked>
                                         <span class="toggle-slider"></span>
                                     </label>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-settings-anim">Animate tab switching, panel transitions and hover effects inside settings</div>
                                 <div class="setting-item">
                                     <span data-i18n="label-hover-anim">Hover animation</span>
                                     <label class="toggle">
@@ -1165,47 +1296,64 @@
                                     </label>
                                 </div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-lyric-anim">Lyric smooth scroll</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-lyric-anim">Lyric smooth scroll</span>
+                                        <span class="setting-sub" data-i18n="desc-lyric-anim">Smooth scroll for over-long lyrics. On: eased scrolling; Off: direct instant scroll (saves GPU).</span>
+                                    </div>
                                     <label class="toggle">
                                         <input type="checkbox" id="opt-lyric-anim">
                                         <span class="toggle-slider"></span>
                                     </label>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-lyric-anim">Smooth scroll for over-long lyrics. On: eased scrolling; Off: direct instant scroll (saves GPU).</div>
                                 <div class="setting-item">
-                                    <span data-i18n="label-card-gradient">Card gradients</span>
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-card-gradient">Card gradients</span>
+                                        <span class="setting-sub" data-i18n="desc-card-gradient">Ambient background gradients on the music and weather cards</span>
+                                    </div>
                                     <label class="toggle">
                                         <input type="checkbox" id="opt-card-gradient" checked>
                                         <span class="toggle-slider"></span>
                                     </label>
                                 </div>
-                                <div class="setting-desc" data-i18n="desc-card-gradient">Ambient background gradients on the music and weather cards</div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-bg-charts">Background charts</span>
+                                        <span class="setting-sub" data-i18n="desc-bg-charts">Trend sparklines on hardware cards and the precipitation chart. Custom data cards use their own option.</span>
+                                    </div>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-bg-charts" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <!-- Advanced Tab -->
                     <div class="tab-content" id="tab-advanced">
                         <div class="subtab-bar">
-                            <button type="button" class="subtab-btn active" data-subtab="advanced" data-i18n="subtab-advanced">Advanced</button>
+                            <button type="button" class="subtab-btn active" data-subtab="server" data-i18n="subtab-server">Server</button>
+                            <button type="button" class="subtab-btn" data-subtab="backup" data-i18n="subtab-backup">Backup</button>
                             <button type="button" class="subtab-btn" data-subtab="debug" data-i18n="subtab-debug">Debug</button>
                         </div>
-                        <div class="subtab-content active" id="subtab-advanced">
+                        <div class="subtab-content active" id="subtab-server">
                         <div class="setting-group">
                             <div class="setting-group-title" data-i18n="settings-server">Server Mode</div>
                             <div class="setting-item">
-                                <span data-i18n="label-server-mode">Enable Server Mode (next launch)</span>
+                                <div class="setting-label">
+                                    <span class="setting-label-text" data-i18n="label-server-mode">Enable Server Mode (next launch)</span>
+                                    <span class="setting-sub" data-i18n="desc-server-mode">Launch as a web server accessible via browser instead of a desktop window</span>
+                                </div>
                                 <label class="toggle">
                                     <input type="checkbox" id="opt-server-mode">
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
                             <div class="setting-item">
-                                <span data-i18n="label-server-host">Listen Host</span>
-                                <input type="text" id="opt-server-host" placeholder="0.0.0.0" class="input-sm">
-                            </div>
-                            <div class="setting-item">
-                                <span data-i18n="label-server-port">Port</span>
-                                <input type="number" id="opt-server-port" placeholder="20622" min="1" max="65535" class="input-sm">
+                                <span data-i18n="label-server-host">Listen Host / Port</span>
+                                <div class="field-pair">
+                                    <input type="text" id="opt-server-host" placeholder="0.0.0.0" class="input-sm">
+                                    <input type="number" id="opt-server-port" placeholder="20622" min="1" max="65535" class="input-sm input-xs">
+                                </div>
                             </div>
                             <div class="setting-item">
                                 <span data-i18n="label-server-auth">BasicAuth</span>
@@ -1214,15 +1362,27 @@
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
-                            <div class="setting-item">
-                                <span data-i18n="label-server-user">Username</span>
-                                <input type="text" id="opt-server-user" placeholder="admin" class="input-sm">
+                            <div id="server-auth-fields" style="display:none">
+                                <div class="setting-item">
+                                    <span data-i18n="label-server-user">Username</span>
+                                    <input type="text" id="opt-server-user" placeholder="admin" class="input-sm">
+                                </div>
+                                <div class="setting-item">
+                                    <span data-i18n="label-server-pass">Password</span>
+                                    <input type="password" id="opt-server-pass" placeholder="" class="input-sm">
+                                </div>
                             </div>
-                            <div class="setting-item">
-                                <span data-i18n="label-server-pass">Password</span>
-                                <input type="password" id="opt-server-pass" placeholder="" class="input-sm">
+                        </div>
+                        </div>
+                        <div class="subtab-content" id="subtab-backup">
+                        <div class="setting-group">
+                            <div class="setting-group-title" data-i18n="settings-backup">Backup</div>
+                            <div class="setting-desc" data-i18n="desc-backup">Export all program data (settings, wallpapers, lyric and traffic caches) to a zip file, or restore from a previous backup.</div>
+                            <div class="setting-item setting-item-block">
+                                <button type="button" class="text-btn" id="btn-backup-export" data-i18n="btn-backup-export">Export Backup</button>
+                                <button type="button" class="text-btn" id="btn-backup-restore" data-i18n="btn-backup-restore">Restore Backup</button>
                             </div>
-                            <div class="setting-desc" data-i18n="desc-server-mode">Launch as a web server accessible via browser instead of a desktop window</div>
+                            <div class="setting-desc" data-i18n="desc-backup-restart">Restoring overwrites current data; restart the app for changes to take full effect.</div>
                         </div>
                         </div>
                         <div class="subtab-content" id="subtab-debug">
@@ -1236,29 +1396,35 @@
                                 <button type="button" class="text-btn" id="btn-reload-ui" data-i18n="btn-reload-ui">Reload UI</button>
                             </div>
                             <div class="setting-item">
-                                <span data-i18n="label-debug-logs">Debug Logs</span>
+                                <div class="setting-label">
+                                    <span class="setting-label-text" data-i18n="label-debug-logs">Debug Logs</span>
+                                    <span class="setting-sub" data-i18n="desc-debug-logs">Write verbose debug logs (momonitor.log) to help diagnose issues. Requires restart to take effect.</span>
+                                </div>
                                 <label class="toggle">
                                     <input type="checkbox" id="opt-debug-logs">
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
-                            <div class="setting-desc" data-i18n="desc-debug-logs">Write verbose debug logs (momonitor.log) to help diagnose issues. Requires restart to take effect.</div>
                             <div class="setting-item">
-                                <span data-i18n="label-debug">Debug Mode</span>
+                                <div class="setting-label">
+                                    <span class="setting-label-text" data-i18n="label-debug">Debug Mode</span>
+                                    <span class="setting-sub" data-i18n="desc-debug">Enable pywebview debug mode (F12 to open DevTools). Requires restart to take effect.</span>
+                                </div>
                                 <label class="toggle">
                                     <input type="checkbox" id="opt-debug">
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
-                            <div class="setting-desc" data-i18n="desc-debug">Enable pywebview debug mode (F12 to open DevTools). Requires restart to take effect.</div>
                             <div class="setting-item">
-                                <span data-i18n="label-force-welcome">Force Welcome Wizard on Next Start</span>
+                                <div class="setting-label">
+                                    <span class="setting-label-text" data-i18n="label-force-welcome">Force Welcome Wizard on Next Start</span>
+                                    <span class="setting-sub" data-i18n="desc-force-welcome">Show the first-launch welcome wizard again on next app start.</span>
+                                </div>
                                 <label class="toggle">
                                     <input type="checkbox" id="opt-force-welcome">
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
-                            <div class="setting-desc" data-i18n="desc-force-welcome">Show the first-launch welcome wizard again on next app start.</div>
                             <div class="setting-item">
                                 <span data-i18n="label-debug-clock-gradient">Force Clock Gradient</span>
                                 <select id="opt-clock-grad-force">
@@ -1277,10 +1443,9 @@
                         </div>
                     </div>
                     <!-- Features Tab -->
-                    <!-- Behavior Tab -->
-                    <div class="tab-content" id="tab-behavior">
+                    <div class="tab-content" id="tab-features">
                         <div class="setting-group">
-                            <div class="setting-group-title" data-i18n="settings-behavior">Behavior</div>
+                            <div class="setting-group-title" data-i18n="settings-features">Feature Toggles</div>
                             <div class="setting-desc" data-i18n="desc-features">Disable features you don't need to reduce API calls and CPU usage. Hardware monitoring (CPU, GPU, Memory, Network, Disk) is always on.</div>
                             <div class="setting-item">
                                 <span data-i18n="ft-top-control">Top Brightness/Volume</span>
@@ -1311,13 +1476,15 @@
                                 </label>
                             </div>
                             <div class="setting-item">
-                                <span data-i18n="label-auto-launch">Auto-launch music player</span>
+                                <div class="setting-label">
+                                    <span class="setting-label-text" data-i18n="label-auto-launch">Auto-launch music player</span>
+                                    <span class="setting-sub" data-i18n="desc-auto-launch">When no music is playing, clicking the play button will automatically launch the last music player process and start playback.</span>
+                                </div>
                                 <label class="toggle">
                                     <input type="checkbox" id="opt-auto-launch" checked>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
-                            <div class="setting-desc" data-i18n="desc-auto-launch">When no music is playing, clicking the play button will automatically launch the last music player process and start playback.</div>
                         </div>
                     </div>
                     <!-- About Tab -->
@@ -1371,6 +1538,7 @@
     <script src="js/card-list.js"></script>
     <script src="js/layout-drag.js"></script>
     <script src="js/customcards.js"></script>
+    <script src="js/customdata.js"></script>
     <script src="js/settings.js"></script>
     <script src="js/welcome.js"></script>
     <script src="js/boot.js"></script>

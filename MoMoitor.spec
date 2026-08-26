@@ -37,7 +37,9 @@ def _collect_web(web_dir):
 datas += _collect_web(os.path.join(ROOT, "momoitor", "web"))
 # LHM 运行时 DLL（clr.AddReference 通过 LoadFrom 语义解析同目录依赖）
 datas += [(os.path.join(ROOT, "momoitor", "libs"), "libs")]
-# 第三方组件许可文本（随包分发，满足 MPL-2.0/OFL 附带许可要求）
+# 托盘图标（services/tray.py 运行时读取）
+datas += [(os.path.join(ROOT, "assets", "app.ico"), "assets")]
+# 第三方组件许可文本（随包分发，满足 MPL-2.0/OFL/LGPL 附带许可要求）
 datas += [(os.path.join(ROOT, "LICENSES"), "LICENSES")]
 
 # winrt 命名空间包没有 PyInstaller hook：打包其运行时 DLL（msvcp140.dll）
@@ -52,6 +54,8 @@ hiddenimports = [
     "plyer.platforms.win.notification",
     "plyer.platforms.win.libs.balloontip",
     "plyer.platforms.win.libs.win_api_defs",
+    # pystray 按平台函数内延迟导入后端，显式声明保险
+    "pystray._win32",
 ]
 
 _icon = os.path.join(ROOT, "assets", "app.ico")

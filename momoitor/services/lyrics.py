@@ -2,22 +2,82 @@
 
 歌词按 曲目|歌手 键缓存到 SQLite（data/lyrics.db），TTL 7 天；
 获取失败时回退使用过期缓存。API 地址由用户在「设置 → 数据 → 歌词」中填写。
+搜索结果不止一条时，按曲名/歌手与当前播放内容的相似度选取最佳匹配项。
 """
 
+import difflib
 import os
 import re
 import time
+import unicodedata
 
 from loguru import logger
 
 from momoitor.common import http_get
-from momoitor.config import DATA_DIR
-from momoitor.services.db import get_conn, init_db
-
-DB_PATH = os.path.join(DATA_DIR, "lyrics.db")
+from momoitor.services.db import LYRICS_DB_PATH as DB_PATH, get_conn, init_db
 
 # 匹配形如 [00:09.499] 或 [00:11] 的 LRC 时间戳标签
 _LRC_RE = re.compile(r"^\[(\d+):(\d+(?:\.\d+)?)\](.*)$")
+
+# 匹配用的分隔符与噪声字符：歌手名分隔、曲名中的空白/标点差异
+_ARTIST_SEP_RE = re.compile(r"[/,、&;；，]+|\bfeat\.?\b|\bft\.?\b", re.IGNORECASE)
+_MATCH_NOISE_RE = re.compile(r"[\s\-—–_()（）\[\]【】「」·.!！?？'\"‘’“”~～]+")
+
+
+def _norm_text(s) -> str:
+    """文本归一化：NFKC 折叠全角、casefold 忽略大小写、去空白与标点噪声。"""
+    s = unicodedata.normalize("NFKC", str(s or ""))
+    return _MATCH_NOISE_RE.sub("", s.casefold())
+
+
+def _name_tokens(s) -> list:
+    """把歌手字段按常见分隔符拆成归一化 token 列表（用于顺序无关比较）。"""
+    parts = _ARTIST_SEP_RE.split(unicodedata.normalize("NFKC", str(s or "")))
+    tokens = [_norm_text(p) for p in parts]
+    return [t for t in tokens if t]
+
+
+def _sim(a: str, b: str) -> float:
+    """字符串相似度 0~1：相等 1.0；互相包含 0.85；其余 difflib 序列相似比。"""
+    if not a or not b:
+        return 0.0
+    if a == b:
+        return 1.0
+    if a in b or b in a:
+        return 0.85
+    return difflib.SequenceMatcher(None, a, b).ratio()
+
+
+def _artist_sim(local: list, remote: list) -> float:
+    """歌手集合相似度：本地每个 token 取对端最大相似度求和，除以较大侧 token 数，
+    对多出/缺失的歌手按比例扣分，且与歌手排列顺序无关。"""
+    if not local or not remote:
+        return 0.0
+    total = sum(max(_sim(t, rt) for rt in remote) for t in local)
+    return total / max(len(local), len(remote))
+
+
+def pick_best_result(results, title, artist=""):
+    """在 Meting 搜索结果中选出与当前播放的曲名/歌手最匹配的一项。
+
+    得分 = 曲名相似度 * 0.7 + 歌手相似度 * 0.3（未提供歌手时仅看曲名）；
+    同分保持原有顺序（全部不匹配即回退第一项，与旧行为一致）。
+    任一入参异常时返回 {}，由调用方按无结果处理。
+    """
+    if not isinstance(results, list) or not results:
+        return {}
+    nt = _norm_text(title)
+    la = _name_tokens(artist)
+    best_i, best_score = 0, -1.0
+    for i, item in enumerate(results):
+        info = item if isinstance(item, dict) else {}
+        tscore = _sim(nt, _norm_text(info.get("title")))
+        ascore = _artist_sim(la, _name_tokens(info.get("author"))) if la else 0.0
+        score = tscore * 0.7 + ascore * 0.3
+        if score > best_score:
+            best_i, best_score = i, score
+    best = results[best_i]
+    return best if isinstance(best, dict) else {}
 
 _SCHEMA = """
     CREATE TABLE IF NOT EXISTS lyrics (
@@ -128,8 +188,9 @@ class LyricsService:
         return []
 
     def _fetch_lrc(self, base, title, artist="", server="netease"):
-        """搜索歌曲并取第一首的 LRC 文本。搜索关键词用「歌名 - 歌手」以提高准确度。
+        """搜索歌曲并取与播放内容最匹配一首的 LRC 文本。搜索关键词用「歌名 - 歌手」以提高准确度。
 
+        结果多于一条时按 pick_best_result 的相似度评分选取，不再盲取第一项；
         返回 "" 表示无结果；任何异常（含空/非 JSON 响应）都归为无结果，不抛出。
         """
         import urllib.parse
@@ -141,7 +202,8 @@ class LyricsService:
             results = self._as_list(resp)
             if not results:
                 return ""
-            lrc_url = (results[0] or {}).get("lrc", "") or ""
+            best = pick_best_result(results, title, artist)
+            lrc_url = (best or {}).get("lrc", "") or ""
             if not lrc_url:
                 return ""
             lresp = http_get(lrc_url, timeout=8)
@@ -174,11 +236,15 @@ class LyricsService:
         logger.debug("Lyrics search response is neither list nor dict: {!r}", data)
         return []
 
-    def invalidate(self):
-        """清空歌词缓存（保留表结构）。"""
+    def invalidate(self) -> int:
+        """清空歌词缓存（保留表结构），返回删除的条目数；失败返回 0。"""
         try:
             with get_conn(DB_PATH) as conn:
-                conn.execute("DELETE FROM lyrics")
+                cur = conn.execute("DELETE FROM lyrics")
                 conn.commit()
+                n = cur.rowcount or 0
+                logger.info("Lyrics cache cleared: {} entries", n)
+                return n
         except Exception as e:
             logger.warning("Failed to clear lyrics cache: {}", e)
+            return 0

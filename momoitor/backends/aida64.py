@@ -16,9 +16,9 @@ import ctypes
 import re
 import time
 import winreg
-from ctypes import wintypes
 
-from .base import BaseMonitor
+from . import _shm
+from .base import BaseMonitor, safe_float, safe_int
 
 # 共享内存名称（官方文档：local/global 命名空间均可用，此处用默认名）。
 _SHM_NAME = "AIDA64_SensorValues"
@@ -40,17 +40,9 @@ _SENSOR_RE = re.compile(
 )
 
 
-def _parse_float(raw, default=None):
-    try:
-        v = float(raw.strip())
-        return v
-    except (TypeError, ValueError):
-        return default
-
-
-def _parse_int(raw, default=None):
-    v = _parse_float(raw)
-    return int(v) if v is not None else default
+# 数值解析统一走 base 的安全转换（历史名保留为别名）
+_parse_float = safe_float
+_parse_int = safe_int
 
 
 def _read_registry_value(path, name):
@@ -67,7 +59,6 @@ class AIDA64Monitor(BaseMonitor):
 
     def __init__(self):
         super().__init__()
-        self._kernel32 = ctypes.windll.kernel32
         self._hw_names_cache = None
         self._hw_names_ts = 0
         self._gpu_list_cache = None
@@ -76,25 +67,17 @@ class AIDA64Monitor(BaseMonitor):
     # ---- 共享内存读取 ----
 
     def _read_shared_memory(self):
-        """读取 AIDA64 共享内存内容并返回原始字符串；失败抛 OSError。"""
-        k32 = self._kernel32
-        k32.OpenFileMappingW.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.LPCWSTR]
-        k32.OpenFileMappingW.restype = wintypes.HANDLE
-        k32.MapViewOfFile.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.DWORD,
-                                      wintypes.DWORD, ctypes.c_size_t]
-        k32.MapViewOfFile.restype = ctypes.c_void_p
-        k32.UnmapViewOfFile.argtypes = [ctypes.c_void_p]
-        k32.UnmapViewOfFile.restype = wintypes.BOOL
-        k32.CloseHandle.argtypes = [wintypes.HANDLE]
-        k32.CloseHandle.restype = wintypes.BOOL
+        """读取 AIDA64 共享内存内容并返回原始字符串；失败抛 OSError。
 
-        handle = k32.OpenFileMappingW(0x4, False, _SHM_NAME)  # FILE_MAP_READ
+        WinAPI 绑定由 backends._shm 在导入时统一声明。
+        """
+        handle = _shm.open_mapping(_SHM_NAME)
         if not handle:
             raise OSError(f"AIDA64 shared memory '{_SHM_NAME}' not available")
         try:
             # 映射整个文件（size=0）。AIDA64 共享内存通常只有几 KB，映射一个
             # 固定的更大 size 会因超出实际大小而失败（ERROR_MAPPED_ALIGNMENT）。
-            addr = k32.MapViewOfFile(handle, 0x4, 0, 0, 0)
+            addr = _shm.map_view(handle)
             if not addr:
                 raise OSError("failed to map AIDA64 shared memory")
             try:
@@ -111,9 +94,9 @@ class AIDA64Monitor(BaseMonitor):
                     offset += _SHM_READ_CHUNK
                 return data.decode("utf-8", errors="replace")
             finally:
-                k32.UnmapViewOfFile(addr)
+                _shm.unmap_view(addr)
         finally:
-            k32.CloseHandle(handle)
+            _shm.close_handle(handle)
 
     def _read_sensors(self):
         """读取并解析全部传感器，返回 {id: (类型, label, value_str)}。"""

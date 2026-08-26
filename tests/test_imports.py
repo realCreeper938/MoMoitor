@@ -16,6 +16,7 @@ def test_package_imports():
         "momoitor.services.fps",
         "momoitor.services.music",
         "momoitor.services.hardware",
+        "momoitor.services.catalog",
         "momoitor.services.background",
         "momoitor.services.system",
         "momoitor.services.proclist",

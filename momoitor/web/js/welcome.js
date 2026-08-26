@@ -6,7 +6,7 @@ let _wizardMonitors = [];
 let _wizardHasMonitorStep = false;
 let _wizardColorDark = 'gruvbox';
 let _wizardColorLight = 'gruvbox-light';
-let _wizardMonitor = 0;
+let _wizardMonitor = '';
 
 async function showWelcomeWizard(s) {
     _wizardSettings = s;
@@ -14,9 +14,10 @@ async function showWelcomeWizard(s) {
     const dsp = s.display || {};
     _wizardColorDark = g.colorscheme_dark || 'gruvbox';
     _wizardColorLight = g.colorscheme_light || 'gruvbox-light';
-    _wizardMonitor = typeof dsp.monitor === 'number' ? dsp.monitor : 0;
 
     _wizardMonitors = await pywebview.api.get_monitors();
+    const legacyIdx = typeof dsp.monitor === 'number' ? dsp.monitor : 0;
+    _wizardMonitor = dsp.monitor_id || ((_wizardMonitors[legacyIdx] && (_wizardMonitors[legacyIdx].id || _wizardMonitors[legacyIdx].device)) || '');
     _wizardSteps = ['welcome'];
     _wizardHasMonitorStep = _wizardMonitors.length > 1;
     if (_wizardHasMonitorStep) _wizardSteps.push('monitor');
@@ -93,15 +94,15 @@ function _wizardBack() {
 function _wizardRenderMonitorCards() {
     const container = document.getElementById('welcome-monitor-cards');
     container.innerHTML = '';
-    _wizardMonitors.forEach((m, i) => {
+    _wizardMonitors.forEach((m) => {
         const card = document.createElement('button');
         card.type = 'button';
-        card.className = 'welcome-monitor-card' + (i === _wizardMonitor ? ' active' : '');
+        card.className = 'welcome-monitor-card' + ((m.id || m.device) === _wizardMonitor ? ' active' : '');
         card.innerHTML =
-            `<span class="welcome-monitor-name">${escapeHtml(t('wizard-monitor-label'))} ${i + 1}</span>` +
+            `<span class="welcome-monitor-name">${escapeHtml(m.name || t('wizard-monitor-label'))} ${m.primary ? ' *' : ''}</span>` +
             `<span class="welcome-monitor-res">${escapeHtml(m.width)}x${escapeHtml(m.height)}</span>`;
         card.addEventListener('click', () => {
-            _wizardMonitor = i;
+            _wizardMonitor = m.id || m.device || '';
             _wizardRenderMonitorCards();
         });
         container.appendChild(card);
@@ -156,7 +157,9 @@ async function _wizardFinish() {
     g.hint_dismissed = true;
     g.force_welcome = false;
     if (_wizardHasMonitorStep) {
-        dsp.monitor = _wizardMonitor;
+        dsp.monitor_id = _wizardMonitor;
+        dsp.monitor = _wizardMonitors.findIndex(m => (m.id || m.device) === _wizardMonitor);
+        if (dsp.monitor < 0) dsp.monitor = 0;
         dsp.on_top = document.getElementById('welcome-on-top').checked;
         dsp.hide_when_monitor_missing = document.getElementById('welcome-hide-missing').checked;
     }

@@ -1,13 +1,12 @@
 """备份/还原服务 —— 将程序使用的数据文件打包为 zip，或从备份 zip 还原。
 
 只打包程序实际使用的数据（settings.json、wallpapers/、lyrics.db、traffic.db），
-不包括日志与未使用的遗留文件。DB 文件用 SQLite 在线备份 API 生成一致性快照，
-避免运行中读写导致拷贝不完整。
+不包括日志与未使用的遗留文件。DB 文件清单与在线快照由 services.db 统一提供，
+避免备份层反向依赖各业务服务。
 """
 
 import os
 import shutil
-import sqlite3
 import tempfile
 import time
 import zipfile
@@ -15,46 +14,17 @@ import zipfile
 from loguru import logger
 
 from momoitor.config import DATA_DIR, SETTINGS_FILE, WALLPAPERS_DIR
-from momoitor.services.lyrics import DB_PATH as LYRICS_DB_PATH
-from momoitor.services.traffic import DB_PATH as TRAFFIC_DB_PATH
+from momoitor.services.db import DB_PATHS, snapshot_db
 
 BACKUP_PREFIX = "momoitor-backup"
 
 # 备份中允许还原的顶层文件名（+ wallpapers/ 目录内任意文件）
 _RESTORE_ALLOWED = {"settings.json", "lyrics.db", "traffic.db"}
 
-DB_PATHS = (LYRICS_DB_PATH, TRAFFIC_DB_PATH)
-
 
 def backup_filename() -> str:
     """生成默认备份文件名，如 momoitor-backup_20260811230516.zip。"""
     return f"{BACKUP_PREFIX}_{time.strftime('%Y%m%d%H%M%S')}.zip"
-
-
-def _snapshot_db_bytes(db_path: str) -> bytes:
-    """用 SQLite 在线备份 API 生成一致性快照字节；失败时回退为直接读取文件。"""
-    try:
-        src = sqlite3.connect(db_path)
-        try:
-            fd, tmp = tempfile.mkstemp(suffix=".db")
-            try:
-                os.close(fd)
-                dst = sqlite3.connect(tmp)
-                try:
-                    src.backup(dst)
-                finally:
-                    dst.close()
-                with open(tmp, "rb") as f:
-                    return f.read()
-            finally:
-                if os.path.exists(tmp):
-                    os.remove(tmp)
-        finally:
-            src.close()
-    except Exception as e:
-        logger.warning("SQLite snapshot failed for {}: {}, falling back to raw copy", db_path, e)
-        with open(db_path, "rb") as f:
-            return f.read()
 
 
 def _collect_entries() -> list:
@@ -68,9 +38,9 @@ def _collect_entries() -> list:
                 full = os.path.join(root, name)
                 rel = os.path.relpath(full, DATA_DIR).replace("\\", "/")
                 entries.append((rel, full))
-    for db in DB_PATHS:
-        if os.path.exists(db):
-            entries.append((os.path.basename(db), _snapshot_db_bytes(db)))
+    for db_file in DB_PATHS:
+        if os.path.exists(db_file):
+            entries.append((os.path.basename(db_file), snapshot_db(db_file)))
     return entries
 
 

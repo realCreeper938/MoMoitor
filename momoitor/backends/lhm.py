@@ -6,6 +6,7 @@ import psutil
 from loguru import logger
 from .base import BaseMonitor
 from momoitor.config import LIB_DIR
+from momoitor.services.catalog import lhm_sensor_kind
 
 DLL_PATH = os.path.join(LIB_DIR, "LibreHardwareMonitorLib.dll")
 
@@ -251,8 +252,9 @@ class LHMMonitor(BaseMonitor):
         now = time.monotonic()
         if self._mem_name_cache is not None and now - self._mem_name_ts < _META_TTL:
             return self._mem_name_cache
-        out = self._run_wmic(["memorychip", "get", "partnumber"])
-        parts = [l.strip() for l in out.splitlines()[1:] if l.strip()]
+        rows = self._run_cim("Win32_PhysicalMemory", ["PartNumber"])
+        parts = [str(r.get("PartNumber") or "").strip() for r in rows]
+        parts = [p for p in parts if p]
         if parts:
             self._mem_name_cache = parts[0]
             self._mem_name_ts = now
@@ -265,6 +267,78 @@ class LHMMonitor(BaseMonitor):
             "gpu": self._get_gpu_detail(gpu_index),
             "mem": self._get_mem_detail(),
         }
+
+    # ---- 原始传感器树（自选数据卡片）----
+    #
+    # ident 格式: "{hw_type}|{hw_name}|{sensor_type}|{sensor_name}"（均取 str()）。
+    # 运行时按枚举顺序首匹配：同名硬件（如两块同型号硬盘）的传感器 ident 相同，
+    # 目录构建时全局去重，仅保留首个条目，与运行时解析结果保持一致。
+
+    def get_sensor_groups(self) -> list:
+        self._ensure_init()
+        groups = []
+        index = {}   # 组名 -> 组 dict
+        seen = set()
+        for hw in self._computer.Hardware:
+            self._collect_lhm_sensors(hw, str(hw.Name), groups, index, seen)
+            for sub in hw.SubHardware:
+                name = f"{str(hw.Name)} \u00b7 {str(sub.Name)}"
+                self._collect_lhm_sensors(sub, name, groups, index, seen)
+        return groups
+
+    def _collect_lhm_sensors(self, hw, group_name, groups, index, seen):
+        items = []
+        for s in hw.Sensors:
+            stype = str(s.SensorType)
+            sname = str(s.Name)
+            ident = f"{str(hw.HardwareType)}|{str(hw.Name)}|{stype}|{sname}"
+            if ident in seen:
+                continue
+            seen.add(ident)
+            items.append({
+                "key": "raw:" + ident,
+                "label": sname,
+                "kind": lhm_sensor_kind(stype),
+            })
+        if not items:
+            return
+        group = index.get(group_name)
+        if group is None:
+            group = {"name": group_name, "items": []}
+            index[group_name] = group
+            groups.append(group)
+        group["items"].extend(items)
+
+    def get_sensor_value(self, ident: str):
+        self._ensure_init()
+        parts = str(ident or "").split("|")
+        if len(parts) != 4:
+            return None
+        want_type, want_hw, want_stype, want_sname = (p.lower() for p in parts)
+        # 快照轮询每秒都会 Update 全部硬件，此处直接读缓存值，不再重复 Update
+        for hw in self._computer.Hardware:
+            val = self._match_lhm_sensor(hw, want_type, want_hw, want_stype, want_sname)
+            if val is not None:
+                return val
+            for sub in hw.SubHardware:
+                val = self._match_lhm_sensor(sub, want_type, want_hw, want_stype, want_sname)
+                if val is not None:
+                    return val
+        return None
+
+    @staticmethod
+    def _match_lhm_sensor(hw, want_type, want_hw, want_stype, want_sname):
+        if str(hw.HardwareType).lower() != want_type or str(hw.Name).lower() != want_hw:
+            return None
+        for s in hw.Sensors:
+            if str(s.SensorType).lower() == want_stype and str(s.Name).lower() == want_sname:
+                v = s.Value
+                try:
+                    return float(v) if v is not None else None
+                except (TypeError, ValueError):
+                    return None
+        return None
+
 
     def _get_cpu_detail(self):
         self._ensure_init()
@@ -285,34 +359,31 @@ class LHMMonitor(BaseMonitor):
                     if s["value"] is not None:
                         info["sensors"][key] = round(float(s["value"]), 2)
                 break
-        out = self._run_wmic([
-            "cpu", "get",
-            "NumberOfCores,NumberOfLogicalProcessors,"
-            "Name,MaxClockSpeed,Architecture,L2CacheSize,L3CacheSize",
-            "/format:csv"
+        rows = self._run_cim("Win32_Processor", [
+            "NumberOfCores", "NumberOfLogicalProcessors", "Name",
+            "MaxClockSpeed", "Architecture", "L2CacheSize", "L3CacheSize",
         ])
-        lines = [l.strip() for l in out.splitlines() if l.strip() and l.strip() != "Node"]
-        if len(lines) > 1:
-            parts = lines[1].split(",")
-            if len(parts) >= 8:
-                # CSV 布局（/format:csv 会在前面加上 Node）：
-                # [0]=Node [1]=NumberOfCores [2]=NumberOfLogicalProcessors
-                # [3]=Name [4]=MaxClockSpeed [5]=Architecture
-                # [6]=L2CacheSize [7]=L3CacheSize
-                info["cores"] = int(parts[1]) if parts[1].isdigit() else None
-                info["threads"] = int(parts[2]) if parts[2].isdigit() else None
-                info["arch"] = parts[5] if parts[5] else ""
-                info["cache_l2"] = f"{parts[6]} KB" if parts[6] else ""
-                info["cache_l3"] = f"{parts[7]} KB" if parts[7] else ""
-                info["base_clock"] = f"{parts[4]} MHz" if parts[4] else ""
-                info["boost_clock"] = f"{parts[4]} MHz" if parts[4] else ""
+        if rows:
+            row = rows[0]
+            cores, threads = row.get("NumberOfCores"), row.get("NumberOfLogicalProcessors")
+            info["cores"] = int(cores) if isinstance(cores, int) else None
+            info["threads"] = int(threads) if isinstance(threads, int) else None
+            arch = row.get("Architecture")
+            info["arch"] = str(arch).strip() if arch is not None else ""
+            l2, l3 = row.get("L2CacheSize"), row.get("L3CacheSize")
+            info["cache_l2"] = f"{l2} KB" if l2 else ""
+            info["cache_l3"] = f"{l3} KB" if l3 else ""
+            mhz = row.get("MaxClockSpeed")
+            mhz_s = f"{mhz} MHz" if mhz else ""
+            info["base_clock"] = mhz_s
+            info["boost_clock"] = mhz_s
         if info["threads"] is None:
             import os
             info["threads"] = os.cpu_count()
-        out = self._run_wmic(["cpu", "get", "SocketDesignation", "/format:list"])
-        for line in out.splitlines():
-            if line.startswith("SocketDesignation="):
-                info["socket"] = line.split("=", 1)[1].strip()
+        for row in self._run_cim("Win32_Processor", ["SocketDesignation"]):
+            socket = str(row.get("SocketDesignation") or "").strip()
+            if socket:
+                info["socket"] = socket
                 break
         self._cpu_detail_cache = info
         self._cpu_detail_ts = time.monotonic()
@@ -345,19 +416,15 @@ class LHMMonitor(BaseMonitor):
             key = f"{s['type']}_{s['name_lower']}"
             if s["value"] is not None:
                 info["sensors"][key] = round(float(s["value"]), 2)
-        out = self._run_wmic([
-            "path", "win32_videocontroller", "get",
-            "Name,DriverVersion,AdapterRAM,VideoProcessor", "/format:csv"
-        ])
-        lines = [l.strip() for l in out.splitlines() if l.strip() and l.strip() != "Node"]
-        for line in lines:
-            parts = line.split(",")
-            if len(parts) >= 4:
-                if info["name"].lower() in parts[1].lower() or parts[1].lower() in info["name"].lower():
-                    info["driver"] = parts[2] if parts[2] else ""
-                    # parts[3]=AdapterRAM 是 uint32 字节数（并非显存类型）；
-                    # Win32_VideoController 没有显存类型字段，因此 vram_type 留空
-                    break
+        target = info["name"].lower()
+        rows = self._run_cim("Win32_VideoController", ["Name", "DriverVersion"])
+        for row in rows:
+            name = str(row.get("Name") or "")
+            name_lower = name.lower()
+            # Win32_VideoController 没有显存类型字段，vram_type 留空
+            if target in name_lower or name_lower in target:
+                info["driver"] = str(row.get("DriverVersion") or "").strip()
+                break
         self._gpu_detail_cache = {cache_key: info}
         self._gpu_detail_ts = time.monotonic()
         return info
@@ -385,30 +452,36 @@ class LHMMonitor(BaseMonitor):
                     if s["value"] is not None:
                         info["sensors"][key] = round(float(s["value"]), 2)
                 break
-        out = self._run_wmic([
-            "memorychip", "get",
-            "Speed,Manufacturer,PartNumber,MemoryType,FormFactor,DeviceLocator",
-            "/format:csv"
+        rows = self._run_cim("Win32_PhysicalMemory", [
+            "Speed", "Manufacturer", "PartNumber", "MemoryType", "FormFactor",
         ])
-        lines = [l.strip() for l in out.splitlines() if l.strip() and l.strip() != "Node"]
-        if lines and lines[0].lower().startswith("node,"):
-            lines = lines[1:]
-        mem_types = {"20": "DDR", "21": "DDR2", "24": "DDR3", "26": "DDR4", "34": "DDR5"}
-        form_factors = {"8": "DIMM", "12": "SODIMM"}
-        for line in lines:
-            parts = line.split(",")
-            if len(parts) >= 7:
-                info["slot_count"] += 1
-                if not info["speed"] and parts[1]:
-                    info["speed"] = f"{parts[1]} MHz"
-                if not info["manufacturer"] and parts[2]:
-                    info["manufacturer"] = parts[2].strip()
-                if not info["part_number"] and parts[3]:
-                    info["part_number"] = parts[3].strip()
-                if not info["type"] and parts[4]:
-                    info["type"] = mem_types.get(parts[4].strip(), f"Type {parts[4]}")
-                if not info["form_factor"] and parts[5]:
-                    info["form_factor"] = form_factors.get(parts[5].strip(), "")
+        mem_types = {20: "DDR", 21: "DDR2", 24: "DDR3", 26: "DDR4", 34: "DDR5"}
+        form_factors = {8: "DIMM", 12: "SODIMM"}
+        for row in rows:
+            info["slot_count"] += 1
+            speed = row.get("Speed")
+            if not info["speed"] and speed:
+                info["speed"] = f"{speed} MHz"
+            manufacturer = str(row.get("Manufacturer") or "").strip()
+            if not info["manufacturer"] and manufacturer:
+                info["manufacturer"] = manufacturer
+            part_number = str(row.get("PartNumber") or "").strip()
+            if not info["part_number"] and part_number:
+                info["part_number"] = part_number
+            mtype = row.get("MemoryType")
+            if not info["type"] and mtype is not None:
+                if isinstance(mtype, int):
+                    info["type"] = mem_types.get(mtype, f"Type {mtype}")
+                else:
+                    s = str(mtype).strip()
+                    info["type"] = mem_types.get(int(s), f"Type {s}") if s.isdigit() else (s or "")
+            ff = row.get("FormFactor")
+            if not info["form_factor"] and ff is not None:
+                if isinstance(ff, int):
+                    info["form_factor"] = form_factors.get(ff, "")
+                else:
+                    s = str(ff).strip()
+                    info["form_factor"] = form_factors.get(int(s), "") if s.isdigit() else ""
         self._mem_detail_cache = info
         self._mem_detail_ts = time.monotonic()
         return info

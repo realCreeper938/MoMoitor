@@ -12,12 +12,16 @@ import copy
 import shutil
 from loguru import logger
 
-# 为本地静态文件服务注册字体 MIME 类型（Windows mimetypes 缺失），
-# 保证 bottle static_file 以正确的 content-type 提供 web 字体。
+# 为本地静态文件服务注册 Windows mimetypes 缺失的类型，
+# 保证 bottle static_file / server.py 以正确的 content-type 提供资源。
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("image/svg+xml", ".svg")
 mimetypes.add_type("font/woff2", ".woff2")
 mimetypes.add_type("font/woff", ".woff")
 mimetypes.add_type("font/ttf", ".ttf")
 mimetypes.add_type("font/otf", ".otf")
+mimetypes.add_type("image/webp", ".webp")
 
 _FROZEN = getattr(sys, "frozen", False)
 
@@ -197,6 +201,7 @@ DEFAULT_SETTINGS = {
         "settings_shadow": True,  # 设置面板阴影
         "settings_animation": True,  # 设置界面动画（标签/面板过渡）
         "card_gradient": True,  # 音乐/天气卡片的背景渐变效果
+        "bg_charts": True,  # 卡片背景折线图（CPU/GPU/内存/网络/磁盘/FPS 与天气降水趋势）；自定义数据卡片由自身开关控制
         "hint_dismissed": False,   # 首次启动提示是否已忽略
         "force_welcome": False,  # 下次启动时是否强制显示欢迎向导
         "update_check_enabled": True,  # 是否检查 GitHub 新版本并弹窗提示
@@ -207,6 +212,7 @@ DEFAULT_SETTINGS = {
     # 显示/监视器
     "display": {
         "monitor": 0,
+        "monitor_id": "",  # 指定显示器的稳定设备 ID（优先于 monitor 序号），空则回退 monitor
         "gpu_index": 0,
         "hide_when_monitor_missing": False,
         "show_hw_names": False,
@@ -245,11 +251,20 @@ DEFAULT_SETTINGS = {
     "music": {
         "meting_api_base": "",  # 音乐歌词 Meting API 地址，留空关闭歌词
         "auto_launch_music_player": False,  # 未播放时点击播放按钮自动启动上次播放音乐的进程
+        "spectrum": False,  # 音乐卡片频谱可视化（WASAPI 回环捕获，仅媒体播放时运行）
+        "spectrum_position": "bottom",  # 频谱位置：bottom / top / left / right
+        "spectrum_style": "bars",  # 频谱样式：bars 柱状 / wave 平滑渐变波形
+        "spectrum_color": "gradient",  # 频谱颜色：gradient 多彩渐变 / theme 跟随配色 / cover 封面取色
+        "spectrum_smooth": 65,  # 频谱平滑度百分比（0 ~ 100）越高柱值变化越柔缓
+        "spectrum_sensitivity": 100,  # 频谱敏感度（50 ~ 200）越低需越大音量才有明显波形，越高越早满格
+        "spectrum_bars": 28,  # 频谱柱数量（12 ~ 48），越多越密集
     },
     "lyrics": {
         "process_whitelist": "cloudmusic,foobar2000,potplayer,QQMusic",  # 仅这些进程播放媒体时获取歌词，逗号分隔，留空则不限
         "auto_translate": False,  # 自动检测歌词行末尾括号内的翻译（原文在下，翻译在上）
         "animation": False,  # 歌词滚动动画
+        "estimated_position": False,  # 歌词预测：播放器不汇报进度时按已播放时长估算推进（暂停即停）
+        "time_offset": 0,  # 歌词时间偏移秒数（正=歌词提前显示），范围 -10 ~ +10
     },
     # 心率：BLE 设备地址/名称，animation 为心图标随心率跳动动画
     "hr": {
@@ -349,6 +364,19 @@ def _migrate_data_sources(general: dict, has_sources: bool = False):
             general["data_source"] = merged[0]["source"] if merged[0].get("enabled") else "lhm"
 
 
+def _looks_legacy(raw: dict) -> bool:
+    """判断是否为旧版扁平结构，需要迁移。
+
+    schema_version 为 SCHEMA_VERSION 是"新版"的强信号；否则若存在任何
+    旧版扁平键（layout/custom_cards/feature_toggles 与新版组名重合，
+    不能作为判定依据），则为旧版需要迁移。load_settings 用同一判定
+    决定是否回写，两处逻辑必须保持一致。
+    """
+    return raw.get("schema_version") != SCHEMA_VERSION and any(
+        k in raw for k in _LEGACY_KEY_MAP
+    )
+
+
 def _normalize_settings(raw: dict) -> dict:
     """将任意旧版/缺键设置字典统一为新版分组结构。
 
@@ -358,12 +386,7 @@ def _normalize_settings(raw: dict) -> dict:
     if not isinstance(raw, dict):
         return copy.deepcopy(DEFAULT_SETTINGS)
 
-    # 判断是否为旧版扁平结构：schema_version 为 SCHEMA_VERSION 是"新版"的强信号，
-    # 否则若存在任何旧版扁平键（layout/custom_cards/feature_toggles 与新版组名重合，
-    # 不能作为判定依据），则为旧版需要迁移。
-    is_old = raw.get("schema_version") != SCHEMA_VERSION and any(
-        k in raw for k in _LEGACY_KEY_MAP
-    )
+    is_old = _looks_legacy(raw)
 
     # 自定义卡片分组更名迁移：旧版使用 custom_text 分组，统一迁移为 custom_cards。
     if "custom_cards" not in raw and isinstance(raw.get("custom_text"), dict):
@@ -389,6 +412,9 @@ def _normalize_settings(raw: dict) -> dict:
                         # 旧版 bug 曾把 data_sources/data_source 注入每个分组，这里清理掉
                         merged.pop("data_sources", None)
                         merged.pop("data_source", None)
+                    if group == "music":
+                        # 频谱幅度（spectrum_gain）已由频谱平滑度取代，清理历史残留键
+                        merged.pop("spectrum_gain", None)
             else:
                 merged = copy.deepcopy(value)
             new[group] = merged
@@ -432,6 +458,17 @@ def _normalize_settings(raw: dict) -> dict:
 _settings_cache = None
 
 
+def server_conf(settings: dict) -> dict:
+    """读取 settings["server"] 分组并补齐默认值。
+
+    server 模式相关代码（main / server / api.core）统一经此访问，
+    避免默认值（端口 20622 等）多处硬编码漂移。
+    """
+    conf = dict(DEFAULT_SETTINGS.get("server", {}))
+    conf.update(settings.get("server") or {})
+    return conf
+
+
 def load_settings() -> dict:
     global _settings_cache
     if _settings_cache is not None:
@@ -443,10 +480,8 @@ def load_settings() -> dict:
                 raw = json.load(f)
             s = _normalize_settings(raw)
             # 若磁盘上仍是旧版扁平结构，或仍在使用旧版 custom_text 分组名，
-            # 回写为新版结构（下次启动即为新版）。
-            if raw.get("schema_version") != SCHEMA_VERSION and any(
-                k in raw for k in _LEGACY_KEY_MAP
-            ):
+            # 回写为新版结构（下次启动即为新版）。判定逻辑与 _normalize_settings 一致。
+            if _looks_legacy(raw):
                 save_settings(s)
             elif isinstance(raw.get("custom_text"), dict) and "custom_cards" not in raw:
                 save_settings(s)

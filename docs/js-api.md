@@ -32,6 +32,8 @@
 | `get_hw_names()` | — | 硬件型号 |
 | `get_gpu_list()` | — | GPU 列表 |
 | `get_hw_detail()` | — | 硬件详情 |
+| `get_data_catalog()` | — | 自选数据卡片目录：启用的数据源 ×（标准指标 + 原始传感器树），item key 形如 `std:{group}.{field}` / `raw:{ident}` |
+| `get_custom_values(slots)` | — | 批量解析自选数据槽位实时值：`[{source,key},...]` → `[float\|None,...]` |
 | `change_backend(source)` | — | 切换后端 |
 | `get_sysinfo()` | — | 系统信息 |
 | `get_top_processes(sort_by, limit)` | — | 进程排序（默认 cpu，limit=1） |
@@ -55,6 +57,8 @@
 |---|---|---|
 | `get_music()` | `music` | 当前媒体；失败返回 `{"available":False,"error":...}` |
 | `get_lyrics(title, artist="")` | `meting_api_base` 非空 | 歌词 `{"lines":[...]}`；未配置返回空 |
+| `clear_lyrics_cache()` | — | 清空歌词缓存，返回 `{"ok":True,"cleared":n}` |
+| `window.__spectrum(bands)` | `music.spectrum` 开启且媒体播放中 | 反向推送（evaluate_js）：N 个 0~1 柱值（数量由 `music.spectrum_bars` 配置）；空数组表示捕获停止。前端绘制音乐卡片频谱 |
 | `get_fps()` | `fps` | `{fps, frametime, process, history_fps, low1pct, avg_fps, p99_fps}`；关闭全 0 |
 | `launch_last_player()` | — | 启动上次的媒体程序 |
 | `music_play_pause()` / `music_next()` / `music_prev()` | `music` | 媒体控制；关闭返回 `{"error":"disabled"}` |
@@ -71,11 +75,12 @@
 
 | 方法 | 说明 |
 |---|---|
-| `get_monitors()` | 显示器坐标列表 |
-| `move_to_monitor(index)` | 移动窗口到目标显示器 |
+| `get_monitors()` | 显示器坐标列表（含 `id`/`device`/`primary`） |
+| `move_to_monitor(target)` | 移动窗口到目标显示器（`target` 为设备 ID/路径字符串或序号 int） |
 | `check_monitor()` | `{available, count}` |
 | `set_caption(enabled)` | 添加/移除原生标题栏 |
 | `toggle_fullscreen()` | 切换全屏 |
+| `apply_window_opacity()` | 应用 `general.window_opacity` 原生透明度（须在 fullscreen/标题栏等窗口样式操作后调用，避免被覆盖） |
 | `minimize_window()` | 最小化 |
 | `get_autostart()` / `set_autostart(enabled)` | 计划任务自启状态/开关 |
 

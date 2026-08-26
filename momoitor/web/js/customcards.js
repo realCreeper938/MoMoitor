@@ -12,7 +12,7 @@ function isCustomCard(id) {
     return typeof id === 'string' && id.indexOf('custom-') === 0;
 }
 
-const _CUSTOM_PREFIX = { text: 'custom-text-', html: 'custom-html-' };
+const _CUSTOM_PREFIX = { text: 'custom-text-', html: 'custom-html-', data: 'custom-data-' };
 
 function _customCardCfg(id) {
     const defaults = {
@@ -24,7 +24,7 @@ function _customCardCfg(id) {
 }
 
 function _customCardType(cfg) {
-    return cfg.type === 'html' ? 'html' : 'text';
+    return cfg.type === 'html' ? 'html' : (cfg.type === 'data' ? 'data' : 'text');
 }
 
 /* Unique id for a new card of the given type, based on the highest existing
@@ -55,6 +55,7 @@ function _createCustomCardElement(id, cfg) {
     const existing = getCard(id);
     if (existing) return existing;
     const type = _customCardType(cfg || {});
+    if (type === 'data') return _createDataCardElement(id, cfg || {});
     const el = document.createElement('div');
     el.className = 'term-box custom-card';
     el.id = id;
@@ -118,7 +119,11 @@ function createCustomCard(type) {
     const id = _nextCustomId(type);
     window._appSettings = window._appSettings || {};
     window._appSettings.custom_cards = window._appSettings.custom_cards || {};
-    window._appSettings.custom_cards[id] = { type: type, text: '', html: '' };
+    if (type === 'data') {
+        window._appSettings.custom_cards[id] = { type: 'data', title: '', big: null, lines: [], spark: { enabled: false, color: '' }, spacing: {} };
+    } else {
+        window._appSettings.custom_cards[id] = { type: type, text: '', html: '' };
+    }
     _createCustomCardElement(id, { type: type });
     _addCard(id);
     openCardEditor(id);
@@ -141,6 +146,7 @@ async function deleteCustomCard(id) {
     if (col !== null) _repackColumn(col, null, null);
     _rebalanceOverflow();
     _updateCardsBtn();
+    delete _cdPending[id];
     try { await pywebview.api.save_settings(window._appSettings); } catch (e) { console.warn('delete custom card:', e); }
 }
 
@@ -150,7 +156,9 @@ function applyCustomCard(id) {
     const card = getCard(id);
     if (!card || !card.el) return;
     const type = _customCardType(cfg);
-    if (type === 'html') {
+    if (type === 'data') {
+        applyCustomData(id, cfg);
+    } else if (type === 'html') {
         const htmlEl = card.el.querySelector('.custom-html');
         if (htmlEl) htmlEl.innerHTML = cfg.html || '';
     } else if (type === 'text') {
@@ -214,6 +222,10 @@ function openTextEditor(id) {
 }
 
 function closeTextEditor() {
+    if (_cdPending[_ceEditId]) {
+        delete _cdPending[_ceEditId];
+        applyCustomCard(_ceEditId);
+    }
     hideOverlay('card-edit-panel');
 }
 
@@ -294,10 +306,12 @@ function initTextCardEditor() {
 function _setEditorType(type) {
     const textFields = document.getElementById('ce-text-fields');
     const htmlField = document.getElementById('ce-html-field');
+    const dataField = document.getElementById('ce-data-fields');
     if (textFields) textFields.style.display = type === 'text' ? '' : 'none';
     if (htmlField) htmlField.style.display = type === 'html' ? '' : 'none';
+    if (dataField) dataField.style.display = type === 'data' ? '' : 'none';
     const title = document.getElementById('card-edit-title');
-    if (title) title.textContent = t(type === 'html' ? 'html-edit-title' : 'text-edit-title');
+    if (title) title.textContent = t(type === 'html' ? 'html-edit-title' : (type === 'data' ? 'data-edit-title' : 'text-edit-title'));
 }
 
 /* Entry point used by the layout mode click-to-edit binding (layout.js). */
@@ -305,6 +319,10 @@ function openCardEditor(id) {
     const cfg = _customCardCfg(id);
     const type = _customCardType(cfg);
     _setEditorType(type);
+    if (type === 'data') {
+        initDataEditor(id);
+        return;
+    }
     if (type === 'html') {
         _ceEditId = id;
         const panel = document.getElementById('card-edit-panel');
@@ -332,6 +350,10 @@ async function saveCardEditor() {
         await saveTextCard();
         return;
     }
+    if (type === 'data') {
+        await saveDataCard();
+        return;
+    }
     const cfg = _customCardCfg(id);
     cfg.html = (document.getElementById('ce-html') || { value: '' }).value;
     window._appSettings = window._appSettings || {};
@@ -353,4 +375,20 @@ function initCustomCardEditor() {
             }
         });
     }
+    initDataCardEditor();
+    _bindCustomCardNormalEdit();
+}
+
+/* 普通（非布局）模式下，点击已添加的自定义卡片（text/html/data）直接打开编辑器。
+   布局模式下的编辑由 layout-mode.js 的布局控件处理，二者互斥（_layoutMode 为真时跳过）。 */
+function _bindCustomCardNormalEdit() {
+    document.addEventListener('click', (e) => {
+        if (_layoutMode) return;
+        const target = e.target.closest('.custom-card, #text-section');
+        if (!target) return;
+        // 避免触发卡片内部的可交互元素（如 HTML 卡片内的链接/按钮）
+        if (e.target.closest('a, button, input, select, textarea, .layout-control-group')) return;
+        const id = target.id;
+        if (isCustomCard(id) || id === 'text-section') openCardEditor(id);
+    });
 }

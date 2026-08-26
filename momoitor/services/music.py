@@ -2,12 +2,13 @@
 
 import base64
 import os
+import shutil
 import subprocess
 import threading
 import time
 from loguru import logger
 
-from momoitor.common import run_hidden
+from momoitor.common import Poller, run_hidden
 
 _have_smtc = False
 _have_buffer = False
@@ -35,14 +36,22 @@ _current = {
     "process_name": "",
     "position": 0.0,
     "duration": 0.0,
+    "position_estimated": False,  # True 表示 position 为估算值（播放器未汇报进度）
     "session_id": "",      # 当前展示会话的 AUMID
     "session_index": 0,    # 当前展示会话在全部会话中的下标
     "session_count": 0,    # SMTC 会话总数
     "session_names": [],   # 全部会话的来源应用名（前端 tooltip 用）
 }
 _lock = threading.Lock()
-_running = False
-_thread = None
+
+# 歌词预测：估算播放位置状态。key 为曲目标识；pos 为该曲目已播放秒数
+# （仅在 playing 时按墙钟累加，暂停冻结，切歌归零）；ts 为上次累加时刻。
+_est = {"key": "", "pos": 0.0, "ts": 0.0}
+# 时间线冻结检测：播放中且 duration>0 但 position 连续多次不变，
+# 视为该播放器实际不更新进度（如部分 UWP/网页播放器）。
+_tl_stale = {"pos": None, "n": 0}
+# 最近一次可信的真实时间线位置：真实→估算交接时以此为基准，避免歌词回跳
+_last_tl_pos = None
 _last_track_key = ""
 _cover_key = ""  # 已抓取过封面的曲目标识
 _last_player = {"name": "", "path": ""}  # 上次播放音乐的进程信息
@@ -59,8 +68,10 @@ def _get_sessions():
         if _mgr is None:
             _mgr = SessionManager.request_async().get()
         return list(_mgr.get_sessions())
-    except Exception:
-        # 管理器可能已失效，丢弃后下一轮重建
+    except Exception as e:
+        # 管理器可能已失效，丢弃后下一轮重建；也可能 winrt 异步运行时不完整
+        # （如缺 winrt-Windows.Foundation），此时记录以便诊断。
+        logger.debug("SMTC session manager unavailable: {}", e)
         _mgr = None
         return []
 
@@ -265,22 +276,17 @@ def launch_last_player():
 
 
 def _find_in_path(name):
-    """在 PATH 中查找可执行文件路径（兼容带 / 不带 .exe 后缀）。"""
-    candidates = [name]
-    if not name.lower().endswith(".exe"):
-        candidates.append(name + ".exe")
-    for cand in candidates:
-        resolved = run_hidden(["where", cand], text=True)
-        if resolved.returncode == 0 and resolved.stdout.strip():
-            first = resolved.stdout.strip().splitlines()[0].strip()
-            if os.path.exists(first):
-                return first
-    return ""
+    """在 PATH 中查找可执行文件路径。
+
+    shutil.which 在 Windows 上自动按 PATHEXT 解析（兼容带 / 不带 .exe 后缀），
+    替代此前每次起 where 子进程的实现。
+    """
+    return shutil.which(name) or ""
 
 
 def _read_session(session, sessions, idx):
     """读取指定会话的全部展示信息并写入 _current（含多会话元数据）。"""
-    global _last_track_key
+    global _last_track_key, _last_tl_pos
     names = [_get_app_name(_session_id(s)) for s in sessions]
     cur_id = _session_id(session)
 
@@ -317,20 +323,64 @@ def _read_session(session, sessions, idx):
     except Exception:
         pass
 
+    # 媒体属性读取失败时回退用上次的曲目标识，保证估算状态机不中断
+    track_key = locals().get("track_key") or _last_track_key
+
     try:
         info = session.get_playback_info()
-        with _lock:
-            _current["playing"] = (info.playback_status.value == PlaybackStatus.PLAYING)
+        playing = (info.playback_status.value == PlaybackStatus.PLAYING)
+    except Exception:
+        playing = False
+
+    position = None
+    duration = 0.0
+    try:
+        tl = session.get_timeline_properties()
+        position = max(0, tl.position.total_seconds())
+        duration = max(0, (tl.end_time - tl.start_time).total_seconds())
     except Exception:
         pass
 
-    try:
-        tl = session.get_timeline_properties()
-        with _lock:
-            _current["position"] = max(0, tl.position.total_seconds())
-            _current["duration"] = max(0, (tl.end_time - tl.start_time).total_seconds())
-    except Exception:
-        pass
+    with _lock:
+        _current["playing"] = playing
+
+        # ---- 播放位置：真实时间线优先，不可用/冻结时回退估算（歌词预测）----
+        now_ts = time.monotonic()
+        if track_key != _est["key"]:
+            _est.update(key=track_key, pos=0.0, ts=now_ts)
+            _tl_stale.update(pos=None, n=0)
+        elif playing:
+            _est["pos"] += max(0.0, now_ts - _est["ts"])
+        _est["ts"] = now_ts
+
+        stale = False
+        tl_ok = position is not None and duration > 0
+        if tl_ok:
+            if playing:
+                # 连续 >=3 轮（约3s）位置纹丝不动 → 该播放器不更新进度
+                stale = (_tl_stale["pos"] == position)
+                _tl_stale["n"] = (_tl_stale["n"] + 1) if stale else 0
+                _tl_stale["pos"] = position
+                stale = _tl_stale["n"] >= 2
+            else:
+                _tl_stale.update(pos=None, n=0)
+
+        was_real = not _current.get("position_estimated", True)
+        if tl_ok and not stale:
+            _current["position"] = position
+            _current["duration"] = duration
+            _current["position_estimated"] = False
+            # 估算时钟与真实进度持续对齐，保证随时可无缝接管
+            _est["pos"] = float(position)
+            _last_tl_pos = float(position)
+        else:
+            # 无法获取有效进度：用估算值推进（暂停时自然冻结）
+            if not was_real and _last_tl_pos is not None:
+                # 真实→估算交接：从最后可信位置继续，避免歌词回跳
+                _est["pos"] = max(_est["pos"], _last_tl_pos)
+            _current["position"] = round(_est["pos"], 1)
+            _current["duration"] = 0.0
+            _current["position_estimated"] = True
 
 
 def switch_session():
@@ -351,40 +401,43 @@ def switch_session():
         # 重置曲目/封面缓存并清空旧信息，避免残留上一会话的内容
         _last_track_key = ""
         _cover_key = ""
+        _est.update(key="", pos=0.0, ts=0.0)
+        _tl_stale.update(pos=None, n=0)
         _current["title"] = ""
         _current["artist"] = ""
         _current["cover"] = ""
         _current["position"] = 0.0
         _current["duration"] = 0.0
+        _current["position_estimated"] = False
     logger.info("Switched media session -> {}", _get_app_name(_session_id(sessions[nxt])))
     _read_session(sessions[nxt], sessions, nxt)
     return True
 
 
 def _poll():
+    """单次轮询；返回下一轮间隔（无会话时降频到 2s，其余 1s）。"""
     global _last_track_key, _cover_key, _selected
-    while _running:
-        try:
-            sessions = _get_sessions()
-            session, idx = _pick_session(sessions)
-            if not session:
-                with _lock:
-                    _selected = None
-                    _current["available"] = False
-                    _current["cover"] = ""
-                    _current["session_id"] = ""
-                    _current["session_index"] = 0
-                    _current["session_count"] = 0
-                    _current["session_names"] = []
-                _last_track_key = ""
-                _cover_key = ""
-                time.sleep(2)
-                continue
-            _read_session(session, sessions, idx)
-
-        except Exception as e:
-            logger.debug("Music poll: {}", e)
-        time.sleep(1)
+    try:
+        sessions = _get_sessions()
+        session, idx = _pick_session(sessions)
+        if not session:
+            with _lock:
+                _selected = None
+                _current["available"] = False
+                _current["cover"] = ""
+                _current["session_id"] = ""
+                _current["session_index"] = 0
+                _current["session_count"] = 0
+                _current["session_names"] = []
+            _last_track_key = ""
+            _cover_key = ""
+            _est.update(key="", pos=0.0, ts=0.0)
+            _tl_stale.update(pos=None, n=0)
+            return 2
+        _read_session(session, sessions, idx)
+    except Exception as e:
+        logger.debug("Music poll: {}", e)
+    return 1
 
 
 def _fetch_cover(props, track_key=None):
@@ -463,21 +516,17 @@ def refresh_cover():
     return get_current()
 
 
+_poller = Poller("music", 1.0, _poll)
+
+
 def start():
-    global _running, _thread
     if not _have_smtc:
         return
-    if _running:
-        return
-    _running = True
-    if _thread and _thread.is_alive():
-        # stop() 后立即 start() 时旧线程仍在运行，直接复用避免重复轮询
-        return
-    _thread = threading.Thread(target=_poll, daemon=True)
-    _thread.start()
-    logger.info("Music polling started")
+    fresh = not _poller.running()
+    _poller.start()
+    if fresh:
+        logger.info("Music polling started")
 
 
 def stop():
-    global _running
-    _running = False
+    _poller.stop()

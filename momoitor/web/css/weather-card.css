@@ -198,6 +198,25 @@ body.no-card-grad #weather-section .wx-bg { display: none; }
     cursor: help;
 }
 
+/* Cancelled alert (messageType=cancel): grayed out with a "\" strike over the glyph */
+.wx-alert-icon.wx-alert-cancelled {
+    position: relative;
+    color: var(--text-dim);
+}
+
+.wx-alert-icon.wx-alert-cancelled::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2px;
+    height: 118%;
+    background: var(--text-dim);
+    border-radius: 1px;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    pointer-events: none;
+}
+
 .wx-meta {
     display: flex;
     flex-direction: column;

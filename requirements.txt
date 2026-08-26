@@ -10,8 +10,16 @@ loguru>=0.7
 Pillow>=10.0
 pycaw>=20230407
 cnlunar>=0.2
+# 音乐频谱可视化：WASAPI 回环捕获（services/spectrum.py），仅 Windows
+pyaudiowpatch>=0.2.12; sys_platform == "win32"
 # 服务端模式启动时发送系统通知（server.py）
 plyer>=2.1
+# 系统托盘图标（services/tray.py）
+pystray>=0.19
+# winrt 异步操作运行时依赖：SMTC 音乐/音量/亮度/心率等均依赖
+# winrt-Windows.Foundation（缺失会令 request_async().get() 抛 _IAsyncOperation 异常，
+# 导致音乐轮询全失败、卡片一直显示"未在播放"）
+winrt-Windows.Foundation; sys_platform == "win32"
 winrt-Windows.Media.Control; sys_platform == "win32"
 winrt-Windows.Storage.Streams; sys_platform == "win32"
 # 心率卡片：BLE 心率服务读取

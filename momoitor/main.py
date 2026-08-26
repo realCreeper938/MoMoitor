@@ -8,8 +8,10 @@ import traceback
 import momoitor.webview_compat  # noqa: F401  （pywebview+bottle 兼容修复，须在 webview 前导入）
 import webview
 from loguru import logger
-from momoitor.config import load_settings, DATA_DIR
+from momoitor.config import load_settings, server_conf, DATA_DIR
 from momoitor.api import create_monitor, create_window, create_api
+from momoitor.services import singleton as singleton_svc
+from momoitor.services import tray as tray_svc
 
 logger.remove()
 
@@ -52,6 +54,19 @@ def _hide_console():
         ctypes.windll.user32.ShowWindow(hwnd, SW_HIDE)
 
 
+def _set_dpi_awareness():
+    """启用 Per-Monitor V2 DPI 感知，保证混用不同缩放比例显示器时定位/尺寸正确。
+
+    必须在创建任何窗口之前调用；失败（如已被 manifest/pywebview 锁定）时静默忽略。
+    PER_MONITOR_AWARE_V2 的值为 (DPI_AWARENESS_CONTEXT)-4。
+    """
+    try:
+        ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))
+        logger.debug("DPI awareness set to PER_MONITOR_AWARE_V2")
+    except Exception as e:
+        logger.debug("SetProcessDpiAwarenessContext failed: {}", e)
+
+
 def _show_error(title, msg):
     """GUI 模式下弹出错误对话框。打包为无控制台 exe，崩溃必须可见而非静默。"""
     try:
@@ -65,6 +80,7 @@ def _run_webview(monitor, settings, t0):
     logger.debug("Creating webview window")
     _hide_console()
     window, api = create_window(monitor)
+    tray_svc.start(api)
     logger.info("Window created ({:.0f}ms), entering event loop", (time.monotonic() - t0) * 1000)
     debug = bool(settings.get("general", {}).get("debug", False))
     webview.start(debug=debug)
@@ -76,6 +92,7 @@ def _run_server(monitor, settings, t0):
     """启动 HTTP 服务器模式。"""
     from momoitor.server import run_server
     api = create_api(monitor)
+    tray_svc.start(api)
     logger.info("API ready ({:.0f}ms), starting HTTP server", (time.monotonic() - t0) * 1000)
     run_server(api, settings)
     return api
@@ -84,6 +101,10 @@ def _run_server(monitor, settings, t0):
 def main():
     t0 = time.monotonic()
     logger.info("Starting MoMoitor")
+    # 单实例：已有实例在运行时聚焦其窗口并退出，避免重复启动。
+    if not singleton_svc.acquire():
+        return
+    _set_dpi_awareness()
     _cleanup_webview2_data()
     settings = load_settings()
     try:
@@ -94,9 +115,10 @@ def main():
         logger.error("Monitor init failed: {}", e)
         logger.debug(traceback.format_exc())
         _show_error("MoMoitor 启动失败", "硬件监视器初始化失败，无法启动：\n\n" + str(e))
+        singleton_svc.release()
         return
     try:
-        if settings.get("server", {}).get("mode", False):
+        if server_conf(settings).get("mode", False):
             api = _run_server(monitor, settings, t0)
         else:
             api = _run_webview(monitor, settings, t0)
@@ -105,6 +127,8 @@ def main():
         logger.debug(traceback.format_exc())
         _show_error("MoMoitor 出错", "运行时错误：\n\n" + str(e))
     finally:
+        tray_svc.stop()
+        singleton_svc.release()
         if "api" in locals():
             api.close_monitor()
         else:

@@ -27,6 +27,8 @@ class CompositeMonitor(BaseMonitor):
         self._monitors = list(monitors)
         # 最近一次快照中失败的源名（供前端提示）。
         self._failed_sources = []
+        # 最近一次快照的按源明细（名称 -> 该源快照），供按源精确定位标准指标值。
+        self._last_snaps = {name: None for name, _ in self._monitors}
 
     def _source_snapshots(self, gpu_index, skip_net):
         """依次采集每个后端的快照；单个后端异常时跳过（该源视为无数据）。"""
@@ -37,9 +39,11 @@ class CompositeMonitor(BaseMonitor):
                 snap = mon.snapshot(gpu_index=gpu_index, skip_net=skip_net)
                 if snap:
                     snaps.append(snap)
+                    self._last_snaps[name] = snap
             except Exception as e:
                 logger.warning("{} backend snapshot failed: {}", name, e)
                 failed.append(name)
+                self._last_snaps[name] = None
         self._failed_sources = failed
         return snaps
 
@@ -115,6 +119,10 @@ class CompositeMonitor(BaseMonitor):
         """返回聚合后端名称：按优先级列出启用的源。"""
         names = [n for n, _ in self._monitors]
         return {"name": " + ".join(names) if names else "None", "version": None}
+
+    def get_source_snapshots(self) -> dict:
+        """最近一次快照的按源明细（名称 -> 该源快照），供按源精确定位标准指标值。"""
+        return {k: v for k, v in self._last_snaps.items()}
 
     def close(self):
         for _, mon in self._monitors:

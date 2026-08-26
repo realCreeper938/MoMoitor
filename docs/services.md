@@ -56,6 +56,8 @@ RTSS 共享内存读取前台 FPS，后台线程轮询。
 | `get_gpu_list()` | GPU 列表 |
 | `get_backend_info()` -> dict | 后端版本信息 |
 | `change_backend(source)` -> bool | `lhm`/`hwinfo` 切换 |
+| `get_data_catalog()` -> dict | 自选数据卡片目录：`{sources:[{source,label,groups}]}`，item key 形如 `std:{group}.{field}` / `raw:{ident}` |
+| `read_value(source, key)` -> float\|None | 解析某源某 key 的实时值（标准指标取最近快照，原始传感交给后端反查） |
 | `close()` | 释放后端资源 |
 
 ## lyrics
@@ -129,6 +131,8 @@ QWeather（和风）JWT 客户端 + 缓存服务（合并于同一模块）。
 |---|---|
 | `minimize(window)` | 最小化 |
 | `set_caption(window, enabled)` | 添加/移除 `WS_CAPTION` |
-| `move_to_monitor(window, index)` -> bool | 移动并调整窗口（失败重试 3 次） |
-| `get_monitors()` -> list | 显示器 `{x,y,width,height,name}` |
+| `move_to_monitor(window, target)` -> bool | 移动并调整窗口（`target` 为设备 ID/路径或序号；失败重试 3 次） |
+| `display_target(display)` | 从 `display` 分组提取目标显示器身份（`monitor_id` 优先，回退序号） |
+| `find_display(target, monitors)` -> `(monitor\|None, matched)` | 解析目标身份为当前枚举中的一块屏 |
+| `get_monitors()` -> list | 显示器 `{x,y,width,height,work_*,name,device,id,primary}` |
 | `get_idle_time()` -> float | 系统空闲秒数（`GetLastInputInfo`） |

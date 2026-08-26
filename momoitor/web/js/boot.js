@@ -1,6 +1,21 @@
 /* Boot */
 let __bootStarted = false;
 
+/* 后端（托盘等外部入口）修改设置后回调：把变更分组合并进前端缓存，
+ * 避免前端随后整包保存时用旧值覆盖。 */
+window.__syncExternalSettings = function(groups) {
+    if (!groups || typeof groups !== 'object') return;
+    window._appSettings = window._appSettings || {};
+    Object.keys(groups).forEach(function(g) {
+        const val = groups[g];
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+            window._appSettings[g] = Object.assign({}, window._appSettings[g], val);
+        } else {
+            window._appSettings[g] = val;
+        }
+    });
+};
+
 function initConsoleForwarding() {
     const origLog = console.log;
     const origWarn = console.warn;
@@ -29,6 +44,7 @@ async function initDisplay(s, g, f, ck, ly) {
     }
     applyFonts(f.ui, f.data, f.clock);
     applyCardGradient(g.card_gradient !== false);
+    applyBgCharts(g.bg_charts !== false);
     if (g.debug_clock_gradient) forceClockTimeGradient(g.debug_clock_gradient);
     await applyAppBackgroundSetting(ck.bg_image, ck.bg_opacity, ck.bg_blur, ck.bg_gradient !== false, ck.bg_fit || 'fit', ck.bg_offset_x ?? 50, ck.bg_offset_y ?? 50);
     applyFontSize(g.font_size || 100);
@@ -37,8 +53,9 @@ async function initDisplay(s, g, f, ck, ly) {
 
     // Move to target monitor + fullscreen, then show
     const dsp = s.display || {};
-    if (dsp.monitor) {
-        await pywebview.api.move_to_monitor(dsp.monitor);
+    const monTarget = dsp.monitor_id || dsp.monitor;
+    if (monTarget) {
+        await pywebview.api.move_to_monitor(monTarget);
     }
     if (g.fullscreen !== false) {
         pywebview.api.toggle_fullscreen();
@@ -278,14 +295,15 @@ function initTaskMgrBtn() {
     }
 }
 
-function initMonitorPolling(dsp) {
-    // Monitor presence polling
+function initMonitorPolling() {
+    // Monitor presence polling（实时读 _appSettings，托盘切换显示器后立即生效）
     let monitorHidden = false;
-    let cachedMonitor = dsp.monitor || 0;
-    let cachedHideMissing = dsp.hide_when_monitor_missing === true;
 
     async function checkMonitor() {
         try {
+            const d = (window._appSettings && window._appSettings.display) || {};
+            const cachedMonitor = d.monitor_id || d.monitor || 0;
+            const cachedHideMissing = d.hide_when_monitor_missing === true;
             async function showMonitor() {
                 if (!monitorHidden) return;
                 document.body.style.visibility = 'visible';
@@ -327,9 +345,10 @@ window.addEventListener('pywebviewready', async () => {
     const ck = s.clock || {};
     const w = s.weather || {};
     const ly = s.lyrics || {};
-    const dsp = s.display || {};
-
     await initDisplay(s, g, f, ck, ly);
+    // 透明度须在 fullscreen / 标题栏等窗口样式操作之后再应用，
+    // 否则会被这些操作重建窗口样式而清除（启动时表现为一闪而过后失效）。
+    try { await pywebview.api.apply_window_opacity(); } catch (e) { console.warn('apply_window_opacity:', e); }
     initClockBgHover();
     await initHardware();
     cacheWeatherCreds(w);
@@ -340,7 +359,7 @@ window.addEventListener('pywebviewready', async () => {
     initAppConfirmModal();
     initUpdateServerModals();
     initTaskMgrBtn();
-    initMonitorPolling(dsp);
+    initMonitorPolling();
 
     // 全部初始化完成后，再显示界面并收起加载动画；
     // 首次启动或开启强制向导时，先展示欢迎向导，向导完成后再显示界面

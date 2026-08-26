@@ -1,24 +1,19 @@
 """HTTP 服务器后端 —— 无需 pywebview 即可提供 Web UI 与 JSON API。"""
 
 import base64
+import hmac
 import inspect
 import json
 import mimetypes
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from urllib.parse import unquote
 
 from loguru import logger
 
-from momoitor.config import WEB_DIR
-
-# 静态文件扩展名 -> MIME 类型补全
-mimetypes.add_type("application/javascript", ".js")
-mimetypes.add_type("text/css", ".css")
-mimetypes.add_type("image/svg+xml", ".svg")
-mimetypes.add_type("font/ttf", ".ttf")
-mimetypes.add_type("image/webp", ".webp")
+from momoitor.config import WALLPAPERS_DIR, WEB_DIR
 
 
 class ServerBackend:
@@ -50,7 +45,8 @@ class ServerBackend:
                 ).decode("ascii")
                 hdr = self.headers.get("Authorization", "")
                 if hdr.startswith("Basic "):
-                    if hdr[6:] == expected:
+                    # 常数时间比较，防止时序侧信道探测凭据
+                    if hmac.compare_digest(hdr[6:], expected):
                         return True
                 self.send_response(401)
                 self.send_header("WWW-Authenticate", 'Basic realm="MoMoitor"')
@@ -70,10 +66,15 @@ class ServerBackend:
                 # 默认指向 index.html
                 if path == "/" or path == "":
                     path = "/index.html"
-                # 防止路径穿越
-                rel = path.lstrip("/")
-                fs_path = os.path.normpath(os.path.join(WEB_DIR, rel))
-                if not fs_path.startswith(WEB_DIR) or not os.path.isfile(fs_path):
+                # /wp/ 前缀映射用户壁纸目录（与桌面模式 bottle 路由行为一致）
+                if path.startswith("/wp/"):
+                    root, rel = WALLPAPERS_DIR, path[4:]
+                else:
+                    root, rel = WEB_DIR, path.lstrip("/")
+                # 防止路径穿越：规范化并解析后必须仍位于对应根目录内
+                fs_path = os.path.normpath(os.path.join(root, rel))
+                if not Path(fs_path).resolve().is_relative_to(Path(root).resolve()) \
+                        or not os.path.isfile(fs_path):
                     self.send_response(404)
                     self.end_headers()
                     return
@@ -167,13 +168,15 @@ def _notify_server_started(urls):
 
 def run_server(api, settings: dict):
     """根据设置启动 HTTP 服务器（阻塞）。返回后端实例供外部管理。"""
+    from momoitor.config import server_conf
+    s = server_conf(settings)
     backend = ServerBackend(
         api,
-        host=settings.get("server", {}).get("host", "0.0.0.0"),
-        port=int(settings.get("server", {}).get("port", 20622)),
-        auth_enabled=bool(settings.get("server", {}).get("auth_enabled", False)),
-        auth_user=settings.get("server", {}).get("auth_user", ""),
-        auth_pass=settings.get("server", {}).get("auth_pass", ""),
+        host=s.get("host") or "0.0.0.0",
+        port=int(s.get("port") or 20622),
+        auth_enabled=bool(s.get("auth_enabled", False)),
+        auth_user=s.get("auth_user") or "",
+        auth_pass=s.get("auth_pass") or "",
     )
     api.set_server_backend(backend)
     try:

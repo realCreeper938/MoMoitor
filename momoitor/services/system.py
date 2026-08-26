@@ -10,13 +10,11 @@ import psutil
 from loguru import logger
 
 from momoitor.services import proclist
-
-# 逻辑核心数不变，启动时缓存一次
-_CPU_COUNT = psutil.cpu_count(logical=True) or 1
+from momoitor.services.cache import TTLCache
 
 # sysinfo 缓存：hostname/IP/boot_time 几乎不变，避免每 60s 重复 DNS 查询
 _SYSINFO_TTL = 600
-_sysinfo_cache = {"hostname": None, "ip": None, "boot": None, "ts": 0.0}
+_sysinfo_cache = TTLCache()
 
 
 def get_time() -> str:
@@ -93,16 +91,23 @@ def clean_memory(deep: bool = False) -> dict:
 
 
 def get_sysinfo() -> dict:
-    now = time.monotonic()
-    if _sysinfo_cache["boot"] is None or now - _sysinfo_cache["ts"] > _SYSINFO_TTL:
+    value, hit = _sysinfo_cache.get("sysinfo", _SYSINFO_TTL)
+    if not hit:
         try:
-            _sysinfo_cache["hostname"] = socket.gethostname()
-            _sysinfo_cache["ip"] = socket.gethostbyname(_sysinfo_cache["hostname"])
-            _sysinfo_cache["boot"] = psutil.boot_time()
-            _sysinfo_cache["ts"] = now
+            hostname = socket.gethostname()
+            value = {
+                "hostname": hostname,
+                "ip": socket.gethostbyname(hostname),
+                "boot": psutil.boot_time(),
+            }
+            _sysinfo_cache.set("sysinfo", value)
         except Exception as e:
             logger.warning("get_sysinfo refresh failed: {}", e)
-    elapsed = int(time.time() - (_sysinfo_cache["boot"] or time.time()))
+        if value is None:
+            # 刷新失败时回退使用旧值（若有）
+            value, _ = _sysinfo_cache.get("sysinfo", None)
+    boot = (value or {}).get("boot") or time.time()
+    elapsed = int(time.time() - boot)
     days, rem = divmod(elapsed, 86400)
     hours, rem = divmod(rem, 3600)
     minutes, secs = divmod(rem, 60)
@@ -113,8 +118,8 @@ def get_sysinfo() -> dict:
     parts.append(f"{minutes}m")
     parts.append(f"{secs}s")
     return {
-        "hostname": _sysinfo_cache["hostname"] or "localhost",
-        "ip": _sysinfo_cache["ip"] or "0.0.0.0",
+        "hostname": (value or {}).get("hostname") or "localhost",
+        "ip": (value or {}).get("ip") or "0.0.0.0",
         "uptime": " ".join(parts),
     }
 
@@ -141,13 +146,12 @@ def get_top_processes(sort_by: str = "cpu", limit: int = 1) -> list:
 
 def _get_all_processes() -> list:
     """内部方法：获取所有进程列表。"""
-    idle_names = {"system idle process", "系统空闲进程", "idle", "memcompression"}
     procs = []
     for p in psutil.process_iter(attrs=["pid", "name", "cpu_percent", "memory_percent", "memory_info"]):
         try:
             info = p.info
             name = info.get("name") or "unknown"
-            if name.lower() in idle_names:
+            if name.lower() in proclist.IDLE_NAMES:
                 continue
             mem_mb = 0.0
             if info.get("memory_info"):
@@ -155,7 +159,7 @@ def _get_all_processes() -> list:
             procs.append({
                 "pid": info["pid"],
                 "name": name,
-                "cpu": round(float(info.get("cpu_percent") or 0.0) / _CPU_COUNT, 1),
+                "cpu": round(float(info.get("cpu_percent") or 0.0) / proclist.CPU_COUNT, 1),
                 "mem": float(info.get("memory_percent") or 0.0),
                 "mem_mb": round(mem_mb, 1),
             })

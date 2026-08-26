@@ -514,9 +514,10 @@ async function refreshWeatherCard() {
             if (hasAlerts) {
                 for (const a of alerts.slice(0, WX_MAX_ALERTS)) {
                     const icon = document.createElement('span');
-                    icon.className = 'nf-icon wx-alert-icon';
+                    const cancelled = a.messageTypeCode === 'cancel';
+                    icon.className = 'nf-icon wx-alert-icon' + (cancelled ? ' wx-alert-cancelled' : '');
                     icon.textContent = wxAlertIcon(a);
-                    icon.style.color = a.colorCode ? `rgb(${a.colorR},${a.colorG},${a.colorB})` : 'var(--red)';
+                    if (!cancelled) icon.style.color = a.colorCode ? `rgb(${a.colorR},${a.colorG},${a.colorB})` : 'var(--red)';
                     icon.addEventListener('mouseenter', () => showWxTip(icon, a));
                     icon.addEventListener('mouseleave', hideWxTip);
                     alertsBox.appendChild(icon);

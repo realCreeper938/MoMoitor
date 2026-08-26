@@ -1,10 +1,23 @@
-"""天气数据源共享工具：罗盘方位、蒲福风级、AQI 分级、时间格式。
+"""天气数据源共享工具：HTTP JSON 请求、罗盘方位、蒲福风级、AQI 分级、时间格式。
 
 各数据源模块把自家响应归一化为统一内部结构（见各 get_now 返回），
 字段缺失时直接省略键或置 None，由前端隐藏对应元素。
 """
 
 from datetime import datetime, timezone
+
+from momoitor.common import http_get
+
+
+def get_json(url, *, params=None, headers=None, timeout=5):
+    """GET 请求并解析 JSON，统一走 common.http_get（浏览器 UA）。
+
+    非 2xx 抛 requests.HTTPError，解析失败抛 json 异常——由调用方
+    （WeatherService._cached_call 等）统一兜底。
+    """
+    resp = http_get(url, headers=headers, timeout=timeout, params=params)
+    resp.raise_for_status()
+    return resp.json()
 
 # 归一化天气类别（前端 data-wx / 图标均按此取值）
 CATEGORIES = ("sun", "cloud", "overcast", "rain", "snow", "fog", "storm")

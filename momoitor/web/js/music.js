@@ -87,8 +87,9 @@ function renderLyrics() {
     const prevEl = document.getElementById('h-lyric-prev');
     const curEl = document.getElementById('h-lyric-current');
     const nextEl = document.getElementById('h-lyric-next');
-    if (!curEl || !nextEl) return;
-    const pos = _lyricBase.pos + (Date.now() - _lyricBase.t) / 1000;
+
+    // 暂停时偏移量固定为 0：歌词停在当前行（预测/真实进度均适用）
+    const pos = _lyricBase.pos + (_musicPlaying ? Date.now() - _lyricBase.t : 0) / 1000;
     const { cur, next, curIdx } = _findLyricAt(pos);
     const prev = curIdx > 0 ? _lyricLines[curIdx - 1] : null;
     _setLyricTexts(prevEl, curEl, nextEl, prev, cur, next);
@@ -133,7 +134,8 @@ function _lyricAnimLoop() {
     const curEl = document.getElementById('h-lyric-current');
     const nextEl = document.getElementById('h-lyric-next');
     if (!curEl || !nextEl) return;
-    const pos = _lyricBase.pos + (Date.now() - _lyricBase.t) / 1000;
+    // 暂停时偏移量固定为 0：动画循环同样停在当前行
+    const pos = _lyricBase.pos + (_musicPlaying ? Date.now() - _lyricBase.t : 0) / 1000;
     const { cur, next, curIdx } = _findLyricAt(pos);
     if (curIdx !== _lyricCurIdx) {
         _lyricCurIdx = curIdx;
@@ -329,24 +331,33 @@ async function refreshMusic() {
     } catch (e) { console.warn('refreshMusic:', e && e.message ? e.message : String(e), e); }
 }
 
-/* Decide whether to show lyrics (playing + position available + configured
-   + process in whitelist). Fetches lyrics once per track, then shows
-   current/next lines over the controls. */
+/* Decide whether to show lyrics (track present + position source usable +
+   configured + process in whitelist). Position is usable either from the
+   player's timeline (duration > 0) or, when 歌词预测 is enabled, from the
+   backend's elapsed-time estimate (position_estimated === true).
+   Paused: keep lyrics visible but frozen — baseline is only advanced while
+   playing, so lines stop at the current one until playback resumes. */
 function handleLyrics(m) {
     const s = window._appSettings || {};
     const metingBase = (s.music || {}).meting_api_base || '';
     const inWhitelist = processInLyricsWhitelist((s.lyrics || {}).process_whitelist, m && m.process_name);
-    const lyricMode = !!(m && m.playing && m.position >= 0 && m.duration > 0 && metingBase && inWhitelist);
+    const hasTrack = !!(m && (m.title || m.artist));
+    // 暂停时 m.playing 为 false，但曲目信息仍在 → 保持歌词显示且冻结
+    const posUsable = !!(m && (m.duration > 0 || ((s.lyrics || {}).estimated_position && m.position_estimated)));
+    const lyricMode = !!(hasTrack && metingBase && inWhitelist && posUsable);
     if (!lyricMode) {
         if (_lyricActive) hideLyrics();
         return;
     }
     const key = (m.title || '') + '|' + (m.artist || '');
     if (_lyricKey === key) {
-        // Same track already loaded — keep advancing
+        // Same track already loaded — keep advancing while playing
         if (_lyricActive) {
-            _lyricBase = { pos: m.position || 0, t: Date.now() };
-            renderLyrics();
+            if (_musicPlaying) {
+                _lyricBase = { pos: m.position || 0, t: Date.now() };
+                renderLyrics();
+            }
+            // paused: 不重置基线也不推进，歌词停在当前行
         } else {
             showLyrics(m);
         }
@@ -493,3 +504,249 @@ function initMemCleanClick() {
     });
 }
 initMemCleanClick();
+
+/* ================= 音乐频谱可视化 =================
+   后端 WASAPI 回环捕获 + FFT，经 evaluate_js 推送柱值到 window.__spectrum；
+   这里做插值补间与 canvas 绘制。位置/颜色/平滑度/柱数均由 music.spectrum_* 设置驱动，
+   改动即时生效（settings.js 会同步写入 window._appSettings）。 */
+
+const SPEC_STALE_MS = 450;   // 超时未收到推送则视为停止，柱值向 0 淡出
+const SPEC_LERP_MIN = 0.03;  // 平滑度 100% 时的最低插值系数，保证柱值仍会缓慢趋近目标
+const SPEC_POS = ['bottom', 'top', 'left', 'right'];
+const SPEC_COLORS = ['gradient', 'theme', 'cover'];
+const SPEC_STYLES = ['bars', 'wave'];
+
+const _spec = { canvas: null, ctx: null, cur: [], target: [], lastAt: 0, raf: 0 };
+let _coverColor = null;   // 封面取色缓存 [r,g,b]
+let _coverSrc = '';
+
+/** 后端推送入口：bands 为 0..1 的柱值数组；空数组表示捕获已停止。 */
+window.__spectrum = function (bands) {
+    const section = document.getElementById('music-section');
+    if (!section || section.style.display === 'none') return;
+    if (!Array.isArray(bands) || bands.length === 0) {
+        _spec.target = [];
+        return;
+    }
+    _spec.target = bands.map(Number);
+    _spec.lastAt = performance.now();
+    if (!_spec.raf) _spec.raf = requestAnimationFrame(specFrame);
+};
+
+function specCfg() {
+    const m = ((window._appSettings || {}).music || {});
+    const pos = SPEC_POS.includes(m.spectrum_position) ? m.spectrum_position : 'bottom';
+    const color = SPEC_COLORS.includes(m.spectrum_color) ? m.spectrum_color : 'gradient';
+    const style = SPEC_STYLES.includes(m.spectrum_style) ? m.spectrum_style : 'bars';
+    // 平滑度 0~100 映射为每帧插值系数：65%（默认）即原 0.35，100% 时钳到下限避免柱值冻结
+    const raw = Number(m.spectrum_smooth);
+    const smooth = Math.min(100, Math.max(0, Number.isFinite(raw) ? raw : 65));
+    const lerp = Math.max(SPEC_LERP_MIN, 1 - smooth / 100);
+    return { pos, color, style, lerp };
+}
+
+/* 从音乐封面提取主色（饱和度加权平均）。跨域图片会抛异常，返回 null 走回退色。 */
+function specCoverColor() {
+    const img = document.getElementById('h-music-cover');
+    if (!img || !img.src || img.style.display === 'none') return null;
+    if (_coverSrc === img.src && _coverColor) return _coverColor;
+    try {
+        const c = document.createElement('canvas');
+        c.width = c.height = 24;
+        const cx = c.getContext('2d', { willReadFrequently: true });
+        cx.drawImage(img, 0, 0, 24, 24);
+        const d = cx.getImageData(0, 0, 24, 24).data;
+        let r = 0, g = 0, b = 0, wsum = 0;
+        for (let i = 0; i < d.length; i += 4) {
+            const mx = Math.max(d[i], d[i + 1], d[i + 2]);
+            const mn = Math.min(d[i], d[i + 1], d[i + 2]);
+            const wgt = (mx - mn) * 1.5 + (mx + mn) * 0.15 + 8; // 饱和度加权，避免暗边主导
+            r += d[i] * wgt; g += d[i + 1] * wgt; b += d[i + 2] * wgt; wsum += wgt;
+        }
+        if (!wsum) return null;
+        _coverColor = [Math.round(r / wsum), Math.round(g / wsum), Math.round(b / wsum)];
+        _coverSrc = img.src;
+    } catch (e) {
+        return null; // 画布被跨域污染等情况
+    }
+    return _coverColor;
+}
+
+function specThemeColor() {
+    const v = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    const m = /^#?([0-9a-f]{6})$/i.exec(v);
+    if (!m) return [255, 255, 255];
+    const h = parseInt(m[1], 16);
+    return [(h >> 16) & 255, (h >> 8) & 255, h & 255];
+}
+
+function specBarRGB(colorMode, idx, total) {
+    if (colorMode === 'gradient') {
+        const hue = 205 + (idx / Math.max(1, total - 1)) * 280; // 蓝→紫→粉的多彩扫掠
+        return `hsla(${hue.toFixed(0)},75%,60%,`;
+    }
+    const rgb = colorMode === 'cover' ? (specCoverColor() || specThemeColor()) : specThemeColor();
+    return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},`;
+}
+
+function specEnsureCanvas() {
+    if (_spec.canvas) return true;
+    const canvas = document.getElementById('music-spectrum');
+    if (!canvas) return false;
+    _spec.canvas = canvas;
+    _spec.ctx = canvas.getContext('2d');
+    return true;
+}
+
+function specDraw(cfg) {
+    const { ctx } = _spec;
+    const canvas = _spec.canvas;
+    const sec = canvas.parentElement;
+    const dpr = window.devicePixelRatio || 1;
+    const w = sec.clientWidth, h = sec.clientHeight;
+    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    const n = _spec.cur.length;
+    if (!n) return;
+    if (cfg.style === 'wave') {
+        specDrawWave(cfg, w, h, n);
+        return;
+    }
+
+    const horizontal = cfg.pos === 'left' || cfg.pos === 'right';
+    const span = horizontal ? h : w;
+    const thick = horizontal ? w : h;
+    const gap = 3;
+    const bw = (span - gap * (n - 1)) / n;
+
+    for (let i = 0; i < n; i++) {
+        const v = Math.min(1, _spec.cur[i] || 0);
+        if (v < 0.01) continue;
+        const len = v * thick;
+        const off = i * (bw + gap);
+        const colorPrefix = specBarRGB(cfg.color, i, n);
+        const grad = horizontal
+            ? ctx.createLinearGradient(cfg.pos === 'left' ? len : w - len, 0, cfg.pos === 'left' ? 0 : w, 0)
+            : ctx.createLinearGradient(0, cfg.pos === 'top' ? len : h - len, 0, cfg.pos === 'top' ? 0 : h);
+        grad.addColorStop(0, colorPrefix + '0.26)');
+        grad.addColorStop(1, colorPrefix + '0.05)');
+        ctx.fillStyle = grad;
+
+        let x, y, wd, ht;
+        if (cfg.pos === 'bottom')      { x = off; y = h - len; wd = bw; ht = len; }
+        else if (cfg.pos === 'top')    { x = off; y = 0; wd = bw; ht = len; }
+        else if (cfg.pos === 'left')   { x = 0; y = off; wd = len; ht = bw; }
+        else                           { x = w - len; y = off; wd = len; ht = bw; }
+
+        if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(x, y, wd, ht, Math.min(2, Math.min(wd, ht) / 2));
+            ctx.fill();
+        } else {
+            ctx.fillRect(x, y, wd, ht);
+        }
+    }
+}
+
+/* 渐变波形样式：柱值作为采样点，中点二次贝塞尔平滑成连续曲线，
+   从卡片边缘（按频谱位置）向内填充渐变。 */
+function specDrawWave(cfg, w, h, n) {
+    const { ctx } = _spec;
+    const horizontal = cfg.pos === 'left' || cfg.pos === 'right';
+    const span = horizontal ? h : w;
+    const thick = horizontal ? w : h;
+
+    // 采样点：与柱状模式相同的中心位置与长度映射
+    const step = span / n;
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+        const v = Math.min(1, _spec.cur[i] || 0);
+        const len = Math.max(2, v * thick);
+        const c = i * step + step / 2;
+        if (cfg.pos === 'bottom')      pts.push([c, h - len]);
+        else if (cfg.pos === 'top')    pts.push([c, len]);
+        else if (cfg.pos === 'left')   pts.push([len, c]);
+        else                           pts.push([w - len, c]);
+    }
+
+    // 填充色：theme/cover 单色；gradient 沿跨度轴做色相扫掠，与柱状观感一致
+    const grad = horizontal
+        ? ctx.createLinearGradient(0, 0, 0, h)
+        : ctx.createLinearGradient(0, 0, w, 0);
+    for (let i = 0; i < n; i++) {
+        grad.addColorStop(n === 1 ? 0 : i / (n - 1), specBarRGB(cfg.color, i, n) + '1)');
+    }
+    // 淡出方向：从基线向外加深（外缘最亮）。offset 0 在外缘、offset 1 在基线。
+    let fade;
+    if (cfg.pos === 'bottom')      fade = ctx.createLinearGradient(0, h - thick * 0.9, 0, h);
+    else if (cfg.pos === 'top')    fade = ctx.createLinearGradient(0, thick * 0.9, 0, 0);
+    else if (cfg.pos === 'left')   fade = ctx.createLinearGradient(thick * 0.9, 0, 0, 0);
+    else                           fade = ctx.createLinearGradient(w - thick * 0.9, 0, w, 0);
+    fade.addColorStop(0, 'rgba(0,0,0,1)');
+    fade.addColorStop(1, 'rgba(0,0,0,0.3)');
+
+    ctx.beginPath();
+    // 基线起点
+    if (cfg.pos === 'bottom')      ctx.moveTo(pts[0][0], h);
+    else if (cfg.pos === 'top')    ctx.moveTo(pts[0][0], 0);
+    else if (cfg.pos === 'left')   ctx.moveTo(0, pts[0][1]);
+    else                           ctx.moveTo(w, pts[0][1]);
+
+    // 中点平滑：quadraticCurveTo 控制点为当前点、终点为中点
+    ctx.lineTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < n - 1; i++) {
+        const mx = (pts[i][0] + pts[i + 1][0]) / 2;
+        const my = (pts[i][1] + pts[i + 1][1]) / 2;
+        ctx.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
+    }
+    ctx.lineTo(pts[n - 1][0], pts[n - 1][1]);
+
+    // 基线终点并闭合
+    if (cfg.pos === 'bottom')      { ctx.lineTo(w, h); }
+    else if (cfg.pos === 'top')    { ctx.lineTo(w, 0); }
+    else if (cfg.pos === 'left')   { ctx.lineTo(0, h); }
+    else                           { ctx.lineTo(w, h); }
+    ctx.closePath();
+
+    // 叠合：色相/主题填充 + 外缘亮边，再用淡出层统一压暗靠基线一侧
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = specBarRGB(cfg.color, n - 1, n) + '0.45)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.fillStyle = fade;
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+}
+
+function specFrame() {
+    _spec.raf = 0;
+    if (!specEnsureCanvas()) return;
+    const cfg = specCfg();
+    const fresh = performance.now() - _spec.lastAt < SPEC_STALE_MS;
+    const n = fresh ? Math.max(_spec.target.length, 1) : _spec.cur.length;
+    if (_spec.cur.length !== n) _spec.cur.length = n;
+    let alive = false;
+    for (let i = 0; i < n; i++) {
+        const t = fresh ? (_spec.target[i] || 0) : 0;
+        const c = _spec.cur[i] || 0;
+        const v = c + (t - c) * cfg.lerp;
+        _spec.cur[i] = v;
+        if (v > 0.005) alive = true;
+    }
+    specDraw(cfg);
+    if (!alive && !fresh) {
+        _spec.canvas.classList.remove('on');
+        _spec.cur = [];
+        _spec.target = [];
+        return;
+    }
+    if (alive) _spec.canvas.classList.add('on');
+    _spec.raf = requestAnimationFrame(specFrame);
+}

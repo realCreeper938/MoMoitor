@@ -46,6 +46,10 @@ _MB = 1024 * 1024
 _CPU_COUNT = psutil.cpu_count(logical=True) or 1
 _IDLE_NAMES = {"system idle process", "系统空闲进程", "idle", "memcompression"}
 
+# 公共别名：system.py 等复用同一份常量，避免两处名单日后漂移
+CPU_COUNT = _CPU_COUNT
+IDLE_NAMES = frozenset(_IDLE_NAMES)
+
 _ntdll = None
 if _IS_WINDOWS:
     try:

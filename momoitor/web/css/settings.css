@@ -6,7 +6,7 @@
 }
 
 .settings-header {
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 72%, #000 28%));
     color: var(--nord0);
     padding: 11px 18px;
     font-weight: 700;
@@ -173,14 +173,36 @@ body.settings-anim-off .subtab-btn {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 9px 0;
+    padding: 9px 6px;
+    margin: 0 -6px;
     color: var(--text);
     font-size: calc(13px * var(--ui-scale));
     border-bottom: 1px solid rgba(var(--bg-rgb), 0.25);
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+}
+
+.setting-item:hover {
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
 .setting-item:last-child {
     border-bottom: none;
+}
+
+/* 双行标签：主标题 + 灰色副标题（内嵌描述，替代独立 desc 行） */
+.setting-label {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.setting-sub {
+    font-size: calc(11px * var(--ui-scale));
+    color: var(--text-dim);
+    opacity: 0.75;
+    line-height: 1.4;
 }
 
 /* Read-only value shown on the right of a setting-item (e.g. run identity) */
@@ -213,8 +235,31 @@ body.settings-anim-off .subtab-btn {
 }
 
 .setting-item input[type="range"] {
-    width: 120px;
-    accent-color: var(--accent);
+    width: 160px;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    padding: 0;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-dim) 35%, transparent);
+    outline: none;
+}
+
+.setting-item input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--nord0);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    transition: transform 0.12s;
+}
+
+.setting-item input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
 }
 
 .setting-item select:focus,
@@ -252,6 +297,22 @@ body.settings-anim-off .subtab-btn {
 /* Small text/number input (consistent width) */
 .input-sm {
     width: 180px !important;
+}
+
+/* 一行多输入框（如 经纬度、监听地址/端口） */
+.field-pair {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.field-pair input {
+    width: 120px !important;
+}
+
+.field-pair input.input-xs {
+    width: 92px !important;
 }
 
 /* ── Segmented control ── */
@@ -712,65 +773,6 @@ body.settings-anim-off .subtab-btn {
     opacity: 0;
     width: 0;
     height: 0;
-}
-
-/* ── Top process panel (beside FPS) ── */
-#proc-section {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-#proc-section .box-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2px 14px;
-    font-size: calc(11px * var(--ui-scale));
-}
-
-#proc-section .proc-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 12px 14px 2px;
-    overflow: hidden;
-    cursor: pointer;
-    user-select: none;
-}
-
-.proc-list {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    width: 100%;
-    overflow: hidden;
-}
-
-.proc-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    line-height: 1.3;
-    min-width: 0;
-}
-
-.proc-item .proc-name {
-    flex: 1 1 auto;
-    min-width: 0;
-    font-weight: 500;
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    cursor: pointer;
-}
-
-.proc-item .proc-name:hover {
-    color: var(--red);
-    text-decoration: underline;
 }
 
 /* Heart rate device selection */

@@ -134,6 +134,12 @@ function applyCardGradient(enabled) {
     document.body.classList.toggle('no-card-grad', !enabled);
 }
 
+/* Enable/disable background sparkline charts on built-in cards (custom data
+   cards keep their own per-card spark toggle and are not affected) */
+function applyBgCharts(enabled) {
+    document.body.classList.toggle('no-bg-charts', !enabled);
+}
+
 /* Settings panel background blur */
 function applySettingsBlur(enabled) {
     document.body.classList.toggle('settings-blur', !!enabled);
@@ -163,24 +169,37 @@ function applyLyricAnim(enabled) {
    translation first, original second. */
 let _lyricAutoTranslate = false;
 
-/* 根据 _lyricAutoTranslate 从原始行生成实际显示的歌词行。
-   开启时把 "原文 (翻译)" 拆成两行（翻译在前、原文在后，同一时间戳）。 */
+/* 根据 _lyricAutoTranslate 与歌词时间偏移设置，从原始行生成实际显示的歌词行。
+   开启翻译时把 "原文 (翻译)" 拆成两行（翻译在前、原文在后，同一时间戳）；
+   偏移为正表示歌词提前显示（时间戳前移），负值延后，钳制到 >= 0。 */
 function _applyLyricTransform() {
+    const off = Number((window._appSettings || {}).lyrics?.time_offset) || 0;
+    const shift = (t) => Math.max(0, t - off);
     if (!_lyricAutoTranslate) {
-        _lyricLines = _lyricRawLines;
+        _lyricLines = off
+            ? _lyricRawLines.map(l => ({ time: shift(l.time), text: l.text }))
+            : _lyricRawLines;
         return;
     }
     _lyricLines = [];
     for (const l of _lyricRawLines) {
         const split = _splitLyricTranslation(l.text);
         if (split) {
-            _lyricLines.push({ time: l.time, text: split.translation, trans: true });
-            _lyricLines.push({ time: l.time, text: split.original });
+            _lyricLines.push({ time: shift(l.time), text: split.translation, trans: true });
+            _lyricLines.push({ time: shift(l.time), text: split.original });
         } else {
-            _lyricLines.push(l);
+            _lyricLines.push({ time: shift(l.time), text: l.text });
         }
     }
 }
+
+/* 设置里调整歌词时间偏移后调用：按新偏移重建显示行并立即重渲染。 */
+function applyLyricTimeOffset() {
+    _applyLyricTransform();
+    _lyricCurIdx = -1;
+    if (_lyricActive) renderLyrics();
+}
+window.applyLyricTimeOffset = applyLyricTimeOffset;
 
 function applyLyricAutoTranslate(enabled) {
     _lyricAutoTranslate = !!enabled;
@@ -871,6 +890,7 @@ async function poll(generation = pollGeneration) {
         updateUI(data);
         updateUnavailableSources(data.unavailable_sources);
         hideBackendError();
+        refreshCustomDataCards();
     } catch (e) {
         console.error(e);
         showBackendError();

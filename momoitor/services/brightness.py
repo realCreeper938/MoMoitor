@@ -11,6 +11,8 @@ import ctypes.wintypes
 
 from loguru import logger
 
+from momoitor.services.window import enum_display_monitors
+
 
 # -- 显示器亮度（DDC/CI，通过 dxva2.dll）------------------------
 
@@ -24,19 +26,7 @@ class _PHYSICAL_MONITOR(ctypes.Structure):
 def _enum_hmonitors() -> list:
     """返回所有活动显示的 HMONITOR 句柄列表。"""
     handles = []
-
-    def callback(hMonitor, hdcMonitor, lprcMonitor, dwData):
-        handles.append(hMonitor)
-        return True
-
-    MONITORENUMPROC = ctypes.WINFUNCTYPE(
-        ctypes.wintypes.BOOL,
-        ctypes.wintypes.HMONITOR,
-        ctypes.wintypes.HDC,
-        ctypes.POINTER(ctypes.wintypes.RECT),
-        ctypes.wintypes.LPARAM,
-    )
-    ctypes.windll.user32.EnumDisplayMonitors(None, None, MONITORENUMPROC(callback), 0)
+    enum_display_monitors(handles.append)
     return handles
 
 
