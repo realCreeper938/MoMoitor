@@ -5,7 +5,7 @@
     check      编译检查（Python compileall + 前端 JS 语法检查）
     build      打包 exe（PyInstaller onedir）→ zip + SHA-256
     run        开发模式启动 (python -m momoitor.main)
-    release    提升版本号 + 提交 + 打 tag（--dry-run 预览）
+    release    提升版本号 + 提交 + 打 tag（--dry-run 预览；仅允许在 main 上执行）
 
 示例:
     python scripts/build.py check
@@ -158,16 +158,21 @@ def cmd_run() -> int:
 
 
 def cmd_release(version: str, dry_run: bool) -> int:
-    """提升版本号 → 提交 → 注解 tag vX.Y.Z。"""
+    """提升版本号 → 提交 → 注解 tag vX.Y.Z（单主干工作流：仅允许在 main 上执行）。"""
     if not VERSION_PATTERN.match(version):
         print("ERROR: version must match X.Y.Z (e.g. 1.1.0)")
-        return 1
-    if version == read_version():
-        print(f"ERROR: version {version} already set in momoitor/config.py")
         return 1
 
     def git(args):
         return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True)
+
+    branch = git(["rev-parse", "--abbrev-ref", "HEAD"]).stdout.strip()
+    if branch != "main":
+        print(f"ERROR: release must be run on 'main' (current branch: {branch})")
+        return 1
+    if version == read_version():
+        print(f"ERROR: version {version} already set in momoitor/config.py")
+        return 1
 
     status = git(["status", "--porcelain"])
     if status.stdout.strip():

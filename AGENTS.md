@@ -111,11 +111,12 @@ For deeper architectural detail, consult `docs/` (backends, config, services, js
   - Substantial real-world evidence that the approach is mature and widely used, backed by concrete references (documentation, official examples, established projects using the same technique).
 - Do not ship a feature built on an unverified, speculative, or newly-invented approach. If you cannot prove the approach works or that it is mature, stop and present the uncertainty to the user before proceeding.
 
-## 14. Branching and Merging Workflow
+## 14. Branching and Merging Workflow (Single Trunk)
 
-- All development and commits happen on the `dev` branch. Never commit directly to `main`.
-- Keep `main`'s commit history clean: never create merge commits or push dev commits directly to `main`. Only merge to `main` when the user explicitly requests it, and always use squash merge (`git checkout main; git merge --squash dev; git commit`) so `main` keeps one clean commit per feature/change.
-- After a merge, if the user requests, reset `dev` to point at the new `main`.
+- Development happens directly on `main` with small, focused commits (`feat/fix/refactor/chore` + 中文描述). The long-lived `dev` branch workflow is retired; `dev` (if it still exists locally or on the remote) is a read-only archive — do not develop, commit, merge, or push to it.
+- For large or experimental work, use a short-lived topic branch (`feat/<topic>`, `fix/<topic>`), then land it on `main` via squash (`git checkout main && git merge --squash <branch> && git commit`) and delete the branch.
+- Releases are cut on `main` only: run `python scripts/build.py release --version X.Y.Z` while checked out on `main` (the script refuses other branches). The version bump commit and the annotated tag both live in main's history, so every tag corresponds to an exact main snapshot.
+- Never force-push shared refs. Stage files explicitly by path (`git add <path>`); never sweep the tree with `git add -A` / `git add .`, which previously committed generated session files despite `.gitignore`.
 
 ## 15. Conventions (Follow the Existing Style)
 
