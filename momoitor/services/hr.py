@@ -2,11 +2,14 @@
 
 使用方式：
     from momoitor.services import hr as hr_svc
-    hr_svc.start()          # 启动事件循环，并按设置自动重连已保存的设备
+    hr_svc.start()          # 启动后台事件循环（不自动连接任何设备）
     hr_svc.scan(8)          # 扫描广播心率服务的 BLE 设备
     hr_svc.connect(addr)    # 连接并订阅心率通知
     hr_svc.disconnect()     # 断开连接
     hr_svc.get_current()    # {connected, bpm, device_name, address}
+
+设备连接由前端根据心率卡片是否可见通过 connect_hr / disconnect_hr 驱动，
+服务本身不做自动重连，保证未添加心率卡片时不产生任何数据获取。
 """
 
 import asyncio
@@ -56,7 +59,7 @@ def _clean_name(name):
 
 
 def start():
-    """启动后台事件循环线程；若设置中保存了设备地址则自动重连。幂等。"""
+    """启动后台事件循环线程（不自动连接设备，连接由显式 connect() 驱动）。幂等。"""
     global _loop, _loop_thread
     with _start_lock:
         if _loop is not None:
@@ -68,9 +71,6 @@ def start():
         _loop_thread = threading.Thread(target=_loop.run_forever, daemon=True, name="hr-bt-loop")
         _loop_thread.start()
         logger.info("Heart rate service started")
-        addr = _configured_address()
-        if addr is not None:
-            _submit(_connect_async(addr), "auto reconnect")
 
 
 def stop():
@@ -88,16 +88,6 @@ def stop():
     except Exception:
         pass
     _loop = None
-
-
-def _configured_address():
-    from momoitor.config import load_settings
-    hr = load_settings().get("hr", {}) or {}
-    raw = hr.get("device_address") or ""
-    try:
-        return int(raw)
-    except (TypeError, ValueError):
-        return None
 
 
 def _submit(coro, what=""):

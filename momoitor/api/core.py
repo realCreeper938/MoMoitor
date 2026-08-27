@@ -318,9 +318,11 @@ class ApiCore:
         logger.info("Closing app")
         tray_svc.stop()
         from momoitor.services import fps as _fps
+        from momoitor.services import hr as _hr
         from momoitor.services import music as _music
         _fps.stop()
         _music.stop()
+        _hr.stop()
         self.close_monitor()
         if self._window:
             self._window.destroy()
