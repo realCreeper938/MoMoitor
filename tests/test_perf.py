@@ -222,22 +222,6 @@ class TestWeather:
         benchmark(svc.get_alerts)
 
 
-# ── 日历 / 黄历 / 节假日 ───────────────────────────────────────
-
-
-@pytest.mark.benchmark(group="calendar")
-class TestCalendar:
-    def test_huangli(self, benchmark):
-        from momoitor.services.calendar import get_huangli
-        _bench_slow(benchmark, get_huangli)
-
-    def test_holiday_cache_hit(self, benchmark):
-        from momoitor.services.calendar import HolidayService
-        svc = HolidayService()
-        svc._cache.set(2026, {"2026-10-01": {"holiday": True, "name": "国庆节"}})
-        benchmark(lambda: svc.get_year(2026))
-
-
 # ── 歌词（解析 + SQLite 缓存命中）──────────────────────────────
 
 

@@ -339,12 +339,11 @@ async function refreshMusic() {
    playing, so lines stop at the current one until playback resumes. */
 function handleLyrics(m) {
     const s = window._appSettings || {};
-    const metingBase = (s.music || {}).meting_api_base || '';
     const inWhitelist = processInLyricsWhitelist((s.lyrics || {}).process_whitelist, m && m.process_name);
     const hasTrack = !!(m && (m.title || m.artist));
     // 暂停时 m.playing 为 false，但曲目信息仍在 → 保持歌词显示且冻结
     const posUsable = !!(m && (m.duration > 0 || ((s.lyrics || {}).estimated_position && m.position_estimated)));
-    const lyricMode = !!(hasTrack && metingBase && inWhitelist && posUsable);
+    const lyricMode = !!(hasTrack && lyricsSourceConfigured() && inWhitelist && posUsable);
     if (!lyricMode) {
         if (_lyricActive) hideLyrics();
         return;
@@ -377,6 +376,15 @@ function handleLyrics(m) {
         _lyricLines = [];
         if (_lyricActive) renderLyrics();
     });
+}
+
+/* 判断当前歌词数据源是否可用。Meting 需配置地址；LrcApi 恒可用（有默认公开 API）。 */
+function lyricsSourceConfigured() {
+    const s = window._appSettings || {};
+    const ly = s.lyrics || {};
+    const source = ly.source || 'meting';
+    if (source === 'lrcapi') return true;
+    return !!((s.music || {}).meting_api_base || '').trim();
 }
 
 /* 判断进程名是否在歌词白名单内。白名单逗号分隔，大小写不敏感、支持子串匹配

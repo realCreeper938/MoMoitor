@@ -9,7 +9,6 @@ requests>=2.31
 loguru>=0.7
 Pillow>=10.0
 pycaw>=20230407
-cnlunar>=0.2
 # 音乐频谱可视化：WASAPI 回环捕获（services/spectrum.py），仅 Windows
 pyaudiowpatch>=0.2.12; sys_platform == "win32"
 # 音频频谱 FFT 分频（services/spectrum.py）

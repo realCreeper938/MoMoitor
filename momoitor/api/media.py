@@ -34,7 +34,7 @@ class MediaMixin:
 
     @safe("get_lyrics", {"lines": []})
     def get_lyrics(self, title, artist=""):
-        if not self._settings.get("music", {}).get("meting_api_base", "").strip():
+        if not self.lyrics.is_configured():
             return {"lines": []}
         return {"lines": self.lyrics.get_lyrics(title or "", artist or "")}
 

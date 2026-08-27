@@ -33,7 +33,7 @@ For deeper architectural detail, consult `docs/` (backends, config, services, js
 ## 2. Do Not Reinvent the Wheel
 
 - Prefer well-known, maintained libraries and the standard library over hand-rolled implementations.
-- The project already depends on: `pywebview`, `pythonnet`, `psutil`, `cryptography`, `PyJWT`, `requests`, `loguru`, `Pillow`, `pycaw`, `cnlunar`, `winrt-Windows.*` (Windows-only).
+- The project already depends on: `pywebview`, `pythonnet`, `psutil`, `cryptography`, `PyJWT`, `requests`, `loguru`, `Pillow`, `pycaw`, `winrt-Windows.*` (Windows-only).
 - Check `requirements.txt` before reaching for a new dependency. Adding a new dependency is a decision that needs user confirmation first.
 - For frontend, the project is intentionally framework-free vanilla JS. Do not introduce a frontend framework or build toolchain without explicit user approval.
 

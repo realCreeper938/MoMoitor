@@ -28,14 +28,6 @@
 |---|---|
 | `adjust_brightness(action, level=None, monitor_index=0)` -> dict | 亮度调节。action: `get/set/up/down`；策略自动回退（WMI → IOCTL `DISPLAY_BRIGHTNESS`），返回 `{"success": bool, ...}` |
 
-## calendar
-
-| 函数/类 | 说明 |
-|---|---|
-| `get_huangli(year, month, day)` -> dict | cnlunar 黄历（干支/宜忌/节气/生肖…），失败返回 `{"error":...}` |
-| `class HolidayService` | 节假日数据（timor.tech API，按年 TTL 缓存） |
-| `HolidayService.get_year(year)` -> dict | `{"MM-DD": {"holiday": bool, "name": str, ...}}` |
-
 ## fps
 
 RTSS 共享内存读取前台 FPS，后台线程轮询。

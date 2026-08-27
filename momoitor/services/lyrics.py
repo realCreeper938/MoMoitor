@@ -1,8 +1,10 @@
-"""歌词服务 —— 通过 Meting API 获取 LRC 歌词并解析。
+"""歌词服务 —— 通过 Meting API 或 LrcApi 获取 LRC 歌词并解析。
 
-歌词按 曲目|歌手 键缓存到 SQLite（data/lyrics.db），TTL 7 天；
-获取失败时回退使用过期缓存。API 地址由用户在「设置 → 数据 → 歌词」中填写。
-搜索结果不止一条时，按曲名/歌手与当前播放内容的相似度选取最佳匹配项。
+歌词按 数据源|地址|曲目|歌手 键缓存到 SQLite（data/lyrics.db）；
+获取失败时回退使用过期缓存。数据源在「设置 → 数据 → 歌词」中选择：
+- meting：地址由用户在 music.meting_api_base 填写，留空关闭歌词；
+- lrcapi：地址由用户在 lyrics.lrcapi_base 填写，留空使用官方公开 API。
+Meting 搜索结果不止一条时，按曲名/歌手与当前播放内容的相似度选取最佳匹配项。
 """
 
 import difflib
@@ -146,10 +148,21 @@ class LyricsService:
         except Exception as e:
             logger.warning("Failed to save lyrics cache: {}", e)
 
+    def _settings_lyrics(self) -> dict:
+        """返回用户配置的 lyrics 分组设置（异常时回退空字典）。"""
+        try:
+            return (self._settings_getter() or {}).get("lyrics", {}) or {}
+        except Exception:
+            return {}
+
+    def _source(self) -> str:
+        """返回当前歌词数据源：meting / lrcapi；未识别一律回退 meting。"""
+        return (self._settings_lyrics().get("source") or "meting")
+
     def _base_url(self):
         """返回用户配置的 Meting API 基础地址（仅去尾斜杠），未配置返回空串。
 
-        完全尊重用户输入：填什么就请求什么，不自动补路径。默认关闭歌词。
+        完全尊重用户输入：填什么就请求什么，不自动补路径。Meting 未配置时关闭歌词。
         """
         base = ""
         try:
@@ -158,34 +171,74 @@ class LyricsService:
             pass
         return base.rstrip("/")
 
+    def _lrcapi_url(self):
+        """返回 LrcApi 歌词地址：用户填写则用之，留空回退官方公开 API。"""
+        base = (self._settings_lyrics().get("lrcapi_base") or "").strip().rstrip("/")
+        return base or "https://api.lrc.cx/lyrics"
+
+    def is_configured(self) -> bool:
+        """当前是否具备可用的歌词数据源。Meting 需配置地址；LrcApi 恒可用（有默认公开 API）。"""
+        source = self._source()
+        if source == "lrcapi":
+            return True
+        if source == "meting":
+            return bool(self._base_url())
+        return False
+
     def get_lyrics(self, title, artist=""):
         """获取某首歌的歌词行列表。
 
-        未配置 Meting 地址或获取失败时返回空列表；命中缓存（永久）则直接返回。
+        按所选数据源获取；未配置地址（仅 Meting 需配置）或获取失败时返回空列表；
+        命中缓存（永久）则直接返回。
         """
-        base = self._base_url()
-        if not base:
+        source = self._source()
+        if source not in ("meting", "lrcapi"):
             return []
         title = (title or "").strip()
         if not title:
             return []
-        server = "netease"  # 歌词数据源固定为 netease
-        key = f"{server}|{title}|{artist}"
+        base = self._base_url() if source == "meting" else self._lrcapi_url()
+        if source == "meting" and not base:
+            return []
+        key = f"{source}|{base}|{title}|{artist}"
 
         # 1. 命中缓存（永久）则直接返回，不再请求服务器
         cached_lrc, _updated = self._load_cached(key)
         if cached_lrc is not None:
             return self._parse_lrc(cached_lrc)
 
-        # 2. 未命中：从 Meting 拉取
+        # 2. 未命中：按数据源拉取
         try:
-            lrc = self._fetch_lrc(base, title, artist, server)
+            lrc = self._fetch_lrc_by_source(source, base, title, artist)
             if lrc:
                 self._save_cache(key, lrc)
                 return self._parse_lrc(lrc)
         except Exception as e:
             logger.warning("Lyrics fetch failed for '{}': {}", title, e)
         return []
+
+    def _fetch_lrc_by_source(self, source, base, title, artist=""):
+        """按数据源分发：lrcapi 走 LrcApi 直取 LRC 文本，meting 走 Meting 搜索。"""
+        if source == "lrcapi":
+            return self._fetch_lrc_lrcapi(base, title, artist)
+        return self._fetch_lrc(base, title, artist)
+
+    def _fetch_lrc_lrcapi(self, base, title, artist=""):
+        """通过 LrcApi 直接获取 LRC 文本：GET {base}?title=..&artist=..。
+
+        返回 "" 表示无结果；任何异常（含非 2xx）都归为无结果，不抛出。
+        """
+        import urllib.parse
+        url = base + "?title=" + urllib.parse.quote(title)
+        if artist:
+            url += "&artist=" + urllib.parse.quote(artist)
+        try:
+            resp = http_get(url, timeout=10)
+            resp.raise_for_status()
+            return resp.text or ""
+        except Exception as e:
+            logger.opt(exception=True).debug("Lyrics lrcapi fetch failed for '{}': {}", title, e)
+            return ""
 
     def _fetch_lrc(self, base, title, artist="", server="netease"):
         """搜索歌曲并取与播放内容最匹配一首的 LRC 文本。搜索关键词用「歌名 - 歌手」以提高准确度。
