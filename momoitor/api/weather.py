@@ -1,14 +1,11 @@
-"""API 天气/日历 mixin —— 天气、空气、预警、农历、节假日。
+"""API 天气 mixin —— 天气、空气、预警的 JS 桥接方法。
 
-WeatherMixin 转发到 momoitor.services.weather.WeatherService（惰性创建）、
-momoitor.services.calendar 与 HolidayService，并统一做 feature_toggles 开关判断。
+WeatherMixin 转发到 momoitor.services.weather.WeatherService（惰性创建）。
 """
-
-from momoitor.services.calendar import get_huangli
 
 
 class WeatherMixin:
-    """天气、黄历、节假日的 JS 桥接方法。"""
+    """天气数据的 JS 桥接方法。"""
 
     def get_weather(self):
         return self.weather.get_now()
@@ -21,13 +18,3 @@ class WeatherMixin:
 
     def get_alerts(self):
         return self.weather.get_alerts()
-
-    def get_huangli(self, year=None, month=None, day=None):
-        if not self._feature_on("calendar"):
-            return {"error": "disabled"}
-        return get_huangli(year, month, day)
-
-    def get_holiday(self, year):
-        if not self._feature_on("calendar"):
-            return {}
-        return self.holiday.get_year(year)

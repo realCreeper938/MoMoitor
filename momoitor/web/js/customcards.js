@@ -139,6 +139,7 @@ async function deleteCustomCard(id) {
     }
     unregisterCard(id);
     setCardPos(id, null);
+    syncCardFetching(id); // 删卡后彻底停止该卡的数据获取（同类型全部实例删完才停）
     if (window._appSettings) {
         if (window._appSettings.custom_cards) delete window._appSettings.custom_cards[id];
         if (window._appSettings.layout) delete window._appSettings.layout[id];

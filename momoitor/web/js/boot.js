@@ -126,9 +126,9 @@ function initSettingsAndPolling(g, s) {
     _startAllWeatherIntervals(wxOn);
     _startInterval(ft.music !== false, refreshMusic, 3000);
     _startInterval(ft.fps !== false, refreshFps, 1000);
-    _startInterval(true, refreshHr, 1000);
     _startInterval(true, refreshSysinfo, 60000);
-    _startInterval(true, refreshTopProcess, 2000);
+    // 心率/进程卡的轮询不走固定定时器：由 cardfetch.js 按卡片可见性启停，
+    // 上方 applyLayout 已完成启动时的首次收敛（删卡即彻底停止取数）。
     // Fit the process list to the actual box height once the initial layout is done.
     setTimeout(recalcProcLimit, 800);
 }

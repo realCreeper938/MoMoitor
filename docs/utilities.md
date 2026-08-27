@@ -27,4 +27,4 @@
 | `clear()` | 清空 |
 | `__len__()` | 条目数 |
 
-使用者：`services/weather.py`（端点缓存）、`services/calendar.py`（`HolidayService` 按年缓存）。
+使用者：`services/weather.py`（端点缓存）。

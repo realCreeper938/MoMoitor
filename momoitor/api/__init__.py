@@ -41,7 +41,9 @@ def create_monitor():
 def _start_background_services(api):
     """按 feature_toggles 启动后台服务，避免未启用的功能每秒空转。
 
-    fps / music 受对应功能开关控制；hr 无独立开关且无设备时近乎零开销，始终启动。
+    fps / music 受对应功能开关控制；hr 仅创建事件循环线程（近乎零开销），
+    设备连接由前端根据心率卡片是否可见通过 connect_hr / disconnect_hr 驱动，
+    未添加心率卡片时不会产生任何数据获取。
     """
     from momoitor.services import fps as _fps
     from momoitor.services import hr as _hr

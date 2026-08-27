@@ -256,6 +256,7 @@ function _deleteCard(id) {
     _repackColumn(col, null, null);
     _rebalanceOverflow();
     _updateCardsBtn();
+    syncCardFetching(id); // 删卡后彻底停止该卡的数据获取
 }
 
 /* Adjust a card's font scale by a step (e.g. +/-10) and live-apply it. The

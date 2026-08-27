@@ -16,7 +16,6 @@ from momoitor.config import (APP_AUTHOR, APP_GITHUB_REPO, APP_HOMEPAGE, APP_VERS
 from momoitor.services import autostart, session as session_watch, window as win_svc
 from momoitor.services import tray as tray_svc
 from momoitor.services.system import get_run_identity
-from momoitor.services.calendar import HolidayService
 from momoitor.services.hardware import HardwareService
 from momoitor.services.lyrics import LyricsService
 from momoitor.services.traffic import TrafficService
@@ -34,7 +33,6 @@ class ApiCore:
         self._hw = HardwareService(monitor, self._settings)
         self._fullscreen = False
         self._weather = None
-        self._holiday = None
         self._traffic = None
         self._lyrics = None
         self._lock_was_visible = False
@@ -45,12 +43,6 @@ class ApiCore:
         if self._weather is None:
             self._weather = WeatherService(lambda: self._settings)
         return self._weather
-
-    @property
-    def holiday(self):
-        if self._holiday is None:
-            self._holiday = HolidayService()
-        return self._holiday
 
     @property
     def traffic(self):
@@ -326,9 +318,11 @@ class ApiCore:
         logger.info("Closing app")
         tray_svc.stop()
         from momoitor.services import fps as _fps
+        from momoitor.services import hr as _hr
         from momoitor.services import music as _music
         _fps.stop()
         _music.stop()
+        _hr.stop()
         self.close_monitor()
         if self._window:
             self._window.destroy()

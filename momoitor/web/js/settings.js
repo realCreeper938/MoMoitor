@@ -1,4 +1,4 @@
-const _FEATURE_TOGGLE_KEYS = ['top_control', 'calendar', 'weather', 'traffic', 'clock_bg'];
+const _FEATURE_TOGGLE_KEYS = ['top_control', 'weather', 'traffic', 'clock_bg'];
 
 const _DATASOURCE_LABELS = {
     lhm: 'LibreHardwareMonitor',
@@ -143,6 +143,10 @@ function initSettings() {
     const datasourceList = document.getElementById('datasource-list');
     const gpuSel = document.getElementById('opt-gpu');
     const metingUrlInput = document.getElementById('opt-meting-url');
+    const lyricsSourceSel = document.getElementById('opt-lyrics-source');
+    const lyricsMetingFields = document.getElementById('lyrics-meting-fields');
+    const lyricsLrcapiFields = document.getElementById('lyrics-lrcapi-fields');
+    const lrcapiUrlInput = document.getElementById('opt-lrcapi-url');
     const musicSpectrumChk = document.getElementById('opt-music-spectrum');
     const spectrumOptions = document.getElementById('spectrum-options');
     const spectrumPosSel = document.getElementById('opt-spectrum-position');
@@ -241,6 +245,14 @@ const lyricsOffsetVal = document.getElementById('lyrics-offset-val');
             }
         });
     }
+
+    // 歌词数据源：按所选源显隐对应地址输入区
+    function applyLyricsSourceFields() {
+        const source = lyricsSourceSel ? lyricsSourceSel.value : 'meting';
+        if (lyricsMetingFields) lyricsMetingFields.style.display = source === 'meting' ? '' : 'none';
+        if (lyricsLrcapiFields) lyricsLrcapiFields.style.display = source === 'lrcapi' ? '' : 'none';
+    }
+    if (lyricsSourceSel) lyricsSourceSel.addEventListener('change', applyLyricsSourceFields);
 
     // 清除歌词缓存：立即生效，toast 反馈清理条数
     const btnLyricsClear = document.getElementById('btn-lyrics-clear');
@@ -686,7 +698,10 @@ const lyricsOffsetVal = document.getElementById('lyrics-offset-val');
             intervalSel.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.value === intervalValue));
         }
         renderDataSourceList(g.data_sources);
+        if (lyricsSourceSel) lyricsSourceSel.value = ly.source || 'meting';
+        applyLyricsSourceFields();
         metingUrlInput.value = m.meting_api_base || '';
+        if (lrcapiUrlInput) lrcapiUrlInput.value = ly.lrcapi_base || '';
         const specOn = m.spectrum === true;
         if (musicSpectrumChk) musicSpectrumChk.checked = specOn;
         updateSpectrumOptions(specOn);
@@ -1028,6 +1043,8 @@ const lyricsOffsetVal = document.getElementById('lyrics-offset-val');
             },
             lyrics: {
                 ...(existing.lyrics || {}),
+                source: lyricsSourceSel ? lyricsSourceSel.value : 'meting',
+                lrcapi_base: lrcapiUrlInput ? lrcapiUrlInput.value.trim() : '',
                 process_whitelist: lyricsWhitelistInput.value.trim(),
                 auto_translate: lyricsTranslateChk.checked,
                 animation: lyricAnimChk.checked,

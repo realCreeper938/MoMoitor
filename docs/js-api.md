@@ -43,13 +43,11 @@
 | `open_taskmgr()` | — | 启动任务管理器 |
 | `open_external(url)` | — | 浏览器打开 http/https 链接；非法 URL 返回 `False` |
 
-## 天气 / 日历（WeatherMixin）
+## 天气（WeatherMixin）
 
 | 方法 | 开关 | 说明 |
 |---|---|---|
 | `get_weather()` / `get_weather_detail()` / `get_airquality()` / `get_alerts()` | — | 见 `services.weather.WeatherService`；始终可获取（未配置凭证时返回 `{"error":"not_configured"}`，alerts 返回 `[]`） |
-| `get_huangli(year, month, day)` | `calendar` | 黄历；关闭返回 `{"error":"disabled"}` |
-| `get_holiday(year)` | `calendar` | 全年节假日；关闭返回 `{}` |
 
 ## 媒体 / 内容（MediaMixin）
 

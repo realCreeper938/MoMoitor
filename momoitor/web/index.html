@@ -19,7 +19,6 @@
     <link rel="stylesheet" href="css/responsive.css?v=37">
     <link rel="stylesheet" href="css/text-card.css?v=38">
     <link rel="stylesheet" href="css/customcards.css?v=38">
-    <link rel="stylesheet" href="css/calendar.css?v=37">
     <link rel="stylesheet" href="css/welcome.css?v=37">
 </head>
 <body>
@@ -337,30 +336,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <!-- Calendar popup — shown when hovering over the date -->
-                    <div id="clock-cal-popup" class="clock-cal-popup">
-                        <div class="cal-popup-today">
-                            <span class="cal-weather-icon" id="cal-weather-icon">☀</span>
-                            <div class="cal-popup-today-info">
-                                <span class="cal-weather-temp" id="cal-weather-temp">--°</span>
-                                <span class="cal-weather-text" id="cal-weather-text">--</span>
-                            </div>
-                            <span class="cal-popup-lunar" id="cal-popup-lunar">--</span>
-                        </div>
-                        <div class="calendar-header">
-                            <button id="cal-prev" class="cal-nav-btn">&lt;</button>
-                            <div class="cal-title">
-                                <span id="cal-year">----</span>
-                                <span id="cal-month">--</span>
-                            </div>
-                            <button id="cal-next" class="cal-nav-btn">&gt;</button>
-                            <button id="cal-today" class="cal-nav-btn cal-today-btn">今</button>
-                        </div>
-                        <div class="calendar-weekdays">
-                            <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span class="cal-weekend">六</span><span class="cal-weekend">日</span>
-                        </div>
-                        <div id="calendar-grid" class="calendar-grid"></div>
                     </div>
                 </div>
             </div>
@@ -909,10 +884,31 @@
                                 </div>
                                 <div class="setting-item">
                                     <div class="setting-label">
-                                        <span class="setting-label-text" data-i18n="label-meting-url">Meting API URL</span>
-                                        <span class="setting-sub" data-i18n="desc-meting-url">Meting API endpoint used to fetch lyrics. Leave empty to disable lyrics.</span>
+                                        <span class="setting-label-text" data-i18n="label-lyrics-source">Lyrics Source</span>
+                                        <span class="setting-sub" data-i18n="desc-lyrics-source">Choose which API is used to fetch lyrics.</span>
                                     </div>
-                                    <input type="text" id="opt-meting-url">
+                                    <select id="opt-lyrics-source">
+                                        <option value="meting">Meting API</option>
+                                        <option value="lrcapi">LrcApi</option>
+                                    </select>
+                                </div>
+                                <div id="lyrics-meting-fields">
+                                    <div class="setting-item">
+                                        <div class="setting-label">
+                                            <span class="setting-label-text" data-i18n="label-meting-url">Meting API URL</span>
+                                            <span class="setting-sub" data-i18n="desc-meting-url">Meting API endpoint used to fetch lyrics. Leave empty to disable lyrics.</span>
+                                        </div>
+                                        <input type="text" id="opt-meting-url">
+                                    </div>
+                                </div>
+                                <div id="lyrics-lrcapi-fields" style="display:none">
+                                    <div class="setting-item">
+                                        <div class="setting-label">
+                                            <span class="setting-label-text" data-i18n="label-lrcapi-url">LrcApi URL</span>
+                                            <span class="setting-sub" data-i18n="desc-lrcapi-url">LrcApi lyrics endpoint. Leave empty to use the official public API (https://api.lrc.cx/lyrics).</span>
+                                        </div>
+                                        <input type="text" id="opt-lrcapi-url" placeholder="https://api.lrc.cx/lyrics">
+                                    </div>
                                 </div>
                                 <div class="setting-item">
                                     <div class="setting-label">
@@ -1455,13 +1451,6 @@
                                 </label>
                             </div>
                             <div class="setting-item">
-                                <span data-i18n="ft-calendar">Calendar Popup</span>
-                                <label class="toggle">
-                                    <input type="checkbox" id="ft-calendar" checked>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="setting-item">
                                 <span data-i18n="ft-traffic">Traffic Record</span>
                                 <label class="toggle">
                                     <input type="checkbox" id="ft-traffic" checked>
@@ -1533,6 +1522,7 @@
     <script src="js/weather.js"></script>
     <script src="js/ports.js"></script>
     <script src="js/appearance.js"></script>
+    <script src="js/cardfetch.js"></script>
     <script src="js/layout.js"></script>
     <script src="js/layout-mode.js"></script>
     <script src="js/card-list.js"></script>
@@ -1542,7 +1532,6 @@
     <script src="js/settings.js"></script>
     <script src="js/welcome.js"></script>
     <script src="js/boot.js"></script>
-    <script src="js/calendar.js"></script>
     <script src="js/traffic.js"></script>
     <script>
     // pywebview shim for server mode: if pywebview is not injected (i.e. served over HTTP),

@@ -608,8 +608,6 @@ function applyFeatureToggles(toggles) {
     if (fpsSection) fpsSection.style.display = _sectionVisible('fps-section') ? '' : 'none';
     const musicSection = document.getElementById('music-section');
     if (musicSection) musicSection.style.display = _sectionVisible('music-section') ? '' : 'none';
-    const calPopup = document.getElementById('clock-cal-popup');
-    if (calPopup) calPopup.style.display = ft.calendar !== false ? '' : 'none';
     const procSection = document.getElementById('proc-section');
     if (procSection) procSection.style.display = _sectionVisible('proc-section') ? '' : 'none';
     const clockBg = document.getElementById('app-bg-image');

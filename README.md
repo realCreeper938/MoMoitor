@@ -17,7 +17,7 @@
 
 - 实时呈现 CPU / GPU / 内存 / 网络 / 磁盘 / 进程等关键指标。
 - 支持 LibreHardwareMonitor，或通过 [HWiNFO](https://www.hwinfo.com/) 共享内存读取数据（需自行下载并开启共享内存）。
-- 显示时间、日历，日历支持显示农历、黄历、法定节假日及调休。
+- 显示时间与农历信息。
 - 接入和风天气 API，提供实时天气、降水预报、空气质量指数及灾害预警等数据。
 - 获取当前播放媒体信息，可控制播放/暂停、上一首/下一首。
 - 内置多套配色方案，并允许自定义时钟区域背景图，满足视觉差异化需求。
@@ -41,9 +41,9 @@
 | :-: | :-: |
 | ![](./assets/screenshots/settings.webp) | ![](./assets/screenshots/settings-theme.webp) |
 
-| 日历 | 天气 |
-| :-: | :-: |
-| ![](./assets/screenshots/calendar.webp) | ![](./assets/screenshots/weather.webp) |
+| 天气 |
+| :-: |
+| ![](./assets/screenshots/weather.webp) |
 
 ## 环境要求
 

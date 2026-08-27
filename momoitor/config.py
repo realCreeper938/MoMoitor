@@ -260,11 +260,13 @@ DEFAULT_SETTINGS = {
         "spectrum_bars": 28,  # 频谱柱数量（12 ~ 48），越多越密集
     },
     "lyrics": {
+        "source": "meting",  # 歌词数据源：meting（Meting API）/ lrcapi（LrcApi）
         "process_whitelist": "cloudmusic,foobar2000,potplayer,QQMusic",  # 仅这些进程播放媒体时获取歌词，逗号分隔，留空则不限
         "auto_translate": False,  # 自动检测歌词行末尾括号内的翻译（原文在下，翻译在上）
         "animation": False,  # 歌词滚动动画
         "estimated_position": False,  # 歌词预测：播放器不汇报进度时按已播放时长估算推进（暂停即停）
         "time_offset": 0,  # 歌词时间偏移秒数（正=歌词提前显示），范围 -10 ~ +10
+        "lrcapi_base": "",  # LrcApi 歌词地址，留空使用官方公开 API（https://api.lrc.cx/lyrics）
     },
     # 心率：BLE 设备地址/名称，animation 为心图标随心率跳动动画
     "hr": {
@@ -315,7 +317,6 @@ DEFAULT_SETTINGS = {
         },
     },
     "feature_toggles": {
-        "calendar": True,
         "weather": True,  # 是否在时钟侧栏显示天气（仅影响显示，不影响天气卡片与数据获取）
         "traffic": True,
         "clock_bg": True,

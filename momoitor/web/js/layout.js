@@ -12,6 +12,8 @@ function applyLayout(layout) {
     });
     applyClockPlacement(rows, cols);
     applyLyricView();
+    // 整版显隐变化后统一收敛各卡的取数状态（启动/取消恢复/行列调整等）
+    syncCardFetching();
 }
 
 /* Shape the grid and place the clock element for the current clock side.
@@ -107,6 +109,7 @@ function _placeCard(id, col, row, span) {
     _repackColumn(col, id, row);
     _rebalanceOverflow();
     _updateCardsBtn();
+    syncCardFetching(id); // 卡片重新落格可见后立即恢复其数据获取
 }
 
 /* First row in a column that is not covered by any visible card, i.e. the next
