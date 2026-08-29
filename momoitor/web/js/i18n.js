@@ -34,6 +34,10 @@ const LANGS = {
         "desc-datasource-aida64": "AIDA64: enable \"Allow Shared Memory\" in Settings → External Applications; it is recommended to check all monitoring items.",
         "desc-datasource-many": "Enabling too many data sources may cause lag or delayed updates.",
         "toast-source-unavailable": "Data source {source} is unavailable. Please check whether it is running with shared memory enabled.",
+        "label-game-mode": "Auto Game Mode",
+        "desc-game-mode": "When GPU usage stays above 60% for 6 seconds, lowers refresh rate and disables non-interactive animations until usage stays low for 15 seconds.",
+        "toast-game-mode-on": "Game mode on: refresh slowed, effects disabled",
+        "toast-game-mode-off": "Game mode off",
         // Backup
         "settings-backup": "Backup",
         "desc-backup": "Export all program data (settings, wallpapers, lyric and traffic caches) to a zip file, or restore from a previous backup.",
@@ -409,6 +413,10 @@ const LANGS = {
         "desc-datasource-aida64": "AIDA64：需要在设置 → 外部程序中勾选\"允许共享内存\"，并建议将所有监控项全部勾选。",
         "desc-datasource-many": "启用过多的数据源可能会导致卡顿、数据更新不及时。",
         "toast-source-unavailable": "数据源 {source} 不可用，请检查是否已运行并启用共享内存。",
+        "label-game-mode": "自动游戏模式",
+        "desc-game-mode": "GPU 占用持续 6 秒超过 60% 时，降低刷新频率并关闭非交互动画；占用持续 15 秒低于 60% 后自动恢复。",
+        "toast-game-mode-on": "已进入游戏模式：已降低刷新率并关闭特效",
+        "toast-game-mode-off": "已退出游戏模式",
         // 备份
         "settings-backup": "备份",
         "desc-backup": "将程序的全部数据（设置、壁纸、歌词与流量缓存）导出为 zip 文件，或从之前的备份中还原。",

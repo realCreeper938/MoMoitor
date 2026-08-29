@@ -84,3 +84,32 @@
     min-width: 32px;
     text-align: center;
 }
+
+/* ── 游戏模式（自动：GPU 占用持续超阈值时启用）──
+   关闭所有 CSS 动画（告警脉冲/心率跳动/弹窗渐入/面板滑动/spinner 等装饰动画）。
+   transition 保留——悬停/开关/滑块等反馈属交互动画；
+   点击涟漪、清内存等一次性点击反馈动画按原时长恢复。 */
+body.game-mode *, body.game-mode *::before, body.game-mode *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+}
+
+body.game-mode .ctrl-ripple {
+    animation: ctrl-ripple-anim 0.5s ease-out forwards !important;
+}
+
+body.game-mode #mem-section.cleaning::after {
+    animation: memSweep 0.7s ease !important;
+}
+
+body.game-mode #mem-section.cleaning {
+    animation: memGlow 0.9s ease !important;
+}
+
+body.game-mode #mem-section.cleaning #mem-pct {
+    animation: memPulse 0.65s ease !important;
+}
+
+body.game-mode .info-swap {
+    animation: infoSwapIn 0.3s ease !important;
+}

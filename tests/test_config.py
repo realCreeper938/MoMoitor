@@ -38,6 +38,15 @@ def test_normalize_preserves_existing_values():
     assert s["general"]["colorscheme"] == "gruvbox"
 
 
+def test_game_mode_default_and_backfill():
+    """游戏模式开关默认开启；旧设置文件缺少该键时归一化自动回填。"""
+    assert config_mod.DEFAULT_SETTINGS["general"]["game_mode"] is True
+    s = _normalize_settings({"general": {"language": "zh"}})
+    assert s["general"]["game_mode"] is True
+    s = _normalize_settings({"general": {"game_mode": False}})
+    assert s["general"]["game_mode"] is False
+
+
 def test_normalize_preserves_whole_groups():
     """layout/feature_toggles 是整体分组：内部键缺失时不能被默认值覆盖；
     custom_cards 条目启动时自动补齐 type 字段（旧版条目迁移为 text）。"""

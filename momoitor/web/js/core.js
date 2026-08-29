@@ -888,6 +888,7 @@ async function poll(generation = pollGeneration) {
         const data = await pywebview.api.get_data(skipNet);
         if (generation !== pollGeneration) return;
         updateUI(data);
+        if (window.gameModeFeed) window.gameModeFeed(data.gpu ? data.gpu.load : null);
         updateUnavailableSources(data.unavailable_sources);
         hideBackendError();
         refreshCustomDataCards();
@@ -896,7 +897,11 @@ async function poll(generation = pollGeneration) {
         showBackendError();
     } finally {
         if (generation === pollGeneration) {
-            pollTimer = setTimeout(() => poll(generation), throttled ? 2000 : userInterval);
+            // 游戏模式优先：强制不低于 1.5s（用户已设更长间隔时不反向提速）
+            const interval = (window.isGameModeActive && window.isGameModeActive())
+                ? Math.max(userInterval, 1500)
+                : (throttled ? 2000 : userInterval);
+            pollTimer = setTimeout(() => poll(generation), interval);
         }
     }
 }

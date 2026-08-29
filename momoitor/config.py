@@ -202,6 +202,7 @@ DEFAULT_SETTINGS = {
         "settings_animation": True,  # 设置界面动画（标签/面板过渡）
         "card_gradient": True,  # 音乐/天气卡片的背景渐变效果
         "bg_charts": True,  # 卡片背景折线图（CPU/GPU/内存/网络/磁盘/FPS 与天气降水趋势）；自定义数据卡片由自身开关控制
+        "game_mode": True,  # 自动游戏模式：GPU 占用持续 6 秒超过 60% 时降低刷新频率并关闭非交互动画
         "hint_dismissed": False,   # 首次启动提示是否已忽略
         "force_welcome": False,  # 下次启动时是否强制显示欢迎向导
         "update_check_enabled": True,  # 是否检查 GitHub 新版本并弹窗提示

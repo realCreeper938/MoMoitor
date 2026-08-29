@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="css/themes.css?v=37">
     <link rel="stylesheet" href="css/themes-dark.css?v=37">
     <link rel="stylesheet" href="css/themes-light.css?v=37">
-    <link rel="stylesheet" href="css/base.css?v=37">
+    <link rel="stylesheet" href="css/base.css?v=38">
     <link rel="stylesheet" href="css/weather.css?v=37">
     <link rel="stylesheet" href="css/weather-card.css?v=38">
     <link rel="stylesheet" href="css/layout.css?v=41">
@@ -810,6 +810,13 @@
                                 </div>
                                 <div class="setting-item">
                                     <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-game-mode">Auto Game Mode</span>
+                                        <span class="setting-sub" data-i18n="desc-game-mode">When GPU usage stays above 60% for 6 seconds, lowers refresh rate and disables non-interactive animations until usage stays low for 15 seconds</span>
+                                    </div>
+                                    <label class="toggle"><input type="checkbox" id="opt-game-mode" checked><span class="toggle-slider"></span></label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
                                         <span class="setting-label-text" data-i18n="label-gpu">GPU</span>
                                         <span class="setting-sub" data-i18n="desc-gpu">Select which GPU to monitor on multi-GPU systems</span>
                                     </div>
@@ -1517,6 +1524,7 @@
     <script src="js/lunar.js"></script>
     <script src="js/cards.js"></script>
     <script src="js/core.js"></script>
+    <script src="js/gamemode.js"></script>
     <script src="js/music.js"></script>
     <script src="js/hwclock.js"></script>
     <script src="js/weather.js"></script>

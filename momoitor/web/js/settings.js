@@ -122,6 +122,7 @@ function initSettings() {
     const lyricAnimChk = document.getElementById('opt-lyric-anim');
     const cardGradChk = document.getElementById('opt-card-gradient');
     const bgChartsChk = document.getElementById('opt-bg-charts');
+    const gameModeChk = document.getElementById('opt-game-mode');
     const updateNotifyChk = document.getElementById('opt-update-notify');
 
     // Server mode
@@ -683,9 +684,12 @@ const lyricsOffsetVal = document.getElementById('lyrics-offset-val');
         lyricAnimChk.checked = ly.animation === true;
         applyLyricAnim(ly.animation === true);
         cardGradChk.checked = g.card_gradient !== false;
-        applyCardGradient(g.card_gradient !== false);
         bgChartsChk.checked = g.bg_charts !== false;
-        applyBgCharts(g.bg_charts !== false);
+        // 游戏模式激活时特效被临时强制关闭，避免面板打开时被上面的用户设置恢复
+        const gmActive = window.isGameModeActive && window.isGameModeActive();
+        applyCardGradient(g.card_gradient !== false && !gmActive);
+        applyBgCharts(g.bg_charts !== false && !gmActive);
+        gameModeChk.checked = g.game_mode !== false;
         autostartChk.checked = await pywebview.api.get_autostart();
         updateNotifyChk.checked = g.update_check_enabled !== false;
 
@@ -974,6 +978,7 @@ const lyricsOffsetVal = document.getElementById('lyrics-offset-val');
                 settings_animation: settingsAnimChk.checked,
                 card_gradient: cardGradChk.checked,
                 bg_charts: bgChartsChk.checked,
+                game_mode: gameModeChk.checked,
                 update_check_enabled: updateNotifyChk.checked,
                 refresh_interval: parseInt(intervalValue),
                 data_sources: collectDataSourceList(),
@@ -1109,8 +1114,11 @@ const lyricsOffsetVal = document.getElementById('lyrics-offset-val');
         const fnt = s.fonts || {};
         applyFonts(fnt.ui, fnt.data, fnt.clock);
         const ckc = s.clock || {};
-        applyCardGradient((s.general || {}).card_gradient !== false);
-        applyBgCharts((s.general || {}).bg_charts !== false);
+        const gmActive = window.isGameModeActive && window.isGameModeActive();
+        applyCardGradient((s.general || {}).card_gradient !== false && !gmActive);
+        applyBgCharts((s.general || {}).bg_charts !== false && !gmActive);
+        // 设置中关闭游戏模式：立即退出并停止检测
+        if (!(s.general || {}).game_mode && window.forceExitGameMode) window.forceExitGameMode();
         await applyAppBackgroundSetting(ckc.bg_image, ckc.bg_opacity, ckc.bg_blur, ckc.bg_gradient !== false, ckc.bg_fit || 'fit', ckc.bg_offset_x ?? 50, ckc.bg_offset_y ?? 50);
         applyHwNames(true);
         applyFeatureToggles(s.feature_toggles || {});

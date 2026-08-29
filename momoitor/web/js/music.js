@@ -106,8 +106,8 @@ function _scrollCurrentLine(curEl, cur, next, pos) {
     const p = Math.min(Math.max((pos - cur.time) / span, 0), 1);
     const target = p * over;
     // 超长歌词始终跟随播放进度滚动；开启平滑时每帧缓动逼近，
-    // 关闭时按 ~500ms 步进直接跳动（生硬无动画，减少连续布局开销）。
-    if (_lyricAnimEnabled) {
+    // 关闭时（或游戏模式下）按 ~500ms 步进直接跳动（生硬无动画，减少连续布局开销）。
+    if (_lyricAnimEnabled && !(window.isGameModeActive && window.isGameModeActive())) {
         curEl.scrollLeft += (target - curEl.scrollLeft) * 0.12;
     } else {
         const now = Date.now();
@@ -532,6 +532,11 @@ let _coverSrc = '';
 window.__spectrum = function (bands) {
     const section = document.getElementById('music-section');
     if (!section || section.style.display === 'none') return;
+    if (window.isGameModeActive && window.isGameModeActive()) {
+        // 游戏模式：丢弃柱值，正在运行的 rAF 因目标归零自然衰减后停止
+        _spec.target = [];
+        return;
+    }
     if (!Array.isArray(bands) || bands.length === 0) {
         _spec.target = [];
         return;
