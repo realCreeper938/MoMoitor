@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="css/weather.css?v=37">
     <link rel="stylesheet" href="css/weather-card.css?v=38">
     <link rel="stylesheet" href="css/layout.css?v=41">
-    <link rel="stylesheet" href="css/music.css?v=37">
+    <link rel="stylesheet" href="css/music.css?v=39">
     <link rel="stylesheet" href="css/cards.css?v=41">
     <link rel="stylesheet" href="css/values.css?v=37">
     <link rel="stylesheet" href="css/settings.css?v=39">
@@ -396,9 +396,9 @@
                                 <span class="music-time-left" id="h-music-time-left">-0:00</span>
                             </div>
                             <div class="music-lyrics" id="h-music-lyrics" style="display:none">
-                                <div class="h-lyric-prev" id="h-lyric-prev"></div>
-                                <div class="h-lyric-current" id="h-lyric-current">--</div>
-                                <div class="h-lyric-next" id="h-lyric-next"></div>
+                                <div class="lyric-viewport">
+                                    <div class="lyric-list" id="h-lyric-list"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1310,6 +1310,16 @@
                                 </div>
                                 <div class="setting-item">
                                     <div class="setting-label">
+                                        <span class="setting-label-text" data-i18n="label-lyric-switch-anim">Lyric switch animation</span>
+                                        <span class="setting-sub" data-i18n="desc-lyric-switch-anim">Smoothly scroll the next lyric line up into position when the line changes</span>
+                                    </div>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="opt-lyric-switch-anim" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
                                         <span class="setting-label-text" data-i18n="label-card-gradient">Card gradients</span>
                                         <span class="setting-sub" data-i18n="desc-card-gradient">Ambient background gradients on the music and weather cards</span>
                                     </div>
@@ -1526,6 +1536,7 @@
     <script src="js/core.js"></script>
     <script src="js/gamemode.js"></script>
     <script src="js/music.js"></script>
+    <script src="js/lyrics.js"></script>
     <script src="js/hwclock.js"></script>
     <script src="js/weather.js"></script>
     <script src="js/ports.js"></script>

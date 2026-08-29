@@ -305,43 +305,48 @@
     min-width: 0;
 }
 
-/* 播放中显示的歌词（当前句 + 下一句），替换播放控�?*/
+/* 播放中显示的歌词：整份歌词渲染为纵向列表，视口固定两行高（当前句 + 下一句），
+   换句时列表 translateY 平滑滚动，把下一句滚进当前行位置。 */
 #music-section .music-lyrics {
     display: flex;
     flex-direction: column;
-    gap: 2px;
     width: 100%;
     min-width: 0;
+    --lyric-row-h: calc(17px * var(--font-scale));
 }
 
-#music-section .h-lyric-current {
+#music-section .lyric-viewport {
+    width: 100%;
+    min-width: 0;
+    height: calc(var(--lyric-row-h) * 2);
+    overflow: hidden;
+}
+
+#music-section .lyric-list {
+    position: relative;        /* 行 offsetTop 以列表为基准，滚动定位才准确 */
+    display: flex;
+    flex-direction: column;
+    will-change: transform;
+    transition: transform 0.55s cubic-bezier(0.33, 0.66, 0.4, 1);
+}
+
+/* 行高固定（line-height = 行盒高度），当前句字号变大不影响布局，换句滚动不抖动 */
+#music-section .lyric-line {
+    height: var(--lyric-row-h);
+    line-height: var(--lyric-row-h);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: calc(13px * var(--font-scale));
+    font-weight: 400;
+    color: var(--text-dim);
+}
+
+#music-section .lyric-line.active {
+    text-overflow: clip;       /* 当前句长文本走 scrollLeft 水平滚动，不用省略号 */
     font-size: calc(15px * var(--font-scale));
     font-weight: 600;
     color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;      /* 长句�?scrollLeft 水平滚动，不用省略号 */
-    line-height: 1.2;
-}
-
-#music-section .h-lyric-next {
-    font-size: calc(13px * var(--font-scale));
-    font-weight: 400;
-    color: var(--text-dim);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.2;
-}
-
-#music-section .h-lyric-prev {
-    display: none;
-    font-size: calc(13px * var(--font-scale));
-    font-weight: 400;
-    color: var(--text-dim);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.2;
 }
 
 /* ── 音乐大卡片（span 2）：封面在左上角，歌词在封面下方左对齐（2行），控件居中，
@@ -392,21 +397,17 @@
 }
 
 #music-section[data-span="2"] .music-lyrics {
-    gap: 2px;
-    order: -1;                 /* 歌词放在控件上方、紧贴封面下�?*/
+    order: -1;                 /* 歌词放在控件上方、紧贴封面下方 */
+    --lyric-row-h: calc(24px * var(--font-scale));
 }
 
-#music-section[data-span="2"] .h-lyric-prev {
-    display: none;             /* 大卡片只显示两行歌词 */
+#music-section[data-span="2"] .lyric-line {
+    font-size: calc(14px * var(--font-scale));
 }
 
-#music-section[data-span="2"] .h-lyric-current {
+#music-section[data-span="2"] .lyric-line.active {
     font-size: calc(22px * var(--font-scale));
     font-weight: 700;
-}
-
-#music-section[data-span="2"] .h-lyric-next {
-    font-size: calc(14px * var(--font-scale));
 }
 
 #music-section[data-span="2"] .music-ctrl {
@@ -447,8 +448,8 @@
     #music-section[data-span="2"] .h-music-cover-wrap,
     #music-section[data-span="2"] .h-music-title,
     #music-section[data-span="2"] .h-music-artist,
-    #music-section[data-span="2"] .h-lyric-current,
-    #music-section[data-span="2"] .h-lyric-next,
+    #music-section[data-span="2"] .lyric-line.active,
+    #music-section[data-span="2"] .lyric-line,
     #music-section[data-span="2"] .music-content {
         transition: width 0.2s ease, height 0.2s ease, font-size 0.2s ease, gap 0.2s ease, padding 0.2s ease;
     }
@@ -466,11 +467,11 @@
         font-size: calc(13px * var(--font-scale));
     }
 
-    #music-section[data-span="2"]:hover .h-lyric-current {
+    #music-section[data-span="2"]:hover .lyric-line.active {
         font-size: calc(19px * var(--font-scale));
     }
 
-    #music-section[data-span="2"]:hover .h-lyric-next {
+    #music-section[data-span="2"]:hover .lyric-line {
         font-size: calc(13px * var(--font-scale));
     }
 

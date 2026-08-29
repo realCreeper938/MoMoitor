@@ -120,6 +120,7 @@ function initSettings() {
     const settingsShadowChk = document.getElementById('opt-settings-shadow');
     const settingsAnimChk = document.getElementById('opt-settings-anim');
     const lyricAnimChk = document.getElementById('opt-lyric-anim');
+    const lyricSwitchAnimChk = document.getElementById('opt-lyric-switch-anim');
     const cardGradChk = document.getElementById('opt-card-gradient');
     const bgChartsChk = document.getElementById('opt-bg-charts');
     const gameModeChk = document.getElementById('opt-game-mode');
@@ -225,6 +226,11 @@ const lyricsOffsetVal = document.getElementById('lyrics-offset-val');
     // 歌词平滑滚动：拨动开关立即生效，无需保存
     lyricAnimChk.addEventListener('change', () => {
         applyLyricAnim(lyricAnimChk.checked);
+    });
+
+    // 歌词换句动画：拨动开关立即生效，无需保存
+    lyricSwitchAnimChk.addEventListener('change', () => {
+        applyLyricSwitchAnim(lyricSwitchAnimChk.checked);
     });
 
     // 歌词时间偏移：拖动即时预览（按新偏移重建显示行），数值随动
@@ -683,6 +689,8 @@ const lyricsOffsetVal = document.getElementById('lyrics-offset-val');
         applySettingsEffects();
         lyricAnimChk.checked = ly.animation === true;
         applyLyricAnim(ly.animation === true);
+        lyricSwitchAnimChk.checked = ly.switch_animation !== false;
+        applyLyricSwitchAnim(ly.switch_animation !== false);
         cardGradChk.checked = g.card_gradient !== false;
         bgChartsChk.checked = g.bg_charts !== false;
         // 游戏模式激活时特效被临时强制关闭，避免面板打开时被上面的用户设置恢复
@@ -1053,6 +1061,7 @@ const lyricsOffsetVal = document.getElementById('lyrics-offset-val');
                 process_whitelist: lyricsWhitelistInput.value.trim(),
                 auto_translate: lyricsTranslateChk.checked,
                 animation: lyricAnimChk.checked,
+                switch_animation: lyricSwitchAnimChk.checked,
                 estimated_position: !!(lyricsPredictionChk && lyricsPredictionChk.checked),
                 time_offset: lyricsOffsetRange ? (parseFloat(lyricsOffsetRange.value) || 0) : 0,
             },
@@ -1110,6 +1119,7 @@ const lyricsOffsetVal = document.getElementById('lyrics-offset-val');
         applySettingsEffects();
         applyLyricAutoTranslate((s.lyrics || {}).auto_translate === true);
         applyLyricAnim((s.lyrics || {}).animation === true);
+        applyLyricSwitchAnim((s.lyrics || {}).switch_animation !== false);
         if (window.applyLyricTimeOffset) window.applyLyricTimeOffset();
         const fnt = s.fonts || {};
         applyFonts(fnt.ui, fnt.data, fnt.clock);

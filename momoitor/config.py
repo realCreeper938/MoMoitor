@@ -265,6 +265,7 @@ DEFAULT_SETTINGS = {
         "process_whitelist": "cloudmusic,foobar2000,potplayer,QQMusic",  # 仅这些进程播放媒体时获取歌词，逗号分隔，留空则不限
         "auto_translate": False,  # 自动检测歌词行末尾括号内的翻译（原文在下，翻译在上）
         "animation": False,  # 歌词滚动动画
+        "switch_animation": True,  # 歌词换句平滑滚动动画（下一句滚动进当前行位置，关闭则直接跳变）
         "estimated_position": False,  # 歌词预测：播放器不汇报进度时按已播放时长估算推进（暂停即停）
         "time_offset": 0,  # 歌词时间偏移秒数（正=歌词提前显示），范围 -10 ~ +10
         "lrcapi_base": "",  # LrcApi 歌词地址，留空使用官方公开 API（https://api.lrc.cx/lyrics）

@@ -164,6 +164,15 @@ function applyLyricAnim(enabled) {
     _lyricAnimEnabled = !!enabled;
 }
 
+/* Toggle the line-change transition for lyrics (歌词换句过渡动画):
+   when the current line changes, the lyric list smooth-scrolls the next line
+   up into the current position. Off: instant jump (saves GPU). */
+let _lyricSwitchAnimEnabled = true;
+
+function applyLyricSwitchAnim(enabled) {
+    _lyricSwitchAnimEnabled = !!enabled;
+}
+
 /* Enable/disable auto-detection of translations in lyric lines.
    A line like "Original text (翻译)" is split into two normal lyric lines:
    translation first, original second. */
