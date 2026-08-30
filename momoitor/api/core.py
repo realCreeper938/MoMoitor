@@ -289,7 +289,33 @@ class ApiCore:
         monitors = win_svc.get_monitors()
         target = win_svc.display_target(self._settings.get("display", {}))
         _, matched = win_svc.find_display(target, monitors)
-        return {"available": matched, "count": len(monitors)}
+        return {
+            "available": matched,
+            "count": len(monitors),
+            "visible": win_svc.is_visible(self._window) if self._window else True,
+        }
+
+    def hide_window(self):
+        """原生隐藏窗口（「显示器缺少时隐藏」：只藏页面内容会在回退屏留全屏窗口）。"""
+        if not self._window:
+            return False
+        try:
+            self._window.hide()
+            return True
+        except Exception as e:
+            logger.warning("Hide window failed: {}", e)
+            return False
+
+    def show_window(self):
+        """恢复被 hide_window 隐藏的窗口（目标显示器重新接入后由前端轮询调用）。"""
+        if not self._window:
+            return False
+        try:
+            self._window.show()
+            return True
+        except Exception as e:
+            logger.warning("Show window failed: {}", e)
+            return False
 
     def set_caption(self, enabled: bool):
         """添加或移除原生标题栏（右上角最小化/最大化/关闭三键）。"""

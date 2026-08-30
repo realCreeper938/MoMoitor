@@ -74,8 +74,9 @@
 | 方法 | 说明 |
 |---|---|
 | `get_monitors()` | 显示器坐标列表（含 `id`/`device`/`primary`） |
-| `move_to_monitor(target)` | 移动窗口到目标显示器（`target` 为设备 ID/路径字符串或序号 int） |
-| `check_monitor()` | `{available, count}` |
+| `move_to_monitor(target)` | 移动窗口到目标显示器（`target` 为设备 ID/路径字符串或序号 int）；保持窗口原有可见性 |
+| `check_monitor()` | `{available, count, visible}`（`visible` 为原生窗口当前可见性） |
+| `hide_window()` / `show_window()` | 原生隐藏/显示窗口（「显示器缺少时隐藏」由前端轮询调用） |
 | `set_caption(enabled)` | 添加/移除原生标题栏 |
 | `toggle_fullscreen()` | 切换全屏 |
 | `apply_window_opacity()` | 应用 `general.window_opacity` 原生透明度（须在 fullscreen/标题栏等窗口样式操作后调用，避免被覆盖） |

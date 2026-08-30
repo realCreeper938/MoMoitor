@@ -227,7 +227,11 @@ def move_to_monitor(window, target) -> bool:
     SWP_NOZORDER = 0x0004
     SWP_NOACTIVATE = 0x0010
     SWP_SHOWWINDOW = 0x0040
-    flags = SWP_NOZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW
+    flags = SWP_NOZORDER | SWP_NOACTIVATE
+    # 保持窗口原有可见性：SWP_SHOWWINDOW 会把隐藏窗口强行显示出来，
+    # 「显示器缺少时隐藏」的窗口在移动时不应因此露出。
+    if is_visible(window):
+        flags |= SWP_SHOWWINDOW
 
     for attempt in range(4):
         result = ctypes.windll.user32.SetWindowPos(

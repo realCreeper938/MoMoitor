@@ -61,37 +61,44 @@ def _target_screen(display: dict, screens: list):
 
     webview.Screen 只暴露坐标/尺寸/缩放，不含设备 ID。因此统一先经 win_svc 的
     物理枚举（含设备 ID）解析出目标屏，再按其下标从 webview.screens 取同序 Screen。
+    返回 (Screen | None, matched)：matched=False 表示目标屏当前不在场（已回退）。
     """
     if not screens:
-        return None
+        return None, False
     mon_target = win_svc.display_target(display)
     monitors = win_svc.get_monitors()
-    target_monitor, _ = win_svc.find_display(mon_target, monitors)
+    target_monitor, matched = win_svc.find_display(mon_target, monitors)
     if target_monitor is None:
-        return screens[0]
+        return screens[0], False
     try:
         idx = monitors.index(target_monitor)
     except ValueError:
         idx = 0
-    return screens[idx] if 0 <= idx < len(screens) else screens[0]
+    screen = screens[idx] if 0 <= idx < len(screens) else screens[0]
+    return screen, matched
 
 
 def create_window(monitor):
     api = Api(monitor)
     index = os.path.join(WEB_DIR, "index.html")
 
-    on_top = api._settings.get("display", {}).get("on_top", True)
+    display_cfg = api._settings.get("display", {})
+    on_top = display_cfg.get("on_top", True)
     screens = webview.screens
     ww, wh = 800, 600
-    target_screen = _target_screen(api._settings.get("display", {}), screens)
+    target_screen, target_matched = _target_screen(display_cfg, screens)
     if target_screen is not None:
         ww, wh = target_screen.width, target_screen.height
+    # 「显示器缺少时隐藏」：目标屏不在场时以隐藏状态创建窗口，避免全屏窗口
+    # 落在回退屏（主屏）上；目标屏重新接入后由前端轮询调用 show_window 恢复。
+    start_hidden = bool(display_cfg.get("hide_when_monitor_missing", False)) and not target_matched
 
     window = webview.create_window(
         "MoMoitor", url=index, js_api=api,
         fullscreen=False, frameless=False, easy_drag=False,
         background_color="#050505", on_top=on_top,
         width=ww, height=wh, screen=target_screen,
+        hidden=start_hidden,
     )
     api.set_window(window)
     _start_background_services(api)

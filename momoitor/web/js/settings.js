@@ -1096,12 +1096,9 @@ const lyricsOffsetVal = document.getElementById('lyrics-offset-val');
 
         window._appSettings = { ...window._appSettings, ...s };
 
-        if ((s.display || {}).hide_when_monitor_missing) {
-            const res = await pywebview.api.check_monitor();
-            document.body.style.visibility = res.available ? 'visible' : 'hidden';
-        } else {
-            document.body.style.visibility = 'visible';
-        }
+        // 「显示器缺少时隐藏」等显示器相关设置变更后立即同步原生窗口显隐
+        // （boot.js initMonitorPolling 暴露；轮询兜底，未就绪时跳过）
+        if (window.syncMonitorVisibility) await window.syncMonitorVisibility();
 
         startPolling((s.general || {}).refresh_interval);
         applyLang((s.general || {}).language || 'en');

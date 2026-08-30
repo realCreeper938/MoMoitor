@@ -296,38 +296,37 @@ function initTaskMgrBtn() {
 }
 
 function initMonitorPolling() {
-    // Monitor presence polling（实时读 _appSettings，托盘切换显示器后立即生效）
-    let monitorHidden = false;
+    // Monitor presence polling（实时读 _appSettings，托盘切换显示器后立即生效）。
+    // 目标显示器缺失时隐藏的是原生窗口本体：只藏 body 会在回退屏（主屏）上
+    // 留下全屏窗口。windowVisible 首轮从 check_monitor 的 visible 字段同步初始
+    // 状态（后端可能已按「缺少时隐藏」以隐藏方式创建窗口），之后仅在状态变化
+    // 时切换，避免周期性重复 move/show 干扰全屏等窗口操作。
+    let windowVisible = null;
 
     async function checkMonitor() {
         try {
             const d = (window._appSettings && window._appSettings.display) || {};
             const cachedMonitor = d.monitor_id || d.monitor || 0;
             const cachedHideMissing = d.hide_when_monitor_missing === true;
-            async function showMonitor() {
-                if (!monitorHidden) return;
-                document.body.style.visibility = 'visible';
-                monitorHidden = false;
-                await pywebview.api.move_to_monitor(cachedMonitor);
-            }
-            if (!cachedHideMissing) {
-                await showMonitor();
-                return;
-            }
             const res = await pywebview.api.check_monitor();
-            if (res.available) {
-                await showMonitor();
+            if (windowVisible === null) windowVisible = res.visible !== false;
+            const wantVisible = !cachedHideMissing || res.available;
+            if (wantVisible === windowVisible) return;
+            windowVisible = wantVisible;
+            if (wantVisible) {
+                // 目标屏重新接入：先移回目标屏再显示，避免在回退屏闪现
+                await pywebview.api.move_to_monitor(cachedMonitor);
+                await pywebview.api.show_window();
             } else {
-                if (!monitorHidden) {
-                    document.body.style.visibility = 'hidden';
-                    monitorHidden = true;
-                }
+                await pywebview.api.hide_window();
             }
         } catch (e) { console.warn('checkMonitor:', e); }
     }
 
     checkMonitor();
     setInterval(checkMonitor, 5000);
+    // 供设置保存后立即同步（settings.js）
+    window.syncMonitorVisibility = checkMonitor;
 }
 
 window.addEventListener('pywebviewready', async () => {
