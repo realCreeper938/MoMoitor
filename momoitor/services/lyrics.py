@@ -62,22 +62,32 @@ def _artist_sim(local: list, remote: list) -> float:
 def pick_best_result(results, title, artist=""):
     """在 Meting 搜索结果中选出与当前播放的曲名/歌手最匹配的一项。
 
-    得分 = 曲名相似度 * 0.7 + 歌手相似度 * 0.3（未提供歌手时仅看曲名）；
-    同分保持原有顺序（全部不匹配即回退第一项，与旧行为一致）。
+    曲名按「完全一致 > 互相包含 > 序列相似比」分层，高层级始终优先；
+    同层内按 曲名相似度*0.7 + 歌手相似度*0.3 评分。分层是为了避免曲名
+    完全一致的候选被「歌名+后缀」变体（beat/伴奏/Remix 等，曲名只算包含
+    0.85 分）靠更高的歌手分反超。未提供歌手时仅看曲名；同分保持原有顺序
+    （全部不匹配即回退第一项，与旧行为一致）。
     任一入参异常时返回 {}，由调用方按无结果处理。
     """
     if not isinstance(results, list) or not results:
         return {}
     nt = _norm_text(title)
     la = _name_tokens(artist)
-    best_i, best_score = 0, -1.0
+    best_i, best_key = 0, None
     for i, item in enumerate(results):
         info = item if isinstance(item, dict) else {}
-        tscore = _sim(nt, _norm_text(info.get("title")))
+        rt = _norm_text(info.get("title"))
+        if nt and rt and nt == rt:
+            tier = 2
+        elif nt and rt and (nt in rt or rt in nt):
+            tier = 1
+        else:
+            tier = 0
+        tscore = _sim(nt, rt)
         ascore = _artist_sim(la, _name_tokens(info.get("author"))) if la else 0.0
-        score = tscore * 0.7 + ascore * 0.3
-        if score > best_score:
-            best_i, best_score = i, score
+        key = (tier, tscore * 0.7 + ascore * 0.3)
+        if best_key is None or key > best_key:
+            best_i, best_key = i, key
     best = results[best_i]
     return best if isinstance(best, dict) else {}
 

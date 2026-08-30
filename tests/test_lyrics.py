@@ -53,3 +53,30 @@ def test_malformed_items_are_skipped():
 def test_empty_or_invalid_results():
     assert pick_best_result([], "x") == {}
     assert pick_best_result(None, "x") == {}
+
+
+# 真实案例「欲泪海 - MOCKER44.」：曲名完全一致的合唱原曲，必须胜过歌手
+# 完全一致的「歌名+后缀」变体（beat/伴奏/Remix）——曲名分层优先于歌手加权分
+_BEAT_RESULTS = [
+    {"title": "欲泪海", "author": "MOCKER44. / 洛天依", "lrc": "u1"},
+    {"title": "欲泪海（Feat.卫锲）", "author": "MOCKER44. / 卫锲", "lrc": "u2"},
+    {"title": "breeze of early autumn", "author": "MOCKER44.", "lrc": "u3"},
+    {"title": "雾林鸟", "author": "MOCKER44. / 洛天依", "lrc": "u4"},
+    {"title": "欲泪海 beat", "author": "MOCKER44.", "lrc": "u5"},
+]
+
+
+def test_exact_title_beats_title_suffix_variant():
+    best = pick_best_result(_BEAT_RESULTS, "欲泪海", "MOCKER44.")
+    assert best["lrc"] == "u1"
+
+
+def test_exact_title_and_artist_beats_exact_title_other_artist():
+    # 同为曲名完全一致时，歌手更匹配者优先：播放 MOCKER44. 的版本，
+    # 不应选到他人翻唱（亦水Akra 等）
+    results = [
+        {"title": "欲泪海", "author": "MOCKER44. / 洛天依", "lrc": "orig"},
+        {"title": "欲泪海", "author": "亦水Akra", "lrc": "cover"},
+        {"title": "欲泪海", "author": "白晏迟", "lrc": "cover2"},
+    ]
+    assert pick_best_result(results, "欲泪海", "MOCKER44.")["lrc"] == "orig"
